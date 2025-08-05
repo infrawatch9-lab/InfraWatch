@@ -1,37 +1,16 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# 📡 InfraWatch – Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+> Sistema completo para monitoramento de infraestrutura, com coleta de métricas, alertas em tempo real, análise de SLA e previsão com IA.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
+## Instakar dependencias
 
 ```bash
 $ npm install
 ```
 
-## Compile and run the project
+## compilar e rodar o projecto
 
 ```bash
 # development
@@ -44,55 +23,214 @@ $ npm run start:dev
 $ npm run start:prod
 ```
 
-## Run tests
+## ⚙️ Fluxo Geral do Sistema
 
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+```jsx
+Usuário
+	│
+	▼
+Frontend (React/Next.js)
+	│
+	▼ [HTTP/API ou GraphQL]
+Backend (Node.js/NestJS)
+	├── Monitoramento Engine
+	│     ├─ Ping
+	│     ├─ SNMP
+	│     ├─ Webhook
+	│     └─ API externa
+	├── SLA e Análise
+	│     ├─ Cálculo de SLA
+	│     └─ Histórico de falhas
+	├── Sistema de Alertas
+	│     └─ Notificações (email, Telegram, Slack)
+	└── API (REST ou GraphQL)
+	▲
+	│
+Banco de Dados
+	├── PostgreSQL (usuários, serviços, alertas)
+	└── TimescaleDB (métricas e logs históricos)
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+## Estrutura da aplicação
+```jsx
+InfraWatch/
+├── frontend/                   # Aplicação React
+├── backend/                    # API NestJS
+├── docs/                       # Documentação técnica
+├── docker-compose.yml          # Orquestração dos serviços
+├── README.md                   # Introdução e visão geral
+└── .gitignore
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## Estrutura do Backend
 
-## Resources
+```jsx
+/backend
+├── src/
+│   ├── app.module.ts
+│
+│   ├── monitors/
+│   │   ├── monitors.module.ts
+│   │   ├── monitors.service.ts
+│   │   ├── ping.service.ts
+│   │   ├── snmp.service.ts
+│   │   └── webhook.service.ts
+│
+│   ├── services/
+│   │   ├── services.module.ts
+│   │   ├── services.controller.ts
+│   │   ├── services.service.ts
+│   │   └── service.entity.ts
+│
+│   ├── sla/
+│   │   ├── sla.module.ts
+│   │   ├── sla.service.ts
+│   │   └── sla.controller.ts
+│
+│   ├── notifications/
+│   │   ├── notifications.module.ts
+│   │   ├── telegram.service.ts
+│   │   ├── email.service.ts
+│   │   └── slack.service.ts
+│
+│   ├── ai/
+│   │   ├── ai.module.ts
+│   │   ├── ai.service.ts
+│   │   └── predictor.service.ts
+│
+│   ├── users/
+│   │   ├── users.module.ts
+│   │   ├── users.service.ts
+│   │   ├── users.controller.ts
+│   │   └── user.entity.ts
+│
+│   ├── database/
+│   │   ├── database.module.ts
+│   │   └── database.providers.ts
+│
+│   └── main.ts
+├── .env
+├── tsconfig.json
+└── package.json
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+### 📊 Módulo metrics
+Responsável por:
+-     Validar token JWT
+-     Armazenar métricas no TimescaleDB
+-     Acionar monitoramento, IA e notificações
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### 📡 Módulo monitors
+Responsavel por:
+-     Detectar quedas e falhas
+-     Avaliar limiares de latência
+-     Classificar severidade do evento
+-     Emitir alertas
 
-## Support
+### 🔔 Módulo notifications
+Responsavel por:
+-     Enviar alertas por e-mail, Telegram, Slack, etc.
+-     Aplicar escalonamento
+-     Registrar logs de notificação
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+### 📈 Módulo sla
+Responsavel por:
+-     Calcular SLA com base nas falhas
+-     Exibir gráficos e relatórios
+-     Histórico mensal/semanal
 
-## Stay in touch
+### 🧠 Módulo ai
+Reonsavel por:
+-     Detectar anomalias com base em padrões históricos
+-     Previsão de falhas
+-     Classificação de falhas
+-     Sugestões automáticas (se aplicável)
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### 🔐 Módulo users
+Responsavel por:
+-     Autenticação e permissões
+-     Gerenciamento de operadores/admins
+-     Logs de auditoria
 
-## License
+### 🛠️ Módulo services
+-     Cadastro e controle de serviços monitorados
+-     Configuração de limiares
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## Associação com agentes
+
+🕵️ Agente (Go)
+### 🏓 1. Coleta de Latência (Ping)
+-     Testa conectividade com ICMP
+-     Mede latência com múltiplos alvos
+
+### 🧠 2. Monitoramento do Sistema
+-     Usa gopsutil para coletar:
+```bash
+  CPU
+  RAM
+  Disco
+  Uptime
+```
+
+### 📜 3. Logs do Sistema
+-     Detecta eventos críticos no SO
+```bash
+Ex: falhas, erros, crashs
+```
+
+### 🧩 4. Detecção de Falhas Locais
+-     Processos finalizados com erro
+-     Exit codes anormais
+
+### 🧾 5. Histórico (opcional)
+-     Lê comandos recentes
+-     Para auditoria e investigação
+
+### 🔁 Frequência
+A cada N segundos (config.yaml)
+
+### 📤 Envio de Dados
+Envia via POST /metrics com token JWT:
+```json
+{
+  "host": "srv-erp-prod",
+  "timestamp": "2025-08-05T16:00:00Z",
+  "metrics": {
+    "cpu": 83.4,
+    "memory": 91.2,
+    "disk": 88.5,
+    "uptime_seconds": 1298432,
+    "network": {
+      "bytes_sent": 502348000,
+      "bytes_recv": 1048329000
+    }
+  },
+  "latency": {
+    "8.8.8.8": 142.7,
+    "192.168.1.1": 1.2,
+    "10.10.10.2": 15.9
+  },
+  "logs": [
+    "systemd[1]: nginx.service failed with exit code 1",
+    "kernel: eth0: link is down",
+    "systemd[1]: Started PostgreSQL database server.",
+    "CRON[7284]: (root) CMD (/usr/local/bin/backup.sh)",
+    "sshd[13423]: Failed password for invalid user admin from 185.212.44.11 port 50322 ssh2"
+  ],
+  "alerts": [
+    {
+      "type": "process_crash",
+      "description": "nginx exited with status 1"
+    },
+    {
+      "type": "high_cpu",
+      "description": "CPU usage exceeded 80% threshold (current: 83.4%)"
+    },
+    {
+      "type": "high_memory",
+      "description": "Memory usage exceeded 90% (current: 91.2%)"
+    }
+  ]
+}
+```
+
