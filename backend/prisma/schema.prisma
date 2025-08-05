@@ -289,4 +289,4 @@ ALTER TABLE system_logs SET (timescaledb.compress);
 SELECT add_compression_policy('system_logs', INTERVAL '7 days');
 
 O fluxo típico: Serviço → Métricas coletadas → Regras verificadas → Alertas disparados → Notificações enviadas → SLAs atualizados
-*/
+*/ 
