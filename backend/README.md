@@ -49,7 +49,10 @@ Backend (Node.js/NestJS)
 Banco de Dados
 	├── PostgreSQL (usuários, serviços, alertas)
 	└── TimescaleDB (métricas e logs históricos)
+```
 
+## Estrutura da aplicação
+```jsx
 InfraWatch/
 ├── frontend/                   # Aplicação React
 ├── backend/                    # API NestJS
@@ -108,8 +111,7 @@ InfraWatch/
 
 📊 Módulo metrics
 Responsável por:
-
-Validar token JWT
+-     Validar token JWT
 
 Armazenar métricas no TimescaleDB
 
