@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+<<<<<<< HEAD
     "module": "commonjs",
     "declaration": true,
     "removeComments": true,
@@ -19,4 +20,16 @@
     "noFallthroughCasesInSwitch": false,
     "types": ["node"]
   }
+=======
+    "target": "ES2020",
+    "module": "CommonJS",
+    "rootDir": "src",
+    "outDir": "dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
+  "include": ["src"],
+  "exclude": ["node_modules"]
+>>>>>>> c7d58d7 (configuirei os packs e coloquei o script para rodar o server)
 }
