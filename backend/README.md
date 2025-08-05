@@ -60,6 +60,11 @@ InfraWatch/
 ├── docker-compose.yml          # Orquestração dos serviços
 ├── README.md                   # Introdução e visão geral
 └── .gitignore
+```
+
+## Estrutura do Backend
+
+```jsx
 /backend
 ├── src/
 │   ├── app.module.ts
@@ -109,94 +114,82 @@ InfraWatch/
 └── package.json
 ```
 
-📊 Módulo metrics
+### 📊 Módulo metrics
 Responsável por:
 -     Validar token JWT
+-     Armazenar métricas no TimescaleDB
+-     Acionar monitoramento, IA e notificações
 
-Armazenar métricas no TimescaleDB
+### 📡 Módulo monitors
+Responsavel por:
+-     Detectar quedas e falhas
+-     Avaliar limiares de latência
+-     Classificar severidade do evento
+-     Emitir alertas
 
-Acionar monitoramento, IA e notificações
+### 🔔 Módulo notifications
+Responsavel por:
+-     Enviar alertas por e-mail, Telegram, Slack, etc.
+-     Aplicar escalonamento
+-     Registrar logs de notificação
 
-📡 Módulo monitors
-Detecta quedas e falhas
+### 📈 Módulo sla
+Responsavel por:
+-     Calcular SLA com base nas falhas
+-     Exibir gráficos e relatórios
+-     Histórico mensal/semanal
 
-Avalia limiares de latência
+### 🧠 Módulo ai
+Reonsavel por:
+-     Detectar anomalias com base em padrões históricos
+-     Previsão de falhas
+-     Classificação de falhas
+-     Sugestões automáticas (se aplicável)
 
-Classifica severidade do evento
+### 🔐 Módulo users
+Responsavel por:
+-     Autenticação e permissões
+-     Gerenciamento de operadores/admins
+-     Logs de auditoria
 
-Emite alertas
+### 🛠️ Módulo services
+-     Cadastro e controle de serviços monitorados
+-     Configuração de limiares
 
-🔔 Módulo notifications
-Envia alertas por e-mail, Telegram, Slack, etc.
-
-Aplica escalonamento
-
-Registra logs de notificação
-
-📈 Módulo sla
-Calcula SLA com base nas falhas
-
-Exibe gráficos e relatórios
-
-Histórico mensal/semanal
-
-🧠 Módulo ai
-Detecta anomalias com base em padrões históricos
-
-Previsão de falhas
-
-Classificação de falhas
-
-Sugestões automáticas (se aplicável)
-
-🔐 Módulo users
-Autenticação e permissões
-
-Gerenciamento de operadores/admins
-
-Logs de auditoria
-
-🛠️ Módulo services
-Cadastro e controle de serviços monitorados
-
-Configuração de limiares
-
-Associação com agentes
+## Associação com agentes
 
 🕵️ Agente (Go)
-🏓 1. Coleta de Latência (Ping)
-Testa conectividade com ICMP
+### 🏓 1. Coleta de Latência (Ping)
+-     Testa conectividade com ICMP
+-     Mede latência com múltiplos alvos
 
-Mede latência com múltiplos alvos
-
-🧠 2. Monitoramento do Sistema
-Usa gopsutil para coletar:
-```
+### 🧠 2. Monitoramento do Sistema
+-     Usa gopsutil para coletar:
+```bash
   CPU
   RAM
   Disco
   Uptime
 ```
 
-📜 3. Logs do Sistema
-Detecta eventos críticos no SO
-
+### 📜 3. Logs do Sistema
+-     Detecta eventos críticos no SO
+```bash
 Ex: falhas, erros, crashs
+```
 
-🧩 4. Detecção de Falhas Locais
-Processos finalizados com erro
+### 🧩 4. Detecção de Falhas Locais
+-     Processos finalizados com erro
+-     Exit codes anormais
 
-Exit codes anormais
+### 🧾 5. Histórico (opcional)
+-     Lê comandos recentes
+-     Para auditoria e investigação
 
-🧾 5. Histórico (opcional)
-Lê comandos recentes
-
-Para auditoria e investigação
-
-🔁 Frequência
+### 🔁 Frequência
 A cada N segundos (config.yaml)
 
-📤 Envio de Dados
+### 📤 Envio de Dados
 Envia via POST /metrics com token JWT:
 ```json
 {
