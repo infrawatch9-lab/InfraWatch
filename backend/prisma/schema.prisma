@@ -169,6 +169,32 @@ model SystemLog {
   @@map("system_logs")
 }
 
+// Agente 
+model Agent {
+  id        String   @id @default(cuid())
+  host      String   @unique
+  createdAt DateTime @default(now())
+  metrics   Metric[]
+}
+
+// Tipos de métricas que medimos
+model Metric {
+  id         String   @id @default(cuid())
+  timestamp  DateTime
+  cpu        Float
+  memory     Float
+  disk       Float
+  uptime     Int
+  bytesSent  BigInt
+  bytesRecv  BigInt
+  latency    Json
+  logs       Json?
+  alerts     Json?
+  agentId    String
+  agent      Agent   @relation(fields: [agentId], references: [id])
+  createdAt  DateTime @default(now())
+}
+
 // Tipo de utilizador no sistema
 enum Role {
   ADMIN
@@ -234,14 +260,6 @@ enum LogType {
   ERROR
   WARNING
   EVENT
-}
-
-// Tipos de métricas que medimos
-enum MetricType {
-  CPU
-  MEMORY
-  LATENCY
-  STATUS
 }
 
 /*
