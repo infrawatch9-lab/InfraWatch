@@ -1,21 +1,23 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
 
   const handleLogin = (e) => {
     e.preventDefault();
-    // Lógica de login aqui
     console.log('Login com', username, password);
+    navigate('/homepage_admin');
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#080F2A]">
+    <div className="min-h-screen flex items-center justify-center" style={{ backgroundImage: "url('/dark_bg.jpg')" }}>
       <div className="bg-white p-10 rounded-md shadow-md w-full max-w-sm">
         <h2 className="text-center text-[#080F2A] font-semibold text-lg mb-6">
-          BEM-VINDO DE VOLTA
+          Bem-vindo
         </h2>
 
         <form onSubmit={handleLogin} className="space-y-4">
@@ -27,7 +29,7 @@ export default function Login() {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="USERNAME"
+              placeholder="Username ou E-mail"
               className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:ring focus:ring-blue-200"
               required
             />
@@ -41,7 +43,7 @@ export default function Login() {
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="SENHA"
+              placeholder="Senha"
               className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:ring focus:ring-blue-200"
               required
             />
@@ -57,12 +59,15 @@ export default function Login() {
             type="submit"
             className="w-full bg-[#080F2A] text-white py-2 rounded-sm text-sm font-semibold hover:bg-[#0a1c47]"
           >
-            INICIAR SESSÃO
+            Iniciar Sessão
           </button>
 
           <div className="text-center mt-2">
+            <a>
+              Esqueceu a senha? 
+            </a>
             <a href="#" className="text-xs text-gray-600 hover:underline">
-              ESQUECI A SENHA
+               Recuperar
             </a>
           </div>
         </form>
