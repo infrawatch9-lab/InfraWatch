@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { UsersModule } from "./users/users.module";
+import { metricsRouter } from "./metrics/metrics.module";
 
 const router = Router();
 
@@ -13,11 +14,11 @@ router.get("/health", (req, res) => {
 });
 
 router.use("/users", UsersModule.router);
+router.use("/metrics", metricsRouter);
 
 // Placeholder para outros módulos
 // router.use("/services", servicesRouter);
 // router.use("/teams", teamsRouter);
-// router.use("/metrics", metricsRouter);
 // router.use("/alerts", alertsRouter);
 // router.use("/notifications", notificationsRouter);
 // router.use("/sla", slaRouter);

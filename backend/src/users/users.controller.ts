@@ -1,13 +1,12 @@
 import { Request, Response } from "express";
 import { usersService } from "./users.service";
-import { verifyToken, extractTokenFromHeader } from "./jwt.service";
 import {
   CreateUserDto,
   LoginDto,
-  JwtPayload,
   RegisterUserDto,
   ResetPasswordDto,
 } from "./user.entity";
+import { JwtPayload } from "../auth/auth.entity";
 
 // Estender interface Request para incluir user
 declare global {
@@ -241,28 +240,6 @@ export class UsersController {
     }
   }
 }
-
-export const authenticateToken = (req: Request, res: Response, next: any) => {
-  try {
-    const token = extractTokenFromHeader(req.headers.authorization);
-
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "Token de acesso requerido",
-      });
-    }
-    const payload = verifyToken(token);
-    req.user = payload;
-    next();
-  } catch (error: any) {
-    const message = error.message || "Token inválido";
-    return res.status(401).json({
-      success: false,
-      message,
-    });
-  }
-};
 
 export const requireAdmin = (req: Request, res: Response, next: any) => {
   if (!req.user) {

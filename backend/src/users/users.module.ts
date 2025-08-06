@@ -1,7 +1,7 @@
 import { Router } from "express";
+import { authenticateToken } from "../auth/jwt.service";
 import {
   usersController,
-  authenticateToken,
   requireAdmin,
 } from "./users.controller";
 

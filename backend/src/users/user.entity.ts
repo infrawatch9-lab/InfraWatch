@@ -41,16 +41,6 @@ export interface RegisterUserDto {
   role?: "ADMIN" | "USER";
 }
 
-export interface JwtPayload {
-  id: number;
-  userId: number;
-  email: string;
-  role: "ADMIN" | "USER";
-  name: string;
-  iat?: number;
-  exp?: number;
-}
-
 export interface AuthTokens {
   accessToken: string;
   refreshToken: string;

@@ -1,9 +1,25 @@
-import { Module } from '@nestjs/common';
+import { Router } from 'express';
 import { MetricsController } from './metrics.controller';
-import { MetricsService } from './metrics.service';
+import { authenticateTokenAgent } from '../auth/jwt.service';
 
-@Module({
-  controllers: [MetricsController],
-  providers: [MetricsService],
-})
-export class MetricsModule {}
+export const metricsRouter = Router();
+
+metricsRouter.post('/metrics', authenticateTokenAgent, async (req, res) =>
+  MetricsController.receiveMetrics(req, res)
+);
+
+metricsRouter.get('/metrics/:host', authenticateTokenAgent, async (req, res) => {
+  MetricsController.getMetricsByHost(req, res);
+});
+
+metricsRouter.get('/metrics', authenticateTokenAgent, async (req, res) => {
+  MetricsController.getAllMetrics(req, res);
+});
+
+export const MetricsModule = {
+  router: metricsRouter,
+  controller: MetricsController,
+  middlewares: {
+    authenticateTokenAgent,
+  },
+};

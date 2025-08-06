@@ -1,23 +1,19 @@
-import { Injectable } from '@nestjs/common';
+import { JwtPayloadAgent } from '../auth/auth.entity';
 import { PrismaClient } from '@prisma/client';
 import { CreateMetricDto } from './metrics.entity';
 
 const prisma = new PrismaClient();
 
-@Injectable()
-export class MetricsService {
-  async saveMetrics(data: CreateMetricDto, token: string) {
-    // Encontra o agente pelo host
-    const agent = await prisma.agent.findUnique({
-      where: { host: data.host },
+export const metricsService = {
+  async saveMetrics(data: CreateMetricDto) {
+    const agentHost = data.host;
+
+    const agent = await prisma.agent.upsert({
+      where: { host: agentHost },
+      create: { host: agentHost },
+      update: {},
     });
 
-    // Se não existir, cria o agente
-    const agentRecord = agent ?? await prisma.agent.create({
-      data: { host: data.host },
-    });
-
-    // Cria a métrica relacionada ao agente
     await prisma.agentMetric.create({
       data: {
         timestamp: new Date(data.timestamp),
@@ -30,11 +26,25 @@ export class MetricsService {
         latency: data.latency,
         logs: data.logs ?? [],
         alerts: data.alerts ?? [],
-        agentId: agentRecord.id,
+        agentId: agent.id,
       },
     });
-    return { message: 'Métrica registrada com sucesso' };
+
+    return { success: true, message: 'Métricas registradas com sucesso' };
+  },
+
+  async getMetricsByHost(host: string) {
+    return await prisma.agentMetric.findMany({
+      where: { agent: { host } },
+      orderBy: { timestamp: 'desc' },
+    });
+  },
+
+  async getAllMetrics() {
+    return await prisma.agentMetric.findMany({
+      orderBy: { timestamp: 'desc' },
+    });
   }
-}
+};
 
-
+export default metricsService;

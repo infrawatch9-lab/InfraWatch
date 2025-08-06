@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
-import { generateTokens, verifyRefreshToken } from "./jwt.service";
+import { generateTokens, verifyRefreshToken } from "../auth/jwt.service";
 import { EmailService, generateTemporaryPassword } from "./email.service";
 import {
   CreateUserDto,

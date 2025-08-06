@@ -1,5 +1,7 @@
 import * as jwt from "jsonwebtoken";
-import { JwtPayload, AuthTokens } from "./user.entity";
+import { AuthAgentTokens, JwtPayload, JwtPayloadAgent } from "./auth.entity";
+import { AuthTokens } from "../users/user.entity";
+import { Request, Response } from "express";
 
 export const JWT_CONFIG = {
   secret: process.env.JWT_SECRET || "infrawatch-secret-key-dev",
@@ -8,7 +10,7 @@ export const JWT_CONFIG = {
 };
 
 export const generateAccessToken = (
-  payload: Omit<JwtPayload, "iat" | "exp">
+  payload: Omit<JwtPayload | JwtPayloadAgent, "iat" | "exp">
 ): string => {
   return jwt.sign(
     payload as any,
@@ -41,7 +43,7 @@ export const generateTokens = (user: {
     email: user.email,
     role: user.role,
     name: user.name,
-  };
+  } as JwtPayload;
 
   const accessToken = generateAccessToken(payload);
   const refreshToken = generateRefreshToken(user.id);
@@ -52,6 +54,34 @@ export const generateTokens = (user: {
     expiresIn: 24 * 60 * 60,
   };
 };
+
+export const generateAgentTokens = (agent: {
+  host: string;
+  exp?: number;
+}): AuthAgentTokens => {
+  const payload = {
+    host: agent.host,
+    iat: Math.floor(Date.now() / 1000),
+    exp: agent.exp,
+  } as JwtPayloadAgent;
+
+  const accessToken = generateAccessToken(payload);
+
+  return {
+    accessToken,
+    expiresIn: agent.exp ? Math.floor(Date.now() / 1000) + agent.exp : 30 * 24 * 60 * 60,
+  };
+};
+
+export function generateAgentToken(host: string): string {
+  return jwt.sign({ host }, process.env.JWT_SECRET!, {
+    expiresIn: '30d',
+  });
+}
+
+export function verifyTokenAgent(token: string): JwtPayloadAgent {
+  return jwt.verify(token, process.env.JWT_SECRET!) as JwtPayloadAgent;
+}
 
 export const verifyToken = (token: string): JwtPayload => {
   try {
@@ -92,4 +122,48 @@ export const extractTokenFromHeader = (authHeader?: string): string | null => {
   if (type !== "Bearer" || !token) return null;
 
   return token;
+};
+
+export const authenticateToken = (req: Request, res: Response, next: any) => {
+  try {
+    const token = extractTokenFromHeader(req.headers.authorization);
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "Token de acesso requerido",
+      });
+    }
+    const payload = verifyToken(token);
+    req.user = payload;
+    next();
+  } catch (error: any) {
+    const message = error.message || "Token inválido";
+    return res.status(401).json({
+      success: false,
+      message,
+    });
+  }
+};
+
+export const authenticateTokenAgent = (req: Request, res: Response, next: any) => {
+  try {
+    const token = extractTokenFromHeader(req.headers.authorization);
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "Token de acesso requerido",
+      });
+    }
+    const payload = verifyTokenAgent(token);
+    (req as any).user = payload;
+    next();
+  } catch (error: any) {
+    const message = error.message || "Token inválido";
+    return res.status(401).json({
+      success: false,
+      message,
+    });
+  }
 };
