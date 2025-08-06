@@ -4,156 +4,137 @@ generator client {
 }
 
 datasource db {
-  provider   = "postgresql"
-  url        = env("DATABASE_URL")
-  extensions = [timescaledb()]
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
-// Pessoas que usam o sistema
 model User {
-  id             Int              @id @default(autoincrement())
-  name           String
-  email          String           @unique
-  password       String
-  role           Role             @default(USER)
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  teams          TeamMember[]     // Equipas onde o utilizador participa
-  alerts         Alert[]          // Alertas atribuídos a este utilizador
-  notifications  Notification[]   // Notificações recebidas
-  createdAlertRules AlertRule[] @relation("CreatedByUser") // Regras de alerta criadas por este utilizador
+  id                     Int            @id @default(autoincrement())
+  name                   String
+  email                  String         @unique
+  password               String
+  role                   Role           @default(USER)
+  isTemporaryPassword    Boolean        @default(false)
+  temporaryPasswordExpiry DateTime?
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+  alerts                 Alert[]
+  createdAlertRules      AlertRule[]    @relation("CreatedByUser")
+  notifications          Notification[]
+  teams                  TeamMember[]
 }
 
-// Grupos de trabalho
 model Team {
-  id        Int           @id @default(autoincrement())
+  id        Int          @id @default(autoincrement())
   name      String
-  createdAt DateTime      @default(now())
-  members   TeamMember[] // Membros desta equipa
-  services  Service[]    // Serviços geridos por esta equipa
+  createdAt DateTime     @default(now())
+  services  Service[]
+  members   TeamMember[]
 }
 
-// Quem pertence a que equipa
 model TeamMember {
-  id      Int       @id @default(autoincrement())
-  userId  Int
-  teamId  Int
-  role    TeamRole
-
-  User    User      @relation(fields: [userId], references: [id])   // Ligação ao utilizador
-  Team    Team      @relation(fields: [teamId], references: [id])   // Ligação à equipa
+  id     Int      @id @default(autoincrement())
+  userId Int
+  teamId Int
+  role   TeamRole
+  Team   Team     @relation(fields: [teamId], references: [id])
+  User   User     @relation(fields: [userId], references: [id])
 }
 
-// Coisas que monitorizamos (servidores, sites, etc)
 model Service {
-  id           Int                @id @default(autoincrement())
-  name         String
-  type         ServiceType
-  endpoint     String
-  protocol     String
-  status       ServiceStatus      @default(PENDING)
-  teamId       Int
-  createdAt    DateTime           @default(now())
-
-  Team         Team               @relation(fields: [teamId], references: [id])   // Equipa responsável
-  metrics      Metric[]           // Dados de performance históricos (TimescaleDB)
-  alerts       Alert[]            // Alertas gerados por este serviço
-  rules        AlertRule[]        @relation("ServiceToAlertRules") // Regras de alerta configuradas
-  slas         SLA[]              // Contratos de disponibilidade
-  configs      MonitoringConfig[] // Configurações de monitorização
-  logs         SystemLog[]        // Logs do sistema (TimescaleDB)
+  id        Int                @id @default(autoincrement())
+  name      String
+  type      ServiceType
+  endpoint  String
+  protocol  String
+  status    ServiceStatus      @default(PENDING)
+  teamId    Int
+  createdAt DateTime           @default(now())
+  alerts    Alert[]
+  rules     AlertRule[]        @relation("ServiceToAlertRules")
+  configs   MonitoringConfig[]
+  slas      SLA[]
+  Team      Team               @relation(fields: [teamId], references: [id])
+  metrics   Metric[]
+  logs      SystemLog[]
 }
 
-// Dados de performance (CPU, memória, etc) - Otimizado com TimescaleDB
 model Metric {
-  id         Int             @id @default(autoincrement())
-  serviceId  Int
-  timestamp  DateTime        @default(now())
-  cpu        Float?
-  memory     Float?
-  latency    Float?
-  status     ServiceStatus
-  errorMsg   String?
+  id        Int           @id @default(autoincrement())
+  serviceId Int
+  timestamp DateTime      @default(now())
+  cpu       Float?
+  memory    Float?
+  latency   Float?
+  status    ServiceStatus
+  errorMsg  String?
+  Service   Service       @relation(fields: [serviceId], references: [id])
 
-  Service    Service         @relation(fields: [serviceId], references: [id]) // Serviço a que pertencem estas métricas
-
-  @@index([timestamp]) // Índice temporal para TimescaleDB
-  @@index([serviceId, timestamp]) // Índice composto para consultas por serviço
-  
+  @@index([timestamp])
+  @@index([serviceId, timestamp])
   @@map("metrics")
 }
 
-// Regras para disparar alertas automaticamente
 model AlertRule {
-  id            Int         @id @default(autoincrement())
+  id            Int        @id @default(autoincrement())
   serviceId     Int
   field         String
   condition     String
   severity      AlertLevel
-  active        Boolean     @default(true)
+  active        Boolean    @default(true)
   createdBy     Int
-  createdAt     DateTime    @default(now())
-
-  Service       Service     @relation("ServiceToAlertRules", fields: [serviceId], references: [id]) // Serviço a monitorizar
-  createdByUser User        @relation("CreatedByUser", fields: [createdBy], references: [id])        // Quem criou a regra
-  alerts        Alert[]     // Alertas gerados por esta regra
+  createdAt     DateTime   @default(now())
+  alerts        Alert[]
+  createdByUser User       @relation("CreatedByUser", fields: [createdBy], references: [id])
+  Service       Service    @relation("ServiceToAlertRules", fields: [serviceId], references: [id])
 }
 
-// Alertas que foram disparados
 model Alert {
-  id            Int         @id @default(autoincrement())
+  id            Int            @id @default(autoincrement())
   serviceId     Int
   ruleId        Int
-  triggeredAt   DateTime    @default(now())
+  triggeredAt   DateTime       @default(now())
   message       String
-  resolved      Boolean     @default(false)
+  resolved      Boolean        @default(false)
   userId        Int?
-
-  Service       Service     @relation(fields: [serviceId], references: [id])  // Serviço que gerou o alerta
-  AlertRule     AlertRule   @relation(fields: [ruleId], references: [id])     // Regra que disparou o alerta
-  User          User?       @relation(fields: [userId], references: [id])     // Utilizador atribuído (opcional)
-  notifications Notification[] // Notificações enviadas para este alerta
+  AlertRule     AlertRule      @relation(fields: [ruleId], references: [id])
+  Service       Service        @relation(fields: [serviceId], references: [id])
+  User          User?          @relation(fields: [userId], references: [id])
+  notifications Notification[]
 }
 
-// Notificações enviadas aos utilizadores
 model Notification {
-  id         Int                @id @default(autoincrement())
-  userId     Int
-  alertId    Int?
-  message    String
-  type       NotificationType
-  channel    NotificationChannel
-  sentAt     DateTime           @default(now())
-
-  User       User               @relation(fields: [userId], references: [id])   // Destinatário da notificação
-  Alert      Alert?             @relation(fields: [alertId], references: [id])  // Alerta relacionado (opcional)
+  id      Int                 @id @default(autoincrement())
+  userId  Int
+  alertId Int?
+  message String
+  type    NotificationType
+  channel NotificationChannel
+  sentAt  DateTime            @default(now())
+  Alert   Alert?              @relation(fields: [alertId], references: [id])
+  User    User                @relation(fields: [userId], references: [id])
 }
 
-// Contratos de disponibilidade (99% uptime, etc)
 model SLA {
-  id          Int         @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   serviceId   Int
   periodStart DateTime
   periodEnd   DateTime
   uptimePct   Float
   downtime    Int
   status      SLAStatus
-
-  Service     Service     @relation(fields: [serviceId], references: [id]) // Serviço a que se aplica este SLA
+  Service     Service   @relation(fields: [serviceId], references: [id])
 }
 
-// Como monitorizar cada serviço (frequência, timeouts)
 model MonitoringConfig {
-  id          Int        @id @default(autoincrement())
-  serviceId   Int
-  frequency   Int        // em segundos
-  timeout     Int        // em milissegundos
-  webhookUrl  String?
-
-  Service     Service    @relation(fields: [serviceId], references: [id]) // Serviço a configurar
+  id         Int     @id @default(autoincrement())
+  serviceId  Int
+  frequency  Int
+  timeout    Int
+  webhookUrl String?
+  Service    Service @relation(fields: [serviceId], references: [id])
 }
 
-// Registo de eventos do sistema - Otimizado com TimescaleDB
 model SystemLog {
   id         Int        @id @default(autoincrement())
   timestamp  DateTime   @default(now())
@@ -206,14 +187,12 @@ enum Role {
   USER
 }
 
-// Papel dentro da equipa
 enum TeamRole {
   OWNER
   EDITOR
   VIEWER
 }
 
-// Tipo de coisa que monitorizamos
 enum ServiceType {
   SERVER
   NETWORK
@@ -223,7 +202,6 @@ enum ServiceType {
   CUSTOM
 }
 
-// Estado atual do serviço
 enum ServiceStatus {
   UP
   DOWN
@@ -231,35 +209,30 @@ enum ServiceStatus {
   PENDING
 }
 
-// Gravidade do alerta
 enum AlertLevel {
   INFO
   WARNING
   CRITICAL
 }
 
-// Tipo de notificação
 enum NotificationType {
   ALERT
   INFO
   SYSTEM
 }
 
-// Como enviar a notificação
 enum NotificationChannel {
   EMAIL
   PUSH
   SMS
 }
 
-// Estado do contrato de disponibilidade
 enum SLAStatus {
   OK
   VIOLATED
   UNKNOWN
 }
 
-// Tipo de mensagem no log
 enum LogType {
   INFO
   ERROR
@@ -267,49 +240,9 @@ enum LogType {
   EVENT
 }
 
-/*
-FLUXO DA BASE DE DADOS INFRAWATCH
-
-Este schema representa uma plataforma de monitorização completa onde:
-
-1. UTILIZADORES E EQUIPAS:
-   - Utilizadores organizam-se em equipas com diferentes papéis
-   - Cada equipa gere os seus próprios serviços
-
-2. SERVIÇOS E MONITORIZAÇÃO:
-   - Serviços (servidores, sites, APIs) são adicionados com configurações específicas
-   - MonitoringConfig define como monitorizar (frequência, timeouts)
-   - Métricas são coletadas continuamente e armazenadas
-
-3. ALERTAS INTELIGENTES:
-   - AlertRules definem condições automáticas (ex: CPU > 80%)
-   - Quando violadas, criam Alerts que geram Notifications
-   - Utilizadores recebem notificações por email, push ou SMS
-
-4. CONTRATOS DE SERVIÇO:
-   - SLAs rastreiam disponibilidade (ex: 99.9% uptime)
-   - Calculam automaticamente percentuais e downtime
-
-5. TIMESCALEDB PARA PERFORMANCE:
-   - Metrics e SystemLogs usam TimescaleDB para dados temporais
-   - Permite consultas rápidas de histórico e agregações
-   - Ideal para dashboards e análise de tendências
-
-CONFIGURAÇÃO TIMESCALEDB HYPERTABLES:
-Após executar prisma migrate dev, execute no PostgreSQL:
-
--- Converter tabela metrics em hypertable
-SELECT create_hypertable('metrics', 'timestamp');
-
--- Converter tabela system_logs em hypertable  
-SELECT create_hypertable('system_logs', 'timestamp');
-
--- Opcional: Configurar compressão automática após 7 dias
-ALTER TABLE metrics SET (timescaledb.compress);
-SELECT add_compression_policy('metrics', INTERVAL '7 days');
-
-ALTER TABLE system_logs SET (timescaledb.compress);
-SELECT add_compression_policy('system_logs', INTERVAL '7 days');
-
-O fluxo típico: Serviço → Métricas coletadas → Regras verificadas → Alertas disparados → Notificações enviadas → SLAs atualizados
-*/ 
+enum MetricType {
+  CPU
+  MEMORY
+  LATENCY
+  STATUS
+}
