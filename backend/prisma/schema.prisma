@@ -171,16 +171,16 @@ model SystemLog {
 
 // Agente 
 model Agent {
-  id        String   @id @default(cuid())
-  host      String   @unique
-  createdAt DateTime @default(now())
-  metrics   Metric[]
+  id           String         @id @default(cuid())
+  host         String         @unique
+  createdAt    DateTime       @default(now())
+  metrics      AgentMetric[]
 }
 
-// Tipos de métricas que medimos
-model Metric {
-  id         String   @id @default(cuid())
-  timestamp  DateTime
+// Tipos de métricas que pegamos do agent
+model AgentMetric {
+  id         Int        @id @default(autoincrement())
+  timestamp  DateTime   @default(now())
   cpu        Float
   memory     Float
   disk       Float
@@ -190,10 +190,15 @@ model Metric {
   latency    Json
   logs       Json?
   alerts     Json?
+
   agentId    String
-  agent      Agent   @relation(fields: [agentId], references: [id])
-  createdAt  DateTime @default(now())
+  agent      Agent      @relation(fields: [agentId], references: [id])
+
+  @@index([timestamp])
+  @@index([agentId, timestamp])
+  @@map("agent_metrics")
 }
+
 
 // Tipo de utilizador no sistema
 enum Role {
