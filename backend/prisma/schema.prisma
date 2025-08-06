@@ -14,6 +14,7 @@ model User {
   email                  String         @unique
   password               String
   role                   Role           @default(USER)
+  status                 Status         @default(ACTIVE)
   isTemporaryPassword    Boolean        @default(false)
   temporaryPasswordExpiry DateTime?
   createdAt              DateTime       @default(now())
@@ -185,6 +186,11 @@ model AgentMetric {
 enum Role {
   ADMIN
   USER
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
 }
 
 enum TeamRole {

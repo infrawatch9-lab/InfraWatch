@@ -9,6 +9,7 @@ import {
   UserResponseDto,
   RegisterUserDto,
   ResetPasswordDto,
+  UpdateUserDto,
 } from "./user.entity";
 
 const prisma = new PrismaClient();
@@ -19,8 +20,9 @@ export class UsersService {
   ): Promise<LoginResponse> {
     try {
       const { name, email, role = "USER" } = data;
-
-      if (!name || !email) {
+      const trimmedName = name.trim();
+      const trimmedEmail = email.trim();
+      if (!trimmedName || !trimmedEmail) {
         return {
           success: false,
           message: "Nome e email são obrigatórios",
@@ -28,7 +30,7 @@ export class UsersService {
       }
 
       const existingUser = await prisma.user.findUnique({
-        where: { email },
+        where: { email: trimmedEmail },
       });
 
       if (existingUser) {
@@ -43,15 +45,15 @@ export class UsersService {
       expiryDate.setHours(expiryDate.getHours() + 24);
       const user = await prisma.user.create({
         data: {
-          name,
-          email,
+          name: trimmedName,
+          email: trimmedEmail,
           password: hashedPassword,
           role,
           isTemporaryPassword: true,
           temporaryPasswordExpiry: expiryDate,
         },
       });
-      await EmailService.sendTemporaryPassword(email, name, temporaryPassword);
+      await EmailService.sendTemporaryPassword(trimmedEmail ?? "", trimmedName ?? "", temporaryPassword);
       const { password: _, ...userWithoutPassword } = user;
       return {
         success: true,
@@ -74,14 +76,19 @@ export class UsersService {
   async register(data: CreateUserDto): Promise<LoginResponse> {
     try {
       const { name, email, password, role = "USER" } = data;
-      if (!name || !email || !password) {
+
+      const trimmedName = name.trim();
+      const trimmedEmail = email.trim();
+      const trimmedPassword = password.trim();
+
+      if (!trimmedName || !trimmedEmail || !trimmedPassword) {
         return {
           success: false,
           message: "Nome, email e password são obrigatórios",
         };
       }
       const existingUser = await prisma.user.findUnique({
-        where: { email },
+        where: { email: trimmedEmail },
       });
       if (existingUser) {
         return {
@@ -92,8 +99,8 @@ export class UsersService {
       const hashedPassword = await bcrypt.hash(password, 10);
       const user = await prisma.user.create({
         data: {
-          name,
-          email,
+          name: trimmedName,
+          email: trimmedEmail,
           password: hashedPassword,
           role,
         },
@@ -104,6 +111,7 @@ export class UsersService {
         email: user.email,
         role: user.role as "ADMIN" | "USER",
         name: user.name,
+        status: user.status as "ACTIVE" | "INACTIVE",
       });
 
       const { password: _, ...userWithoutPassword } = user;
@@ -125,21 +133,32 @@ export class UsersService {
   async login(data: LoginDto): Promise<LoginResponse> {
     try {
       const { email, password } = data;
-      if (!email || !password) {
+      const email_trimmed = email.trim();
+      const password_trimmed = password.trim();
+
+      if (!email_trimmed || !password_trimmed) {
         return {
           success: false,
           message: "Email e password são obrigatórios",
         };
       }
 
+      console.log("Login attempt with:", { email: email_trimmed, password: password_trimmed });
       const user = await prisma.user.findUnique({
-        where: { email },
+        where: { email: email_trimmed },
       });
 
       if (!user) {
         return {
           success: false,
           message: "Credenciais inválidas",
+        };
+      }
+
+      if (user.status === "INACTIVE") {
+        return {
+          success: false,
+          message: "Conta inativa. Entre em contato com o administrador.",
         };
       }
 
@@ -167,6 +186,7 @@ export class UsersService {
         email: user.email,
         role: user.role as "ADMIN" | "USER",
         name: user.name,
+        status: user.status as "ACTIVE" | "INACTIVE",
       });
 
       const { password: _, ...userWithoutPassword } = user;
@@ -193,6 +213,7 @@ export class UsersService {
       };
     }
   }
+
   async refreshToken(refreshToken: string): Promise<Partial<LoginResponse>> {
     try {
       const { userId } = verifyRefreshToken(refreshToken);
@@ -210,6 +231,7 @@ export class UsersService {
         email: user.email,
         role: user.role as "ADMIN" | "USER",
         name: user.name,
+        status: user.status as "ACTIVE" | "INACTIVE",
       });
       return {
         success: true,
@@ -224,6 +246,28 @@ export class UsersService {
       };
     }
   }
+
+  async getProfile(userId: number): Promise<UserResponseDto | null> {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+      return user;
+    }
+    catch (error) {
+      console.error("Erro ao buscar perfil do usuário:", error);
+      return null;
+    }
+  }
+
   async findById(id: number): Promise<UserResponseDto | null> {
     try {
       const user = await prisma.user.findUnique({
@@ -260,9 +304,13 @@ export class UsersService {
       return [];
     }
   }
-  async create(data: CreateUserDto): Promise<UserResponseDto | null> {
+
+  async createUser(data: CreateUserDto): Promise<UserResponseDto | null> {
     try {
       const { name, email, password, role = "USER" } = data;
+      name.trim();
+      email.trim();
+      password.trim();
       const existingUser = await prisma.user.findUnique({
         where: { email },
       });
@@ -291,6 +339,91 @@ export class UsersService {
       return user;
     } catch (error) {
       console.error("Erro ao criar usuário:", error);
+      return null;
+    }
+  }
+
+  async getAllUsers(): Promise<UserResponseDto[]> {
+    try {
+      return await prisma.user.findMany({
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+    } catch (error) {
+      console.error("Erro ao listar usuários:", error);
+      return [];
+    }
+  }
+
+  async updateUser(userId: number, data: UpdateUserDto): Promise<UserResponseDto | null> {
+    try {
+      const { name, email, role, isTemporaryPassword, status } = data;
+
+      const trimmedName = name.trim();
+      const trimmedEmail = email.trim();
+
+      if (!trimmedEmail || !trimmedName) {
+        throw new Error("Nome e email são obrigatórios");
+      }
+
+      let password: string | undefined = undefined;
+      let temporaryPasswordExpiry: Date | undefined = undefined;
+      if (isTemporaryPassword) {
+        const temporaryPassword = generateTemporaryPassword();
+        const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
+        password = hashedPassword;
+        temporaryPasswordExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        await EmailService.sendTemporaryPassword(trimmedEmail, trimmedName, temporaryPassword);
+      }
+
+      if (trimmedName && trimmedName.length === 0) {
+        throw new Error("Nome não pode ser vazio");
+      }
+
+      if (trimmedEmail && trimmedEmail.length === 0) {
+        const existingUser = await prisma.user.findUnique({
+          where: { email },
+        });
+        if (existingUser && existingUser.id !== userId) {
+          throw new Error("Email já está em uso por outro usuário");
+        }
+      }
+
+      const updateData: any = {
+        ...(name && { name }),
+        ...(email && { email }),
+        ...(role && { role }),
+        ...(isTemporaryPassword !== undefined && { isTemporaryPassword }),
+        ...(status && { status }),
+        updatedAt: new Date(),
+      };
+
+      if (password) {
+        updateData.password = password;
+        updateData.temporaryPasswordExpiry = temporaryPasswordExpiry;
+      }
+
+      const user = await prisma.user.update({
+        where: { id: userId },
+        data: updateData,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+      return user;
+    } catch (error) {
+      console.error("Erro ao atualizar usuário:", error);
       return null;
     }
   }

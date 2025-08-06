@@ -1,260 +1,87 @@
-import { Request, Response } from "express";
-import { usersService } from "./users.service";
 import {
-  CreateUserDto,
-  LoginDto,
-  RegisterUserDto,
-  ResetPasswordDto,
-} from "./user.entity";
-import { JwtPayload } from "../auth/auth.entity";
+  Controller,
+  Get,
+  Post,
+  Put,
+  Body,
+  Param,
+  UseGuards,
+  Request,
+  ParseIntPipe,
+} from '@nestjs/common';
+import { UsersService } from './users.service';
+import { RolesGuard } from '../auth/roles.guard';
+import { CreateUserDto, LoginDto, ResetPasswordDto, UpdateUserDto } from './user.entity';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { Roles } from '../auth/roles.decorator';
+import { Public } from '../auth/public.decorator';
 
-// Estender interface Request para incluir user
-declare global {
-  namespace Express {
-    interface Request {
-      user?: JwtPayload;
-    }
-  }
-}
-
+@ApiTags('users')
+@Controller('users')
 export class UsersController {
-  async registerWithTempPassword(req: Request, res: Response) {
-    try {
-      const data: RegisterUserDto = req.body;
-      const result = await usersService.registerWithTemporaryPassword(data);
+  constructor(private readonly usersService: UsersService) {}
 
-      if (result.success) {
-        return res.status(201).json(result);
-      } else {
-        return res.status(400).json(result);
-      }
-    } catch (error) {
-      console.error("Erro no registro:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Erro interno do servidor",
-      });
-    }
+  @Post('login')
+  @Public()
+  @ApiOperation({ summary: 'User login' })
+  async login(@Body() loginDto: LoginDto) {
+    return this.usersService.login(loginDto);
   }
 
-  async register(req: Request, res: Response) {
-    try {
-      const data: CreateUserDto = req.body;
-      const result = await usersService.register(data);
-
-      if (result.success) {
-        return res.status(201).json(result);
-      } else {
-        return res.status(400).json(result);
-      }
-    } catch (error) {
-      console.error("Erro no registro:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Erro interno do servidor",
-      });
-    }
+  @Post('register')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Register user (Admin only)' })
+  async registerWithTemporaryPassword(@Body() CreateUserDto: CreateUserDto) {
+    return this.usersService.registerWithTemporaryPassword(CreateUserDto);
   }
 
-  async login(req: Request, res: Response) {
-    try {
-      const data: LoginDto = req.body;
-      const result = await usersService.login(data);
-      if (result.success) {
-        return res.status(200).json(result);
-      } else {
-        return res.status(401).json(result);
-      }
-    } catch (error) {
-      console.error("Erro no login:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Erro interno do servidor",
-      });
-    }
+  @Post('refresh')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Refresh JWT token' })
+  async refreshToken(@Body() body: { refreshToken: string }) {
+    return this.usersService.refreshToken(body.refreshToken);
   }
 
-  async refreshToken(req: Request, res: Response) {
-    try {
-      const { refreshToken } = req.body;
-      if (!refreshToken) {
-        return res.status(400).json({
-          success: false,
-          message: "Refresh token é obrigatório",
-        });
-      }
-      const result = await usersService.refreshToken(refreshToken);
-      if (result.success) {
-        return res.status(200).json(result);
-      } else {
-        return res.status(401).json(result);
-      }
-    } catch (error) {
-      console.error("Erro no refresh token:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Erro interno do servidor",
-      });
-    }
+  @Get('profile')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user profile' })
+  async getProfile(@Request() req: any) {
+    return this.usersService.getProfile(req.user.id);
   }
 
-  async getProfile(req: Request, res: Response) {
-    try {
-      if (!req.user) {
-        return res.status(401).json({
-          success: false,
-          message: "Usuário não autenticado",
-        });
-      }
-      const user = await usersService.findById(req.user.id);
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: "Usuário não encontrado",
-        });
-      }
-      return res.status(200).json({
-        success: true,
-        user,
-      });
-    } catch (error) {
-      console.error("Erro ao obter perfil:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Erro interno do servidor",
-      });
-    }
+  @Put('reset-password')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Reset user password' })
+  async resetPassword(@Request() req: any, @Body() resetPasswordDto: ResetPasswordDto) {
+    return this.usersService.resetPassword(req.user.id, resetPasswordDto);
   }
 
-  async getAllUsers(req: Request, res: Response) {
-    try {
-      if (!req.user || req.user.role !== "ADMIN") {
-        return res.status(403).json({
-          success: false,
-          message: "Acesso negado: permissões de administrador requeridas",
-        });
-      }
-      const users = await usersService.findAll();
-      return res.status(200).json({
-        success: true,
-        users,
-      });
-    } catch (error) {
-      console.error("Erro ao listar usuários:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Erro interno do servidor",
-      });
-    }
+  @Put('update-user')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update user settings' })
+  async updateUser(@Request() req: any, @Body() updateUserDto: UpdateUserDto) {
+    return this.usersService.updateUser(req.user.id, updateUserDto);
   }
 
-  async getUserById(req: Request, res: Response) {
-    try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
-        return res.status(400).json({
-          success: false,
-          message: "ID inválido",
-        });
-      }
-      if (!req.user || (req.user.id !== id && req.user.role !== "ADMIN")) {
-        return res.status(403).json({
-          success: false,
-          message: "Acesso negado",
-        });
-      }
-      const user = await usersService.findById(id);
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: "Usuário não encontrado",
-        });
-      }
-
-      return res.status(200).json({
-        success: true,
-        user,
-      });
-    } catch (error) {
-      console.error("Erro ao obter usuário:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Erro interno do servidor",
-      });
-    }
+  @Get(':id')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get user by ID' })
+  async getUserById(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.findById(id);
   }
 
-  async resetPassword(req: Request, res: Response) {
-    try {
-      if (!req.user) {
-        return res.status(401).json({
-          success: false,
-          message: "Usuário não autenticado",
-        });
-      }
-
-      const data: ResetPasswordDto = req.body;
-      const result = await usersService.resetPassword(req.user.id, data);
-
-      if (result.success) {
-        return res.status(200).json(result);
-      } else {
-        return res.status(400).json(result);
-      }
-    } catch (error) {
-      console.error("Erro ao redefinir senha:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Erro interno do servidor",
-      });
-    }
-  }
-
-  async createUser(req: Request, res: Response) {
-    try {
-      if (!req.user || req.user.role !== "ADMIN") {
-        return res.status(403).json({
-          success: false,
-          message: "Acesso negado: permissões de administrador requeridas",
-        });
-      }
-      const data: CreateUserDto = req.body;
-      const user = await usersService.create(data);
-      if (!user) {
-        return res.status(400).json({
-          success: false,
-          message: "Erro ao criar usuário",
-        });
-      }
-      return res.status(201).json({
-        success: true,
-        message: "Usuário criado com sucesso",
-        user,
-      });
-    } catch (error) {
-      console.error("Erro ao criar usuário:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Erro interno do servidor",
-      });
-    }
+  @Get()
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all users (Admin only)' })
+  async getAllUsers() {
+    return this.usersService.getAllUsers();
   }
 }
-
-export const requireAdmin = (req: Request, res: Response, next: any) => {
-  if (!req.user) {
-    return res.status(401).json({
-      success: false,
-      message: "Autenticação requerida",
-    });
-  }
-  if (req.user.role !== "ADMIN") {
-    return res.status(403).json({
-      success: false,
-      message: "Acesso negado: permissões de administrador requeridas",
-    });
-  }
-  next();
-};
-
-export const usersController = new UsersController();

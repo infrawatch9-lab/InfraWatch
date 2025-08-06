@@ -4,6 +4,7 @@ export interface User {
   email: string;
   password: string;
   role: "ADMIN" | "USER";
+  status: "ACTIVE" | "INACTIVE";
   createdAt: Date;
   updatedAt: Date;
 }
@@ -13,6 +14,7 @@ export interface CreateUserDto {
   email: string;
   password: string;
   role?: "ADMIN" | "USER";
+  status?: "ACTIVE" | "INACTIVE";
 }
 
 export interface LoginDto {
@@ -52,4 +54,12 @@ export interface LoginResponse {
   message: string;
   user?: UserResponseDto;
   tokens?: AuthTokens;
+}
+
+export interface UpdateUserDto {
+  name: string;
+  email: string;
+  role?: "ADMIN" | "USER";
+  isTemporaryPassword?: boolean;
+  status?: "ACTIVE" | "INACTIVE";
 }

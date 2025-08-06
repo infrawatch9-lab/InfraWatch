@@ -3,6 +3,7 @@ export interface JwtPayload {
     userId: number;
     email: string;
     role: "ADMIN" | "USER";
+    status: "ACTIVE" | "INACTIVE";
     name: string;
     iat?: number;
     exp?: number;

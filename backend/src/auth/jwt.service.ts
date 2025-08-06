@@ -3,6 +3,14 @@ import { AuthAgentTokens, JwtPayload, JwtPayloadAgent } from "./auth.entity";
 import { AuthTokens } from "../users/user.entity";
 import { Request, Response } from "express";
 
+declare global {
+  namespace Express {
+    interface Request {
+      user?: JwtPayload;
+    }
+  }
+}
+
 export const JWT_CONFIG = {
   secret: process.env.JWT_SECRET || "infrawatch-secret-key-dev",
   expiresIn: process.env.JWT_EXPIRES_IN || "24h",
@@ -36,6 +44,7 @@ export const generateTokens = (user: {
   email: string;
   role: "ADMIN" | "USER";
   name: string;
+  status: "ACTIVE" | "INACTIVE";
 }): AuthTokens => {
   const payload = {
     id: user.id,
@@ -43,6 +52,7 @@ export const generateTokens = (user: {
     email: user.email,
     role: user.role,
     name: user.name,
+    status: user.status,
   } as JwtPayload;
 
   const accessToken = generateAccessToken(payload);
@@ -80,7 +90,20 @@ export function generateAgentToken(host: string): string {
 }
 
 export function verifyTokenAgent(token: string): JwtPayloadAgent {
-  return jwt.verify(token, process.env.JWT_SECRET!) as JwtPayloadAgent;
+  if (!token) {
+    throw new Error("Token is required");
+  }
+  try {
+    return jwt.verify(token, process.env.JWT_SECRET!) as JwtPayloadAgent;
+  } catch (error: any) {
+    if (error.name === "TokenExpiredError") {
+      throw new Error("Agent Token expired");
+    }
+    if (error.name === "JsonWebTokenError") {
+      throw new Error("Invalid Agent token");
+    }
+    throw new Error("Agent Token verification failed");
+  }
 }
 
 export const verifyToken = (token: string): JwtPayload => {
@@ -122,48 +145,4 @@ export const extractTokenFromHeader = (authHeader?: string): string | null => {
   if (type !== "Bearer" || !token) return null;
 
   return token;
-};
-
-export const authenticateToken = (req: Request, res: Response, next: any) => {
-  try {
-    const token = extractTokenFromHeader(req.headers.authorization);
-
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "Token de acesso requerido",
-      });
-    }
-    const payload = verifyToken(token);
-    req.user = payload;
-    next();
-  } catch (error: any) {
-    const message = error.message || "Token inválido";
-    return res.status(401).json({
-      success: false,
-      message,
-    });
-  }
-};
-
-export const authenticateTokenAgent = (req: Request, res: Response, next: any) => {
-  try {
-    const token = extractTokenFromHeader(req.headers.authorization);
-
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "Token de acesso requerido",
-      });
-    }
-    const payload = verifyTokenAgent(token);
-    (req as any).user = payload;
-    next();
-  } catch (error: any) {
-    const message = error.message || "Token inválido";
-    return res.status(401).json({
-      success: false,
-      message,
-    });
-  }
 };
