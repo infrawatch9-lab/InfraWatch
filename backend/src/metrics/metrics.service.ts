@@ -1,11 +1,13 @@
+import { Injectable } from '@nestjs/common';
 import { JwtPayloadAgent } from '../auth/auth.entity';
 import { PrismaClient } from '@prisma/client';
 import { CreateMetricDto } from './metrics.entity';
 
 const prisma = new PrismaClient();
 
-export const metricsService = {
-  async saveMetrics(data: CreateMetricDto) {
+@Injectable()
+export class MetricsService {
+    async saveMetrics(data: CreateMetricDto) {
     const agentHost = data.host;
 
     const agent = await prisma.agent.upsert({
@@ -31,14 +33,14 @@ export const metricsService = {
     });
 
     return { success: true, message: 'Métricas registradas com sucesso' };
-  },
+  }
 
   async getMetricsByHost(host: string) {
     return await prisma.agentMetric.findMany({
       where: { agent: { host } },
       orderBy: { timestamp: 'desc' },
     });
-  },
+  }
 
   async getAllMetrics() {
     return await prisma.agentMetric.findMany({
@@ -47,4 +49,3 @@ export const metricsService = {
   }
 };
 
-export default metricsService;

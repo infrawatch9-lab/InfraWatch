@@ -1,38 +1,44 @@
-import { Request, Response } from 'express';
-import { metricsService } from './metrics.service';
+import { Controller, Get, Post, Param, Body, UseGuards } from '@nestjs/common';
+import { MetricsService } from './metrics.service';
 import { CreateMetricDto } from './metrics.entity';
+import { AgentAuthGuard } from '../auth/agent-auth.guard';
+import { Public } from '../auth/public.decorator';
 
-export const MetricsController = {
-  async receiveMetrics(req: Request, res: Response) {
+@Controller('metrics')
+export class MetricsController {
+  constructor(private readonly metricsService: MetricsService) {}
+
+  @Post()
+  @Public()
+  async receiveMetrics(@Body() data: CreateMetricDto) {
     try {
-      const data = req.body as CreateMetricDto;
-
-      const result = await metricsService.saveMetrics(data);
-      return res.status(200).json(result);
+      console.log('Recebendo métricas:', data);
+      const result = await this.metricsService.saveMetrics(data);
+      return result;
     } catch (error) {
       console.error('Erro ao salvar métricas:', error);
-      return res.status(500).json({ message: 'Erro interno do servidor' });
+      throw new Error('Erro interno do servidor');
     }
-  },
+  }
 
-  async getMetricsByHost(req: Request, res: Response) {
+  @Get(':host')
+  async getMetricsByHost(@Param('host') host: string) {
     try {
-      const { host } = req.params;
-      const metrics = await metricsService.getMetricsByHost(host);
-      return res.status(200).json(metrics);
+      const metrics = await this.metricsService.getMetricsByHost(host);
+      return metrics;
     } catch (error) {
       console.error('Erro ao buscar métricas por host:', error);
-      return res.status(500).json({ message: 'Erro interno do servidor' });
+      throw new Error('Erro interno do servidor');
     }
-  },
+  }
 
-  async getAllMetrics(req: Request, res: Response) {
+  @Get()
+  async getAllMetrics() {
     try {
-      const metrics = await metricsService.getAllMetrics();
-      return res.status(200).json(metrics);
+      return await this.metricsService.getAllMetrics();
     } catch (error) {
       console.error('Erro ao buscar todas as métricas:', error);
-      return res.status(500).json({ message: 'Erro interno do servidor' });
+      throw new Error('Erro interno do servidor');
     }
-  },
-};
+  }
+}

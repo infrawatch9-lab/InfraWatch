@@ -1,15 +1,23 @@
 import * as jwt from "jsonwebtoken";
 import { AuthAgentTokens, JwtPayload, JwtPayloadAgent } from "./auth.entity";
 import { AuthTokens } from "../users/user.entity";
-import { Request, Response } from "express";
+import { Injectable } from "@nestjs/common";
 
-declare global {
-  namespace Express {
-    interface Request {
-      user?: JwtPayload;
-    }
+@Injectable()
+export class JwtService {
+  sign(payload: any): string {
+    return jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: '1h' });
+  }
+
+  verify(token: string): any {
+    return jwt.verify(token, process.env.JWT_SECRET!);
+  }
+
+  decode(token: string): any {
+    return jwt.decode(token);
   }
 }
+
 
 export const JWT_CONFIG = {
   secret: process.env.JWT_SECRET || "infrawatch-secret-key-dev",

@@ -1,3 +1,5 @@
+import { Request } from 'express';
+
 export interface JwtPayload {
     id: number;
     userId: number;
@@ -26,11 +28,11 @@ export interface UserResponseDto {
   isTemporaryPassword?: boolean;
 }
 
-export interface Request {
-  user?: JwtPayload;
-}
-
 export interface AuthAgentTokens {
   accessToken: string;
   expiresIn: number;
+}
+
+export interface AgentRequest extends Request {
+  agent: JwtPayloadAgent;
 }
