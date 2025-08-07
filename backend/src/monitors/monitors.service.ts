@@ -135,7 +135,7 @@ export class MonitorsService implements OnModuleInit {
       await this.saveMetrics({
         serviceId: service.id,
         status: ServiceStatus.DOWN,
-        errorMessage: error.message,
+        errorMessage: error instanceof Error ? error.message : String(error),
         timestamp: new Date(),
       });
     }
@@ -186,7 +186,7 @@ export class MonitorsService implements OnModuleInit {
           });
 
           // Envia notificações
-          await this.notificationsService.sendAlert(alert, rule.severity);
+          await this.notificationsService.sendAlert(alert.message);
 
           this.logger.warn(
             `Alerta disparado para ${service.name}: ${alert.message}`,

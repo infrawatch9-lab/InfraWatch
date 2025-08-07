@@ -57,12 +57,12 @@ export class WebhookService {
     } catch (error) {
       const latency = Date.now() - startTime;
 
-      let errorMessage = error.message;
-      if (error.name === 'AbortError') {
+      let errorMessage = (error as Error).message;
+      if ((error as Error).name === 'AbortError') {
         errorMessage = `Timeout após ${config.timeout || 5000}ms`;
-      } else if (error.code === 'ENOTFOUND') {
+      } else if (typeof (error as any).code === 'string' && (error as any).code === 'ENOTFOUND') {
         errorMessage = `Host não encontrado: ${service.endpoint}`;
-      } else if (error.code === 'ECONNREFUSED') {
+      } else if (typeof (error as any).code === 'string' && (error as any).code === 'ECONNREFUSED') {
         errorMessage = `Conexão recusada: ${service.endpoint}`;
       }
 
@@ -142,7 +142,7 @@ export class WebhookService {
       // Ignora erros de parsing - nem todas as APIs retornam JSON válido
       this.logger.debug(
         'Não foi possível extrair métricas da resposta:',
-        error.message,
+        (error as Error).message,
       );
     }
 
@@ -161,7 +161,7 @@ export class WebhookService {
         }
       });
     } catch (error) {
-      this.logger.debug('Erro ao parsear Server-Timing:', error.message);
+      this.logger.debug('Erro ao parsear Server-Timing:', (error as Error).message);
     }
 
     return timing;
@@ -220,7 +220,7 @@ export class WebhookService {
     } catch (error) {
       return {
         valid: false,
-        error: error.message,
+        error: (error as Error).message,
       };
     }
   }

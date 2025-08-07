@@ -40,17 +40,18 @@ export class PingService {
 
     } catch (error) {
       const latency = Date.now() - startTime;
-      this.logger.error(`❌ Ping falhou para ${service.name} (${error.message})`);
+      const errMessage = (error instanceof Error) ? error.message : String(error);
+      this.logger.error(`❌ Ping falhou para ${service.name} (${errMessage})`);
 
       return {
         serviceId: service.id,
         status: ServiceStatus.DOWN,
         latency,
-        errorMessage: error.message,
+        errorMessage: errMessage,
         timestamp: new Date(),
         metrics: {
           hostname: this.extractHostname(service.endpoint),
-          errorCode: error.code,
+          errorCode: typeof error === 'object' && error !== null && 'code' in error ? (error as any).code : undefined,
         }
       };
     }
@@ -121,7 +122,7 @@ export class PingService {
     } catch (error) {
       return {
         success: false,
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   }

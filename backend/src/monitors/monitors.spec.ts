@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PingService } from './ping.service';
-import { ServiceStatus } from '../types/prisma-types';
+import { ServiceStatus } from '@prisma/client'
 
 describe('PingService', () => {
   let service: PingService;
