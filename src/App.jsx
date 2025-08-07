@@ -8,11 +8,11 @@ export default function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/" element={<Layout/>}>
+        <Route path="/" element={<Login />} />
+        <Route path="/admin" element={<Layout/>}>
           <Route index element={<HomepageAdmin />}/>
-          <Route path="/homepage_admin" element={<HomepageAdmin />}/>
-          <Route path="/dashboard_admin" element={<DashboardAdmin />}/>
+          <Route path="homepage_admin" element={<HomepageAdmin />}/>
+          <Route path="dashboard_admin" element={<DashboardAdmin />}/>
         </Route>
       </Routes>
     </Router>
