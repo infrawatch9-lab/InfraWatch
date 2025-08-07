@@ -52,7 +52,7 @@ export default function Sidebar() {
           )}
         </div>
 
-        <button onClick={() => navigate('/login')} className="w-full flex items-center justify-center space-x-2 bg-gray-600 hover:bg-red-600 text-white rounded-md py-2 text-sm transition-all">
+        <button onClick={() => navigate('/')} className="w-full flex items-center justify-center space-x-2 bg-gray-600 hover:bg-red-600 text-white rounded-md py-2 text-sm transition-all">
           <FaPowerOff />
           {isOpen && <span>Logout</span>}
         </button>
