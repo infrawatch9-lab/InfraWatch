@@ -17,7 +17,8 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center divimg" >
       <div className="bg-white p-10 rounded-md shadow-md w-full max-w-sm">
-        <h2 className="text-center text-[#080F2A] font-semibold text-lg mb-6">
+        <img src="/logo_normal.png" alt="Logo" className="w-20 h-20 mx-auto"/>
+        <h2 className="text-center text-[#080F2A] font-semibold text-xl mb-6">
           Bem-vindo
         </h2>
 
@@ -67,7 +68,7 @@ export default function Login() {
             <a>
               Esqueceu a senha? 
             </a>
-            <a href="#" className="text-xs text-gray-600 hover:underline">
+            <a href="#" className="ml-2 text-base text-gray-600 hover:underline">
                Recuperar
             </a>
           </div>
@@ -76,3 +77,4 @@ export default function Login() {
     </div>
   );
 }
+
