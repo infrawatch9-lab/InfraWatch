@@ -1,0 +1,8 @@
+node_modules/
+build/
+.dockerignore
+Dockerfile
+.env
+.env.local
+LICENSE
+README

@@ -11,7 +11,7 @@ export default function Login() {
   const handleLogin = (e) => {
     e.preventDefault();
     console.log('Login com', username, password);
-    navigate('/homepage_admin');
+    navigate('/admin');
   };
 
   return (

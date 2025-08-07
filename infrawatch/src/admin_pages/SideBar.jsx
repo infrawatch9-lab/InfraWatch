@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { FaHome, FaDesktop, FaChartBar, FaHistory, FaBars, FaUsers, FaCog, FaMoon, FaPowerOff, FaFolderOpen } from 'react-icons/fa';
-import CollapseButton from './CollapseButton';
+import { FaHome, FaDesktop, FaChartBar, FaHistory, FaUsers, FaCog, FaMoon, FaPowerOff, FaFolderOpen } from 'react-icons/fa';
+import CollapseButton from '../components/CollapseButton';
 import { useNavigate } from 'react-router-dom';
+import SidebarItemWithSubmenu from '../components/SideBarWithSubMenu'
+import SidebarItem from '../components/SideBarItem';
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(true);
@@ -18,8 +20,14 @@ export default function Sidebar() {
           <CollapseButton isOpen={isOpen} toggle={() => setIsOpen(!isOpen)} />
         </div>
 
-        <SidebarItem icon={<FaHome />} label="Homepage" isOpen={isOpen} />
-        <SidebarItem icon={<FaDesktop />} label="Dashboard" isOpen={isOpen}/>
+        <SidebarItem icon={<FaHome />} label="Homepage" isOpen={isOpen} to="homepage_admin"/>
+        <SidebarItemWithSubmenu icon={<FaUsers />} label="Testes" isOpen={isOpen}
+          subItems={[
+          { label: 'Users', onClick: () => navigate('/users') },
+          { label: 'Teams', onClick: () => navigate('/teams') },
+          { label: 'Roles', onClick: () => navigate('/roles') },]}
+        />
+        <SidebarItem icon={<FaDesktop />} label="Dashboard" isOpen={isOpen} to="dashboard_admin"/>
         <SidebarItem icon={<FaChartBar />} label="Monitoramento" badge="1" isOpen={isOpen} />
         <SidebarItem icon={<FaFolderOpen />} label="Relatórios" badge="1" isOpen={isOpen} />
         <SidebarItem icon={<FaHistory />} label="Histórico" isOpen={isOpen} />
@@ -44,7 +52,7 @@ export default function Sidebar() {
           )}
         </div>
 
-        <button onClick={() => navigate('/')} className="w-full flex items-center justify-center space-x-2 bg-gray-600 hover:bg-red-600 text-white rounded-md py-2 text-sm transition-all">
+        <button onClick={() => navigate('/login')} className="w-full flex items-center justify-center space-x-2 bg-gray-600 hover:bg-red-600 text-white rounded-md py-2 text-sm transition-all">
           <FaPowerOff />
           {isOpen && <span>Logout</span>}
         </button>
@@ -55,17 +63,3 @@ export default function Sidebar() {
     
   );
 }
-
-function SidebarItem({ icon, label, isOpen }) {
-  return (
-    <div className="flex items-center space-x-4 p-2 hover:bg-[#2d2d2d] rounded cursor-pointer transition-all">
-      <span className="text-lg">{icon}</span>
-      {isOpen && <span className="text-sm">{label}</span>}
-    </div>
-  );
-}
-
-
-/*
-
-        */
