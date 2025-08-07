@@ -54,3 +54,12 @@ pids
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+node_modules
+# Keep environment variables out of version control
+.env
+
+# Ignore build output
+dist
+build
+
+/src/generated/prisma

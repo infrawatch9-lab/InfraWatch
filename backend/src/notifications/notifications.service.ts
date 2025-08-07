@@ -1,24 +1,39 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { AlertLevel } from '@prisma/client';
+import { Injectable } from '@nestjs/common';
+import { TelegramService } from './telegram.service';
+import { EmailService } from './email.service';
+import { SlackService } from './slack.service';
 
 @Injectable()
 export class NotificationsService {
-  private readonly logger = new Logger(NotificationsService.name);
+  constructor(
+    private readonly telegramService: TelegramService,
+    private readonly emailService: EmailService,
+    private readonly slackService: SlackService,
+  ) {}
 
-  async sendAlert(alert: any, severity: AlertLevel): Promise<void> {
-    this.logger.log(`Enviando alerta: ${alert.message} (${severity})`);
+  async sendAlert(message: string) {
+    const subject = '🚨 Alerta de Serviço';
+    const html = '<b>' + message + '</b>';
+    const to = 'olamundoemjs@gmail.com';
 
-    // Por agora, apenas log - implementar integrações reais depois
-    switch (severity) {
-      case AlertLevel.CRITICAL:
-        this.logger.error(`🚨 CRÍTICO: ${alert.message}`);
-        break;
-      case AlertLevel.WARNING:
-        this.logger.warn(`⚠️ AVISO: ${alert.message}`);
-        break;
-      case AlertLevel.INFO:
-        this.logger.log(`ℹ️ INFO: ${alert.message}`);
-        break;
-    }
+    await this.telegramService.send(message);
+    await this.emailService.send(message, subject, html, to);
+    await this.slackService.send(message);
+    console.log('Todos os alertas enviados:', message);
+  }
+
+  async sendNotificationToTelegram(message: string) {
+    await this.telegramService.send(message);
+    console.log('Alerta enviado para o Telegram:', message);
+  }
+
+  async sendNotificationToSlack(message: string) {
+    await this.slackService.send(message);
+    console.log('Alerta enviado para o Slack:', message);
+  }
+
+  async sendNotificationToEmail(message: string, subject: string, html: string, to: string) {
+    await this.emailService.send(message, subject, html, to);
+    console.log('Alerta enviado para o Email:', message);
   }
 }

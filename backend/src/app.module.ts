@@ -1,13 +1,12 @@
 import { Module } from '@nestjs/common';
-import { ScheduleModule } from '@nestjs/schedule';
-import { MonitorsModule } from './monitors/monitors.module';
-import { DatabaseModule } from './database/database.module';
+import { AppController, NotificationsController } from './app.controller';
+import { UsersModule } from './users/users.module';
+import { MetricsModule } from './metrics/metrics.module';
+import { AuthModule } from './auth/ auth.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
-  imports: [
-    ScheduleModule.forRoot(),
-    DatabaseModule,
-    MonitorsModule,
-  ],
+  imports: [UsersModule, MetricsModule, AuthModule, NotificationsModule],
+  controllers: [AppController, NotificationsController],
 })
 export class AppModule {}
