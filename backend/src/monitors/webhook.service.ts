@@ -15,14 +15,17 @@ export class WebhookService {
         () => controller.abort(),
         config.timeout || 5000,
       );
-
-      const response = await fetch(service.endpoint, {
-        method: config.method || 'GET',
-        headers: {
+      const h = {
           'User-Agent': 'InfraWatch-Monitor/1.0',
           Accept: 'application/json',
           ...(config.headers && this.parseHeaders(config.headers)),
-        },
+        };
+        
+      this.logger.debug(`Fazendo request para ${service.endpoint} (serviço: ${service.name})`);
+      
+      const response = await fetch(service.endpoint, {
+        method: config.method || 'GET',
+        headers: h,
         body: config.body ? this.parseBody(config.body) : undefined,
         signal: controller.signal,
       });
@@ -39,6 +42,8 @@ export class WebhookService {
 
       // Extrai métricas adicionais dos headers e corpo da resposta
       const metrics = await this.extractResponseMetrics(response);
+      if (isSuccess)
+        this.logger.log(`✅ Request OK para ${service.name}: ${latency}ms`);
 
       return {
         serviceId: service.id,
