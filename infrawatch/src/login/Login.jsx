@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import './Login.css'
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -14,7 +15,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ backgroundImage: "url('/dark_bg.jpg')" }}>
+    <div className="min-h-screen flex items-center justify-center divimg" >
       <div className="bg-white p-10 rounded-md shadow-md w-full max-w-sm">
         <h2 className="text-center text-[#080F2A] font-semibold text-lg mb-6">
           Bem-vindo
