@@ -8,6 +8,7 @@ import {
   UseGuards,
   Request,
   ParseIntPipe,
+  Delete,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { RolesGuard } from '../auth/roles.guard';
@@ -83,5 +84,14 @@ export class UsersController {
   @ApiOperation({ summary: 'Get all users (Admin only)' })
   async getAllUsers() {
     return this.usersService.getAllUsers();
+  }
+
+  @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete user by ID (Admin only)' })
+  async deleteUser(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.deleteUser(id);
   }
 }

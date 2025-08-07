@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { generateTokens, verifyRefreshToken } from "../auth/jwt.service";
-import { EmailService, generateTemporaryPassword } from "./email.service";
+import { EmailService, generateTemporaryPassword } from "./users-email.service";
 import {
   CreateUserDto,
   LoginDto,
@@ -287,6 +287,7 @@ export class UsersService {
       return null;
     }
   }
+
   async findAll(): Promise<UserResponseDto[]> {
     try {
       return await prisma.user.findMany({
@@ -302,44 +303,6 @@ export class UsersService {
     } catch (error) {
       console.error("Erro ao listar usuários:", error);
       return [];
-    }
-  }
-
-  async createUser(data: CreateUserDto): Promise<UserResponseDto | null> {
-    try {
-      const { name, email, password, role = "USER" } = data;
-      name.trim();
-      email.trim();
-      password.trim();
-      const existingUser = await prisma.user.findUnique({
-        where: { email },
-      });
-
-      if (existingUser) {
-        throw new Error("Usuário já existe com este email");
-      }
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const user = await prisma.user.create({
-        data: {
-          name,
-          email,
-          password: hashedPassword,
-          role,
-        },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      });
-
-      return user;
-    } catch (error) {
-      console.error("Erro ao criar usuário:", error);
-      return null;
     }
   }
 
@@ -496,6 +459,36 @@ export class UsersService {
       };
     } catch (error) {
       console.error("Erro ao redefinir senha:", error);
+      return {
+        success: false,
+        message: "Erro interno do servidor",
+      };
+    }
+  }
+
+  async deleteUser(id: number): Promise<{ success: boolean; message: string }> {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id },
+      });
+
+      if (!user) {
+        return {
+          success: false,
+          message: "Usuário não encontrado",
+        };
+      }
+
+      await prisma.user.delete({
+        where: { id },
+      });
+
+      return {
+        success: true,
+        message: "Usuário deletado com sucesso",
+      };
+    } catch (error) {
+      console.error("Erro ao deletar usuário:", error);
       return {
         success: false,
         message: "Erro interno do servidor",
