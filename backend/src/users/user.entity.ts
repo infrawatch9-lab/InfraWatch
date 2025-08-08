@@ -9,17 +9,17 @@ export interface User {
   updatedAt: Date;
 }
 
-export interface CreateUserDto {
-  name: string;
-  email: string;
-  password: string;
+export class CreateUserDto {
+  name!: string;
+  email!: string;
+  password!: string;
   role?: "ADMIN" | "USER";
   status?: "ACTIVE" | "INACTIVE";
 }
 
-export interface LoginDto {
-  email: string;
-  password: string;
+export class LoginDto {
+  email!: string;
+  password!: string;
 }
 
 export interface UserResponseDto {
@@ -32,9 +32,9 @@ export interface UserResponseDto {
   isTemporaryPassword?: boolean;
 }
 
-export interface ResetPasswordDto {
-  currentPassword: string;
-  newPassword: string;
+export class ResetPasswordDto {
+  currentPassword!: string;
+  newPassword!: string;
 }
 
 export interface RegisterUserDto {
@@ -56,9 +56,9 @@ export interface LoginResponse {
   tokens?: AuthTokens;
 }
 
-export interface UpdateUserDto {
-  name: string;
-  email: string;
+export class UpdateUserDto {
+  name!: string;
+  email!: string;
   role?: "ADMIN" | "USER";
   isTemporaryPassword?: boolean;
   status?: "ACTIVE" | "INACTIVE";
