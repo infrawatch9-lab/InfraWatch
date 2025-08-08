@@ -14,7 +14,7 @@ export class PingService {
     const startTime = Date.now();
 
     try {
-      // Extrai hostname/IP do endpoint
+      // Extrai hostname/IP do endpoint 
       const hostname = this.extractHostname(service.endpoint);
       
       this.logger.debug(`Fazendo ping para ${hostname} (serviço: ${service.name})`);

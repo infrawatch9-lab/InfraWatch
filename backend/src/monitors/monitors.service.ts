@@ -105,9 +105,10 @@ export class MonitorsService implements OnModuleInit {
           result = await this.pingService.monitor(service, config);
           break;
 
-        case ServiceType.WEBSITE:
+        case ServiceType.WEBSITE: 
         case ServiceType.API:
           result = await this.webhookService.monitor(service, config);
+          //console.log("webhookService monitor result: ", result);
           break;
 
         case ServiceType.DATABASE:

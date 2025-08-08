@@ -42,6 +42,7 @@ export class WebhookService {
 
       // Extrai métricas adicionais dos headers e corpo da resposta
       const metrics = await this.extractResponseMetrics(response);
+      //console.log("metrics: ", metrics);
       if (isSuccess)
         this.logger.log(`✅ Request OK para ${service.name}: ${latency}ms`);
 
@@ -120,7 +121,6 @@ export class WebhookService {
       const contentType = response.headers.get('content-type');
       if (contentType?.includes('application/json')) {
         const responseData = await response.clone().json();
-
         // Procura por campos comuns de métricas
         if (responseData.metrics) {
           Object.assign(metrics, responseData.metrics);
