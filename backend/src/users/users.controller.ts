@@ -318,7 +318,6 @@ export class UsersController {
   @Roles('ADMIN')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete user by ID (Admin only)' })
-  @ApiOperation({ summary: 'Delete user by ID (Admin only)' })
   @ApiResponse({
     status: 200,
     description: 'User deleted successfully',
