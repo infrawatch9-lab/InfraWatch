@@ -21,16 +21,15 @@ export default function Sidebar() {
         </div>
 
         <SidebarItem icon={<Home size={20} />} label="Homepage" isOpen={isOpen} to="homepage_admin"/>
-        <SidebarItemWithSubmenu icon={<Users size={20} />} label="Testes" isOpen={isOpen}
+        <SidebarItem icon={<Monitor size={20} />} label="Dashboard" isOpen={isOpen} to="dashboard_admin"/>
+        <SidebarItem icon={<BarChart size={20} />} label="Monitoramento" badge="1" isOpen={isOpen} />
+        <SidebarItemWithSubmenu icon={<FolderOpen size={20} />} label="Relatórios" isOpen={isOpen}
           subItems={[
-            { label: 'Users', onClick: () => navigate('/users') },
-            { label: 'Teams', onClick: () => navigate('/teams') },
+            { label: 'Servidores', onClick: () => navigate('/users') },
+            { label: 'Redes', onClick: () => navigate('/teams') },
             { label: 'Roles', onClick: () => navigate('/roles') },
           ]}
         />
-        <SidebarItem icon={<Monitor size={20} />} label="Dashboard" isOpen={isOpen} to="dashboard_admin"/>
-        <SidebarItem icon={<BarChart size={20} />} label="Monitoramento" badge="1" isOpen={isOpen} />
-        <SidebarItem icon={<FolderOpen size={20} />} label="Relatórios" badge="1" isOpen={isOpen} />
         <SidebarItem icon={<History size={20} />} label="Histórico" isOpen={isOpen} />
         <SidebarItem icon={<Users size={20} />} label="Usuários" isOpen={isOpen} />
         <SidebarItem icon={<Settings size={20} />} label="Configurações" isOpen={isOpen} />
