@@ -32,7 +32,12 @@ export class NotificationsService {
     console.log('Alerta enviado para o Slack:', message);
   }
 
-  async sendNotificationToEmail(message: string, subject: string, html: string, to: string) {
+  async sendNotificationToEmail(
+    message: string,
+    subject: string,
+    html: string,
+    to: string,
+  ) {
     await this.emailService.send(message, subject, html, to);
     console.log('Alerta enviado para o Email:', message);
   }

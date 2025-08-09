@@ -9,20 +9,20 @@ datasource db {
 }
 
 model User {
-  id                     Int            @id @default(autoincrement())
-  name                   String
-  email                  String         @unique
-  password               String
-  role                   Role           @default(USER)
-  status                 Status         @default(ACTIVE)
-  isTemporaryPassword    Boolean        @default(false)
+  id                      Int            @id @default(autoincrement())
+  name                    String
+  email                   String         @unique
+  password                String
+  role                    Role           @default(USER)
+  status                  Status         @default(ACTIVE)
+  isTemporaryPassword     Boolean        @default(false)
   temporaryPasswordExpiry DateTime?
-  createdAt              DateTime       @default(now())
-  updatedAt              DateTime       @updatedAt
-  alerts                 Alert[]
-  createdAlertRules      AlertRule[]    @relation("CreatedByUser")
-  notifications          Notification[]
-  teams                  TeamMember[]
+  createdAt               DateTime       @default(now())
+  updatedAt               DateTime       @updatedAt
+  alerts                  Alert[]
+  createdAlertRules       AlertRule[]    @relation("CreatedByUser")
+  notifications           Notification[]
+  teams                   TeamMember[]
 }
 
 model Team {
@@ -43,21 +43,21 @@ model TeamMember {
 }
 
 model Service {
-  id        Int                @id @default(autoincrement())
-  name      String
-  type      ServiceType
-  endpoint  String
-  protocol  String
-  status    ServiceStatus      @default(PENDING)
-  teamId    Int
-  createdAt DateTime           @default(now())
-  alerts    Alert[]
-  rules     AlertRule[]        @relation("ServiceToAlertRules")
-  configs   MonitoringConfig[]
-  slas      SLA[]
-  Team      Team               @relation(fields: [teamId], references: [id])
-  metrics   Metric[]
-  logs      SystemLog[]
+  id          Int                @id @default(autoincrement())
+  name        String
+  description String             @default("Sem descrição")
+  type        ServiceType
+  status      ServiceStatus      @default(PENDING)
+  teamId      Int
+  createdAt   DateTime           @default(now())
+  alerts      Alert[]
+  rules       AlertRule[]        @relation("ServiceToAlertRules")
+  configs     MonitoringConfig[]
+  PingConfig  PingConfig?
+  slas        SLA[]
+  Team        Team               @relation(fields: [teamId], references: [id])
+  metrics     Metric[]
+  logs        SystemLog[]
 }
 
 model Metric {
@@ -137,52 +137,67 @@ model MonitoringConfig {
 }
 
 model SystemLog {
-  id         Int        @id @default(autoincrement())
-  timestamp  DateTime   @default(now())
-  type       LogType
-  message    String
-  serviceId  Int?
+  id        Int      @id @default(autoincrement())
+  timestamp DateTime @default(now())
+  type      LogType
+  message   String
+  serviceId Int?
+  Service   Service? @relation(fields: [serviceId], references: [id])
 
-  Service    Service?   @relation(fields: [serviceId], references: [id]) // Serviço relacionado (opcional)
-  
-  @@index([timestamp]) // Índice temporal para TimescaleDB
-  @@index([serviceId, timestamp]) // Índice composto para consultas por serviço
-  
+  @@index([timestamp])
+  @@index([serviceId, timestamp])
   @@map("system_logs")
 }
 
-// Agente 
 model Agent {
-  id           String         @id @default(cuid())
-  host         String         @unique
-  createdAt    DateTime       @default(now())
-  metrics      AgentMetric[]
+  id        String        @id @default(cuid())
+  host      String        @unique
+  createdAt DateTime      @default(now())
+  metrics   AgentMetric[]
 }
 
-// Tipos de métricas que pegamos do agent
 model AgentMetric {
-  id         Int        @id @default(autoincrement())
-  timestamp  DateTime   @default(now())
-  cpu        Float
-  memory     Float
-  disk       Float
-  uptime     Int
-  bytesSent  BigInt
-  bytesRecv  BigInt
-  latency    Json
-  logs       Json?
-  alerts     Json?
-
-  agentId    String
-  agent      Agent      @relation(fields: [agentId], references: [id])
+  id        Int      @id @default(autoincrement())
+  timestamp DateTime @default(now())
+  cpu       Float
+  memory    Float
+  disk      Float
+  uptime    Int
+  bytesSent BigInt
+  bytesRecv BigInt
+  latency   Json
+  logs      Json?
+  alerts    Json?
+  agentId   String
+  agent     Agent    @relation(fields: [agentId], references: [id])
 
   @@index([timestamp])
   @@index([agentId, timestamp])
   @@map("agent_metrics")
 }
 
+model PingConfig {
+  id                 Int            @id @default(autoincrement())
+  serviceId          Int            @unique
+  ipAddress          String
+  packetSize         Int?
+  ttl                Int?
+  monitoringMode     MonitoringMode
+  cronExpression     String?
+  timezone           String?
+  startTime          String?
+  endTime            String?
+  agentVersion       String?
+  autoGenerate       Boolean?
+  interval           Int
+  timeout            Int
+  retries            Int?
+  delay              Int?
+  alertAfterFailures Int?
+  minAlertInterval   Int?
+  Service            Service        @relation(fields: [serviceId], references: [id])
+}
 
-// Tipo de utilizador no sistema
 enum Role {
   ADMIN
   USER
@@ -203,8 +218,8 @@ enum ServiceType {
   SERVER
   NETWORK
   WEBSITE
-  DATABASE
   API
+  DATABASE
   CUSTOM
 }
 
@@ -216,21 +231,27 @@ enum ServiceStatus {
 }
 
 enum AlertLevel {
-  INFO
-  WARNING
+  LOW
+  MEDIUM
+  HIGH
   CRITICAL
 }
 
 enum NotificationType {
-  ALERT
-  INFO
-  SYSTEM
+  EMAIL
+  PUSH
+  SMS
+  SLACK
+  TELEGRAM
 }
 
 enum NotificationChannel {
   EMAIL
+  SLACK
   PUSH
   SMS
+  TELEGRAM
+  WEBHOOK
 }
 
 enum SLAStatus {
@@ -251,4 +272,10 @@ enum MetricType {
   MEMORY
   LATENCY
   STATUS
+}
+
+enum MonitoringMode {
+  cron
+  agent
+  both
 }
