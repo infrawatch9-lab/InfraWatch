@@ -12,7 +12,12 @@ import {
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { RolesGuard } from '../auth/roles.guard';
-import { CreateUserDto, LoginDto, ResetPasswordDto, UpdateUserDto } from './user.entity';
+import {
+  CreateUserDto,
+  LoginDto,
+  ResetPasswordDto,
+  UpdateUserDto,
+} from './user.entity';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Roles } from '../auth/roles.decorator';
 import { Public } from '../auth/public.decorator';
@@ -33,7 +38,7 @@ export class UsersController {
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Register user (Admin only)' })
+  @ApiOperation({ summary: 'Register user' })
   async registerWithTemporaryPassword(@Body() CreateUserDto: CreateUserDto) {
     return this.usersService.registerWithTemporaryPassword(CreateUserDto);
   }
@@ -55,7 +60,10 @@ export class UsersController {
   @Put('reset-password')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Reset user password' })
-  async resetPassword(@Request() req: any, @Body() resetPasswordDto: ResetPasswordDto) {
+  async resetPassword(
+    @Request() req: any,
+    @Body() resetPasswordDto: ResetPasswordDto,
+  ) {
     return this.usersService.resetPassword(req.user.id, resetPasswordDto);
   }
 

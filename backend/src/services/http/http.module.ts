@@ -1,0 +1,12 @@
+import { Module } from '@nestjs/common';
+import { HttpController } from './http.controller';
+import { HttpService } from './http.service';
+import { DatabaseModule } from '../../database/database.module';
+
+@Module({
+  imports: [DatabaseModule],
+  controllers: [HttpController],
+  providers: [HttpService],
+  exports: [HttpService],
+})
+export class HttpModule {}
