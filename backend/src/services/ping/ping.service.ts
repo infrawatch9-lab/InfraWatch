@@ -7,7 +7,7 @@ import {
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { PrismaService } from '../../database/prisma.service';
-import { ServiceType, ServiceStatus, MonitoringMode } from '@prisma/client';
+import { ServiceType, ServiceStatus } from '@prisma/client';
 import {
   CreatePingServiceDto,
   CreatePingConfigDto,
