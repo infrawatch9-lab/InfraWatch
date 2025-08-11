@@ -15,14 +15,17 @@ export class WebhookService {
         () => controller.abort(),
         config.timeout || 5000,
       );
-
-      const response = await fetch(service.endpoint, {
-        method: config.method || 'GET',
-        headers: {
+      const h = {
           'User-Agent': 'InfraWatch-Monitor/1.0',
           Accept: 'application/json',
           ...(config.headers && this.parseHeaders(config.headers)),
-        },
+        };
+        
+      this.logger.debug(`Fazendo request para ${service.endpoint} (serviço: ${service.name})`);
+      
+      const response = await fetch(service.endpoint, {
+        method: config.method || 'GET',
+        headers: h,
         body: config.body ? this.parseBody(config.body) : undefined,
         signal: controller.signal,
       });
@@ -39,6 +42,9 @@ export class WebhookService {
 
       // Extrai métricas adicionais dos headers e corpo da resposta
       const metrics = await this.extractResponseMetrics(response);
+      //console.log("metrics: ", metrics);
+      if (isSuccess)
+        this.logger.log(`✅ Request OK para ${service.name}: ${latency}ms`);
 
       return {
         serviceId: service.id,
@@ -57,12 +63,12 @@ export class WebhookService {
     } catch (error) {
       const latency = Date.now() - startTime;
 
-      let errorMessage = error.message;
-      if (error.name === 'AbortError') {
+      let errorMessage = (error as Error).message;
+      if ((error as Error).name === 'AbortError') {
         errorMessage = `Timeout após ${config.timeout || 5000}ms`;
-      } else if (error.code === 'ENOTFOUND') {
+      } else if (typeof (error as any).code === 'string' && (error as any).code === 'ENOTFOUND') {
         errorMessage = `Host não encontrado: ${service.endpoint}`;
-      } else if (error.code === 'ECONNREFUSED') {
+      } else if (typeof (error as any).code === 'string' && (error as any).code === 'ECONNREFUSED') {
         errorMessage = `Conexão recusada: ${service.endpoint}`;
       }
 
@@ -115,7 +121,6 @@ export class WebhookService {
       const contentType = response.headers.get('content-type');
       if (contentType?.includes('application/json')) {
         const responseData = await response.clone().json();
-
         // Procura por campos comuns de métricas
         if (responseData.metrics) {
           Object.assign(metrics, responseData.metrics);
@@ -142,7 +147,7 @@ export class WebhookService {
       // Ignora erros de parsing - nem todas as APIs retornam JSON válido
       this.logger.debug(
         'Não foi possível extrair métricas da resposta:',
-        error.message,
+        (error as Error).message,
       );
     }
 
@@ -161,7 +166,7 @@ export class WebhookService {
         }
       });
     } catch (error) {
-      this.logger.debug('Erro ao parsear Server-Timing:', error.message);
+      this.logger.debug('Erro ao parsear Server-Timing:', (error as Error).message);
     }
 
     return timing;
@@ -220,7 +225,7 @@ export class WebhookService {
     } catch (error) {
       return {
         valid: false,
-        error: error.message,
+        error: (error as Error).message,
       };
     }
   }

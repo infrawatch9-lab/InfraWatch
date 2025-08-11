@@ -12,6 +12,7 @@ import { ServiceType, ServiceStatus, AlertLevel } from '@prisma/client';
 export class MonitorsService implements OnModuleInit {
   private readonly logger = new Logger(MonitorsService.name);
   private activeMonitors = new Map<number, NodeJS.Timeout>();
+  private alertStates = new Map<string, {lastAlertTime: Date, isAlerting: boolean }>();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -42,7 +43,7 @@ export class MonitorsService implements OnModuleInit {
         },
       });
 
-      this.logger.log(`Inicializando ${services.length} monitores...`);
+      this.logger.log(`Inicializando -${services.length}- monitores...`);
 
       for (const service of services) {
         await this.startMonitoring(service);
@@ -104,9 +105,10 @@ export class MonitorsService implements OnModuleInit {
           result = await this.pingService.monitor(service, config);
           break;
 
-        case ServiceType.WEBSITE:
+        case ServiceType.WEBSITE: 
         case ServiceType.API:
           result = await this.webhookService.monitor(service, config);
+          //console.log("webhookService monitor result: ", result);
           break;
 
         case ServiceType.DATABASE:
@@ -135,7 +137,7 @@ export class MonitorsService implements OnModuleInit {
       await this.saveMetrics({
         serviceId: service.id,
         status: ServiceStatus.DOWN,
-        errorMessage: error.message,
+        errorMessage: error instanceof Error ? error.message : String(error),
         timestamp: new Date(),
       });
     }
@@ -162,21 +164,34 @@ export class MonitorsService implements OnModuleInit {
     }
   }
 
-  /**
-   * Verifica regras de alerta e dispara notificações
-   */
-  private async checkAlertRules(
-    service: any,
-    result: MonitorResult,
-  ): Promise<void> {
-    try {
-      for (const rule of service.rules) {
-        if (!rule.active) continue;
+ /**
+ * Verifica regras de alerta e dispara notificações (verificando banco)
+ */
+private async checkAlertRules(
+  service: any,
+  result: MonitorResult,
+): Promise<void> {
+  try {
+    for (const rule of service.rules) {
+      if (!rule.active) continue;
 
-        const shouldAlert = this.evaluateAlertRule(rule, result);
+      const shouldAlert = this.evaluateAlertRule(rule, result);
 
-        if (shouldAlert) {
-          // Cria alerta
+      if (shouldAlert) {
+        // Verifica se já existe alerta não resolvido
+        const existingAlert = await this.prisma.alert.findFirst({
+          where: {
+            serviceId: service.id,
+            ruleId: rule.id,
+            resolved: false,
+          },
+          orderBy: {
+            triggeredAt: 'desc',
+          },
+        });
+
+        if (!existingAlert) {
+          // Cria novo alerta apenas se não existe um ativo
           const alert = await this.prisma.alert.create({
             data: {
               serviceId: service.id,
@@ -185,18 +200,63 @@ export class MonitorsService implements OnModuleInit {
             },
           });
 
-          // Envia notificações
-          await this.notificationsService.sendAlert(alert, rule.severity);
+          // Envia notificação
+          await this.notificationsService.sendAlert(alert.message, );
 
           this.logger.warn(
-            `Alerta disparado para ${service.name}: ${alert.message}`,
+            `🚨 NOVO ALERTA para ${service.name}: ${alert.message}`,
           );
+        } else {
+          // Verifica se deve reenviar baseado no tempo
+          const timeSinceAlert = new Date().getTime() - existingAlert.triggeredAt.getTime();
+          const renotifyInterval = 30 * 60 * 1000; // 30 minutos
+
+          if (timeSinceAlert > renotifyInterval) {
+            await this.notificationsService.sendAlert(
+              `🔄 LEMBRETE: ${service.name} ainda com problema há ${Math.round(timeSinceAlert / 60000)} minutos`
+            );
+
+            this.logger.warn(`🔄 Reenvio de alerta para ${service.name}`);
+          }
+        }
+      } else {
+        // Resolve alertas ativos se a condição não está mais sendo atendida
+        await this.prisma.alert.updateMany({
+          where: {
+            serviceId: service.id,
+            ruleId: rule.id,
+            resolved: false,
+          },
+          data: {
+            resolved: true,
+          },
+        });
+
+        // Envia notificação de recuperação se havia alerta ativo
+        const hadActiveAlert = await this.prisma.alert.findFirst({
+          where: {
+            serviceId: service.id,
+            ruleId: rule.id,
+            resolved: true,
+          },
+          orderBy: {
+            triggeredAt: 'desc',
+          },
+        });
+
+        if (hadActiveAlert && new Date().getTime() - hadActiveAlert.triggeredAt.getTime() < 60000) {
+          await this.notificationsService.sendAlert(
+            `✅ RECUPERADO: ${service.name} - ${rule.field} voltou ao normal`
+          );
+
+          this.logger.log(`✅ Serviço ${service.name} recuperado`);
         }
       }
-    } catch (error) {
-      this.logger.error('Erro ao verificar regras de alerta:', error);
     }
+  } catch (error) {
+    this.logger.error('Erro ao verificar regras de alerta:', error);
   }
+}
 
   /**
    * Avalia se uma regra de alerta deve ser disparada

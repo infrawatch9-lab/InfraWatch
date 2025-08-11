@@ -35,14 +35,14 @@ export class SnmpService {
       const latency = Date.now() - startTime;
       this.logger.error(
         `SNMP monitor falhou para ${service.name}:`,
-        error.message,
+        (error as Error).message,
       );
 
       return {
         serviceId: service.id,
         status: ServiceStatus.DOWN,
         latency,
-        errorMessage: error.message,
+        errorMessage: (error instanceof Error ? error.message : String(error)),
         timestamp: new Date(),
       };
     }
@@ -88,7 +88,8 @@ export class SnmpService {
       // Fallback para simulação
       return this.simulateSnmpData();
     } catch (error) {
-      this.logger.warn('SNMP query failed, using simulation:', error.message);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logger.warn('SNMP query failed, using simulation:', errorMessage);
       return this.simulateSnmpData();
     }
   }
