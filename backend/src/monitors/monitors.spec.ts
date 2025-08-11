@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PingService } from './ping.service';
+import { WebhookService } from './webhook.service';
 import { ServiceStatus } from '@prisma/client'
 
 describe('PingService', () => {

@@ -6,14 +6,19 @@
     "dev": "ts-node-dev --respawn --transpile-only src/main.ts",
     "build": "tsc",
     "start": "node dist/main.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start:dev": "nest start --watch"
+    "start:dev": "nest start --watch",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@jest/types": "^30.0.5",
     "@nestjs/testing": "^11.1.6",
     "@types/cors": "^2.8.19",
     "@types/jest": "^30.0.0",
