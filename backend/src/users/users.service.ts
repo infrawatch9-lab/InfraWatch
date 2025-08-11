@@ -1,7 +1,7 @@
-import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcrypt";
-import { generateTokens, verifyRefreshToken } from "../auth/jwt.service";
-import { EmailService, generateTemporaryPassword } from "./users-email.service";
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcrypt';
+import { generateTokens, verifyRefreshToken } from '../auth/jwt.service';
+import { EmailService, generateTemporaryPassword } from './users-email.service';
 import {
   CreateUserDto,
   LoginDto,
@@ -10,22 +10,22 @@ import {
   RegisterUserDto,
   ResetPasswordDto,
   UpdateUserDto,
-} from "./user.entity";
+} from './user.entity';
 
 const prisma = new PrismaClient();
 
 export class UsersService {
   async registerWithTemporaryPassword(
-    data: RegisterUserDto
+    data: RegisterUserDto,
   ): Promise<LoginResponse> {
     try {
-      const { name, email, role = "USER" } = data;
+      const { name, email, role = 'USER' } = data;
       const trimmedName = name.trim();
       const trimmedEmail = email.trim();
       if (!trimmedName || !trimmedEmail) {
         return {
           success: false,
-          message: "Nome e email são obrigatórios",
+          message: 'Nome e email são obrigatórios',
         };
       }
 
@@ -36,7 +36,7 @@ export class UsersService {
       if (existingUser) {
         return {
           success: false,
-          message: "Usuário já existe com este email",
+          message: 'Usuário já existe com este email',
         };
       }
       const temporaryPassword = generateTemporaryPassword();
@@ -53,29 +53,33 @@ export class UsersService {
           temporaryPasswordExpiry: expiryDate,
         },
       });
-      await EmailService.sendTemporaryPassword(trimmedEmail ?? "", trimmedName ?? "", temporaryPassword);
+      await EmailService.sendTemporaryPassword(
+        trimmedEmail ?? '',
+        trimmedName ?? '',
+        temporaryPassword,
+      );
       const { password: _, ...userWithoutPassword } = user;
       return {
         success: true,
         message:
-          "Conta criada com sucesso! Verifique seu email para a senha provisória.",
+          'Conta criada com sucesso! Verifique seu email para a senha provisória.',
         user: {
           ...userWithoutPassword,
           isTemporaryPassword: true,
         },
       };
     } catch (error) {
-      console.error("Erro no registro:", error);
+      console.error('Erro no registro:', error);
       return {
         success: false,
-        message: "Erro interno do servidor",
+        message: 'Erro interno do servidor',
       };
     }
   }
 
   async register(data: CreateUserDto): Promise<LoginResponse> {
     try {
-      const { name, email, password, role = "USER" } = data;
+      const { name, email, password, role = 'USER' } = data;
 
       const trimmedName = name.trim();
       const trimmedEmail = email.trim();
@@ -84,7 +88,7 @@ export class UsersService {
       if (!trimmedName || !trimmedEmail || !trimmedPassword) {
         return {
           success: false,
-          message: "Nome, email e password são obrigatórios",
+          message: 'Nome, email e password são obrigatórios',
         };
       }
       const existingUser = await prisma.user.findUnique({
@@ -93,7 +97,7 @@ export class UsersService {
       if (existingUser) {
         return {
           success: false,
-          message: "Usuário já existe com este email",
+          message: 'Usuário já existe com este email',
         };
       }
       const hashedPassword = await bcrypt.hash(password, 10);
@@ -109,23 +113,23 @@ export class UsersService {
       const tokens = generateTokens({
         id: user.id,
         email: user.email,
-        role: user.role as "ADMIN" | "USER",
+        role: user.role as 'ADMIN' | 'USER',
         name: user.name,
-        status: user.status as "ACTIVE" | "INACTIVE",
+        status: user.status as 'ACTIVE' | 'INACTIVE',
       });
 
       const { password: _, ...userWithoutPassword } = user;
       return {
         success: true,
-        message: "Conta criada com sucesso",
+        message: 'Conta criada com sucesso',
         user: userWithoutPassword,
         tokens,
       };
     } catch (error) {
-      console.error("Erro no registro:", error);
+      console.error('Erro no registro:', error);
       return {
         success: false,
-        message: "Erro interno do servidor",
+        message: 'Erro interno do servidor',
       };
     }
   }
@@ -139,26 +143,36 @@ export class UsersService {
       if (!email_trimmed || !password_trimmed) {
         return {
           success: false,
-          message: "Email e password são obrigatórios",
+          message: 'Email e password são obrigatórios',
         };
       }
 
-      console.log("Login attempt with:", { email: email_trimmed, password: password_trimmed });
+      console.log('Login attempt with:', {
+        email: email_trimmed,
+        password: password_trimmed,
+      });
       const user = await prisma.user.findUnique({
         where: { email: email_trimmed },
       });
 
       if (!user) {
+        console.log('User not found:', email_trimmed);
         return {
           success: false,
-          message: "Credenciais inválidas",
+          message: 'Credenciais inválidas',
         };
       }
 
-      if (user.status === "INACTIVE") {
+      console.log('User found:', {
+        id: user.id,
+        email: user.email,
+        status: user.status,
+      });
+
+      if (user.status === 'INACTIVE') {
         return {
           success: false,
-          message: "Conta inativa. Entre em contato com o administrador.",
+          message: 'Conta inativa. Entre em contato com o administrador.',
         };
       }
 
@@ -168,33 +182,37 @@ export class UsersService {
           return {
             success: false,
             message:
-              "Senha provisória expirada. Entre em contato com o administrador.",
+              'Senha provisória expirada. Entre em contato com o administrador.',
           };
         }
       }
 
-      const isPasswordValid = await bcrypt.compare(password, user.password);
+      const isPasswordValid = await bcrypt.compare(
+        password_trimmed,
+        user.password,
+      );
       if (!isPasswordValid) {
+        console.log('Password comparison failed for user:', email_trimmed);
         return {
           success: false,
-          message: "Credenciais inválidas",
+          message: 'Credenciais inválidas',
         };
       }
 
       const tokens = generateTokens({
         id: user.id,
         email: user.email,
-        role: user.role as "ADMIN" | "USER",
+        role: user.role as 'ADMIN' | 'USER',
         name: user.name,
-        status: user.status as "ACTIVE" | "INACTIVE",
+        status: user.status as 'ACTIVE' | 'INACTIVE',
       });
 
       const { password: _, ...userWithoutPassword } = user;
 
       // Incluir informação sobre senha temporária na resposta
       const responseMessage = user.isTemporaryPassword
-        ? "Login realizado! ATENÇÃO: Você deve alterar sua senha provisória."
-        : "Login realizado com sucesso";
+        ? 'Login realizado! ATENÇÃO: Você deve alterar sua senha provisória.'
+        : 'Login realizado com sucesso';
 
       return {
         success: true,
@@ -206,10 +224,10 @@ export class UsersService {
         tokens,
       };
     } catch (error) {
-      console.error("Erro no login:", error);
+      console.error('Erro no login:', error);
       return {
         success: false,
-        message: "Erro interno do servidor",
+        message: 'Erro interno do servidor',
       };
     }
   }
@@ -223,26 +241,26 @@ export class UsersService {
       if (!user) {
         return {
           success: false,
-          message: "Usuário não encontrado",
+          message: 'Usuário não encontrado',
         };
       }
       const tokens = generateTokens({
         id: user.id,
         email: user.email,
-        role: user.role as "ADMIN" | "USER",
+        role: user.role as 'ADMIN' | 'USER',
         name: user.name,
-        status: user.status as "ACTIVE" | "INACTIVE",
+        status: user.status as 'ACTIVE' | 'INACTIVE',
       });
       return {
         success: true,
-        message: "Token renovado com sucesso",
+        message: 'Token renovado com sucesso',
         tokens,
       };
     } catch (error) {
-      console.error("Erro no refresh token:", error);
+      console.error('Erro no refresh token:', error);
       return {
         success: false,
-        message: "Token de refresh inválido",
+        message: 'Token de refresh inválido',
       };
     }
   }
@@ -261,9 +279,8 @@ export class UsersService {
         },
       });
       return user;
-    }
-    catch (error) {
-      console.error("Erro ao buscar perfil do usuário:", error);
+    } catch (error) {
+      console.error('Erro ao buscar perfil do usuário:', error);
       return null;
     }
   }
@@ -283,7 +300,7 @@ export class UsersService {
       });
       return user;
     } catch (error) {
-      console.error("Erro ao buscar usuário:", error);
+      console.error('Erro ao buscar usuário:', error);
       return null;
     }
   }
@@ -301,7 +318,7 @@ export class UsersService {
         },
       });
     } catch (error) {
-      console.error("Erro ao listar usuários:", error);
+      console.error('Erro ao listar usuários:', error);
       return [];
     }
   }
@@ -319,12 +336,15 @@ export class UsersService {
         },
       });
     } catch (error) {
-      console.error("Erro ao listar usuários:", error);
+      console.error('Erro ao listar usuários:', error);
       return [];
     }
   }
 
-  async updateUser(userId: number, data: UpdateUserDto): Promise<UserResponseDto | null> {
+  async updateUser(
+    userId: number,
+    data: UpdateUserDto,
+  ): Promise<UserResponseDto | null> {
     try {
       const { name, email, role, isTemporaryPassword, status } = data;
 
@@ -332,7 +352,7 @@ export class UsersService {
       const trimmedEmail = email.trim();
 
       if (!trimmedEmail || !trimmedName) {
-        throw new Error("Nome e email são obrigatórios");
+        throw new Error('Nome e email são obrigatórios');
       }
 
       let password: string | undefined = undefined;
@@ -342,11 +362,15 @@ export class UsersService {
         const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
         password = hashedPassword;
         temporaryPasswordExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
-        await EmailService.sendTemporaryPassword(trimmedEmail, trimmedName, temporaryPassword);
+        await EmailService.sendTemporaryPassword(
+          trimmedEmail,
+          trimmedName,
+          temporaryPassword,
+        );
       }
 
       if (trimmedName && trimmedName.length === 0) {
-        throw new Error("Nome não pode ser vazio");
+        throw new Error('Nome não pode ser vazio');
       }
 
       if (trimmedEmail && trimmedEmail.length === 0) {
@@ -354,7 +378,7 @@ export class UsersService {
           where: { email },
         });
         if (existingUser && existingUser.id !== userId) {
-          throw new Error("Email já está em uso por outro usuário");
+          throw new Error('Email já está em uso por outro usuário');
         }
       }
 
@@ -386,7 +410,7 @@ export class UsersService {
       });
       return user;
     } catch (error) {
-      console.error("Erro ao atualizar usuário:", error);
+      console.error('Erro ao atualizar usuário:', error);
       return null;
     }
   }
@@ -394,7 +418,7 @@ export class UsersService {
   // Método para redefinir senha
   async resetPassword(
     userId: number,
-    data: ResetPasswordDto
+    data: ResetPasswordDto,
   ): Promise<{ success: boolean; message: string }> {
     try {
       const { currentPassword, newPassword } = data;
@@ -402,14 +426,14 @@ export class UsersService {
       if (!currentPassword || !newPassword) {
         return {
           success: false,
-          message: "Senha atual e nova senha são obrigatórias",
+          message: 'Senha atual e nova senha são obrigatórias',
         };
       }
 
       if (newPassword.length < 6) {
         return {
           success: false,
-          message: "Nova senha deve ter pelo menos 6 caracteres",
+          message: 'Nova senha deve ter pelo menos 6 caracteres',
         };
       }
 
@@ -420,19 +444,19 @@ export class UsersService {
       if (!user) {
         return {
           success: false,
-          message: "Usuário não encontrado",
+          message: 'Usuário não encontrado',
         };
       }
 
       // Verificar senha atual
       const isCurrentPasswordValid = await bcrypt.compare(
         currentPassword,
-        user.password
+        user.password,
       );
       if (!isCurrentPasswordValid) {
         return {
           success: false,
-          message: "Senha atual incorreta",
+          message: 'Senha atual incorreta',
         };
       }
 
@@ -455,13 +479,13 @@ export class UsersService {
 
       return {
         success: true,
-        message: "Senha alterada com sucesso",
+        message: 'Senha alterada com sucesso',
       };
     } catch (error) {
-      console.error("Erro ao redefinir senha:", error);
+      console.error('Erro ao redefinir senha:', error);
       return {
         success: false,
-        message: "Erro interno do servidor",
+        message: 'Erro interno do servidor',
       };
     }
   }
@@ -475,7 +499,7 @@ export class UsersService {
       if (!user) {
         return {
           success: false,
-          message: "Usuário não encontrado",
+          message: 'Usuário não encontrado',
         };
       }
 
@@ -485,13 +509,13 @@ export class UsersService {
 
       return {
         success: true,
-        message: "Usuário deletado com sucesso",
+        message: 'Usuário deletado com sucesso',
       };
     } catch (error) {
-      console.error("Erro ao deletar usuário:", error);
+      console.error('Erro ao deletar usuário:', error);
       return {
         success: false,
-        message: "Erro interno do servidor",
+        message: 'Erro interno do servidor',
       };
     }
   }
