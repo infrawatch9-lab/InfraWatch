@@ -16,7 +16,7 @@ import { DatabaseModule } from './database/database.module'
     MetricsModule,
     AuthModule,
     NotificationsModule,
-    MonitorsModule,
+    // MonitorsModule,
   ],
   controllers: [AppController, NotificationsController],
 })

@@ -11,10 +11,9 @@ export class NotificationsService {
     private readonly slackService: SlackService,
   ) {}
 
-  async sendAlert(message: string) {
+  async sendAlert(message: string, to: string) {
     const subject = '🚨 Alerta de Serviço';
     const html = '<b>' + message + '</b>';
-    const to = 'carmodagama@gmail.com';
 
     await this.telegramService.send(message);
     await this.emailService.send(message, subject, html, to);
