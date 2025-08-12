@@ -11,6 +11,6 @@ import { NotificationsModule } from '../notifications/notifications.module';
   imports: [DatabaseModule, NotificationsModule],
   controllers: [MonitorsController],
   providers: [MonitorsService, PingService, SnmpService, WebhookService],
-  exports: [MonitorsService],
+  exports: [MonitorsService, PingService, SnmpService, WebhookService],
 })
 export class MonitorsModule {}

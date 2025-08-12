@@ -6,7 +6,7 @@ import { SnmpService } from './snmp.service';
 import { WebhookService } from './webhook.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { MonitorResult, MonitorConfig } from './interfaces/monitor.interface';
-import { ServiceType, ServiceStatus, AlertLevel } from '@prisma/client';
+import { ServiceType, ServiceStatus, AlertLevel, Service } from '@prisma/client';
 
 @Injectable()
 export class MonitorsService implements OnModuleInit {
@@ -343,6 +343,16 @@ private async checkAlertRules(
       this.logger.error('Erro na limpeza de métricas:', error);
     }
   }
+  async getServiceById(serviceId: number): Promise<any | null> {
+    const service = await this.prisma.service.findUnique({
+      where: { id: serviceId },
+      include: {
+        configs: true,
+        rules: true,
+      },
+    });
+    return service;
+  }
 
   /**
    * Adiciona um novo serviço para monitoramento
@@ -380,4 +390,43 @@ private async checkAlertRules(
       monitoredServices: Array.from(this.activeMonitors.keys()),
     };
   }
+
+  /**
+ * Obtém métricas de um serviço específico
+ */
+async getServiceMetrics(
+  serviceId: number, 
+  from?: string, 
+  to?: string
+): Promise<any> {
+  try {
+    const fromDate = from ? new Date(from) : new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const toDate = to ? new Date(to) : new Date();
+
+    const metrics = await this.prisma.metric.findMany({
+      where: {
+        serviceId,
+        timestamp: {
+          gte: fromDate,
+          lte: toDate,
+        },
+      },
+      orderBy: {
+        timestamp: 'desc',
+      },
+      take: 100,
+    });
+
+    return {
+      serviceId,
+      period: { from: fromDate, to: toDate },
+      metrics,
+      count: metrics.length,
+    };
+  } catch (error) {
+    this.logger.error('Erro ao buscar métricas do serviço:', error);
+    throw error;
+  }
+}
+
 }
