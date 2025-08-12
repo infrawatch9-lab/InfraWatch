@@ -16,7 +16,6 @@ async function bootstrap() {
   app.useGlobalGuards(new JwtAuthGuard(reflector));
   app.useGlobalGuards(new DynamicAuthGuard(reflector, jwtService));
 
-
   const config = new DocumentBuilder()
     .setTitle('InfraWatch API')
     .setDescription('API para monitoramento de infraestrutura e segurança')
@@ -27,6 +26,6 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
 
-  await app.listen(3042);
+  await app.listen(3000);
 }
 bootstrap();
