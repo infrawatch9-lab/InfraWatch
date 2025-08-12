@@ -18,7 +18,7 @@ export default function IncidentHistoryChart() {
         <span className="text-xs text-gray-400">Últimos 6 meses</span>
       </div>
 
-      <ResponsiveContainer width="80%" height={300}>
+      <ResponsiveContainer width="80%" height={250}>
         <BarChart data={data} barGap={6}>
           <CartesianGrid strokeDasharray="3 3" stroke="#1E2A5C" vertical={false} />
           <XAxis dataKey="name" stroke="#94A3B8" tickLine={false} axisLine={false} />

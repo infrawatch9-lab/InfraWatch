@@ -21,7 +21,7 @@ export default function ResourceConsumptionChart() {
           <button className="bg-[#162050] text-white px-3 py-1 rounded text-sm">Month</button>
         </div>
       </div>
-      <ResponsiveContainer width="80%" height={300}>
+      <ResponsiveContainer width="80%" height={220}>
         <LineChart data={data}>
           <CartesianGrid strokeDasharray="3 3" stroke="#1E2A5C" />
           <XAxis dataKey="name" stroke="#94A3B8" />
