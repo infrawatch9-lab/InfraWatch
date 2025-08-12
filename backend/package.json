@@ -6,7 +6,11 @@
     "dev": "ts-node-dev --respawn --transpile-only src/main.ts",
     "build": "tsc",
     "start": "node dist/main.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:sla": "jest src/sla/sla-api.spec.ts --config=jest.config.json --verbose",
+    "test:sla-http": "jest src/sla/sla-http.spec.ts --config=jest.config.json --verbose --detectOpenHandles",
+    "test:sla-ts": "ts-node src/sla/sla-debug.ts",
     "start:dev": "nest start --watch"
   },
   "keywords": [],

@@ -8,6 +8,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { MonitorsModule } from './monitors/monitors.module';
 import { DatabaseModule } from './database/database.module';
 import { ServicesModule } from './services/services.module';
+import { SlaModule } from './sla/sla.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { ServicesModule } from './services/services.module';
     NotificationsModule,
     MonitorsModule,
     ServicesModule,
+    SlaModule,
   ],
   controllers: [AppController],
 })
