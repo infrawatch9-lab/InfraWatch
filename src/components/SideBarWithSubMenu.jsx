@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-export default function SidebarItemWithSubmenu({ icon, label, subItems, isOpen }) {
+export default function SidebarItemWithSubmenu({ icon, label, subItems, isOpen, to }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <div>
@@ -28,7 +30,7 @@ export default function SidebarItemWithSubmenu({ icon, label, subItems, isOpen }
             <div
               key={index}
               className="text-sm text-gray-300 hover:text-white cursor-pointer"
-              onClick={subItem.onClick}
+              onClick={() => navigate(`/admin/${subItem.to}`)}
             >
               {subItem.label}
             </div>

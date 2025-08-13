@@ -4,6 +4,13 @@ import Layout from "./admin_pages/Layout";
 import { HomepageAdmin } from './admin_pages/Homepage';
 import DashboardAdmin from './admin_pages/Dashboard';
 import { AuthProvider } from "./components/AuthContext";
+import MonitorAdmin from './admin_pages/Monitor';
+import HistoryAdmin from './admin_pages/History';
+import UsersAdmin from './admin_pages/Users';
+import SettingsAdmin from './admin_pages/Settings';
+import ServersAdmin from './admin_pages/Relatorio_pages/Servers';
+import NetworksAdmin from './admin_pages/Relatorio_pages/Networks';
+import RolesAdmin from './admin_pages/Relatorio_pages/Roles';
 
 export default function Router() {
   return (
@@ -23,6 +30,13 @@ export default function Router() {
             <Route index element={<HomepageAdmin />}/>
             <Route path="homepage_admin" element={<HomepageAdmin />}/>
             <Route path="dashboard_admin" element={<DashboardAdmin />}/>
+            <Route path="servers_admin" element={<ServersAdmin />}/>
+            <Route path="networks_admin" element={<NetworksAdmin />}/>
+            <Route path="roles" element={<RolesAdmin />}/>
+            <Route path="monitor_admin" element={<MonitorAdmin />}/>
+            <Route path="history_admin" element={<HistoryAdmin />}/>
+            <Route path="users_admin" element={<UsersAdmin />}/>
+            <Route path="settings_admin" element={<SettingsAdmin />}/>
           </Route>
         </Routes>
       </AuthProvider>

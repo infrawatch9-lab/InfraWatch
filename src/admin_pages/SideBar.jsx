@@ -20,19 +20,19 @@ export default function Sidebar() {
           <CollapseButton isOpen={isOpen} toggle={() => setIsOpen(!isOpen)} />
         </div>
 
-        <SidebarItem icon={<Home size={20} />} label="Homepage" isOpen={isOpen} to="homepage_admin"/>
-        <SidebarItem icon={<Monitor size={20} />} label="Dashboard" isOpen={isOpen} to="dashboard_admin"/>
-        <SidebarItem icon={<BarChart size={20} />} label="Monitoramento" badge="1" isOpen={isOpen} />
+        <SidebarItem icon={<Home size={20} />} label="Homepage" isOpen={isOpen} to="/admin/homepage_admin"/>
+        <SidebarItem icon={<Monitor size={20} />} label="Dashboard" isOpen={isOpen} to="/admin/dashboard_admin"/>
+        <SidebarItem icon={<BarChart size={20} />} label="Monitoramento" badge="1" isOpen={isOpen} to="/admin/monitor_admin"/>
         <SidebarItemWithSubmenu icon={<FolderOpen size={20} />} label="Relatórios" isOpen={isOpen}
           subItems={[
-            { label: 'Servidores', onClick: () => navigate('/users') },
-            { label: 'Redes', onClick: () => navigate('/teams') },
-            { label: 'Roles', onClick: () => navigate('/roles') },
+            { label: 'Servidores', to: "servers_admin" },
+            { label: 'Redes', to: "networks_admin" },
+            { label: 'Roles', to: "roles" },
           ]}
         />
-        <SidebarItem icon={<History size={20} />} label="Histórico" isOpen={isOpen} />
-        <SidebarItem icon={<Users size={20} />} label="Usuários" isOpen={isOpen} />
-        <SidebarItem icon={<Settings size={20} />} label="Configurações" isOpen={isOpen} />
+        <SidebarItem icon={<History size={20} />} label="Histórico" isOpen={isOpen} to="/admin/history_admin"/>
+        <SidebarItem icon={<Users size={20} />} label="Usuários" isOpen={isOpen} to="/admin/users_admin"/>
+        <SidebarItem icon={<Settings size={20} />} label="Configurações" isOpen={isOpen} to="/admin/settings_admin"/>
       </div>
 
       {/* Parte inferior */}
