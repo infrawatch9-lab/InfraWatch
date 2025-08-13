@@ -1,4 +1,4 @@
-import { MonitoringMode } from '@prisma/client';
+import { $Enums, MonitoringMode } from '@prisma/client';
 import {
   BaseServiceDto,
   BaseMonitoringConfigDto,
@@ -8,6 +8,23 @@ import {
 export interface CreatePingServiceDto extends BaseServiceDto {
   endpoint: string;
   pingConfig: CreatePingConfigDto;
+  usersToNotify?: string[];
+}
+
+export interface ola {
+  name: string;
+  description: string;
+  teamId?: number;
+  endpoint?: string;
+  emailsToNotify?: string[];
+  pingConfig: {
+    interval?: number;
+    timeout?: number;
+    webhookUrl?: string;
+    ipAddress: string;
+    packetSize?: number;
+    ttl?: number;
+  };
 }
 
 // Aliases para compatibilidade
@@ -18,7 +35,6 @@ export interface CreatePingConfigDto extends BaseMonitoringConfigDto {
   ipAddress: string;
   packetSize?: number;
   ttl?: number;
-  monitoringMode: MonitoringMode;
   cronExpression?: string;
   timezone?: string;
   startTime?: string;
@@ -38,7 +54,6 @@ export interface PingServiceResponseDto {
   id: number;
   name: string;
   description: string;
-  endpoint: string;
   status: string;
   teamId: number;
   createdAt: Date;
@@ -51,7 +66,6 @@ export interface PingConfigResponseDto {
   ipAddress: string;
   packetSize?: number;
   ttl?: number;
-  monitoringMode: MonitoringMode;
   cronExpression?: string;
   timezone?: string;
   startTime?: string;
@@ -64,6 +78,7 @@ export interface PingConfigResponseDto {
   delay?: number;
   alertAfterFailures?: number;
   minAlertInterval?: number;
+  monitoringId?: number;
 }
 
 export interface PingTestDto {
@@ -88,4 +103,13 @@ export interface PingHealthDto extends ServiceHealthDto {
     packetLoss?: number;
     jitter?: number;
   };
+}
+
+export class ResponseAllPingServicesDto {
+    id!: number;
+    name!: string;
+    description!: string | null;
+    status!: $Enums.ServiceStatus;
+    teamId!: number;
+    createdAt!: Date;
 }

@@ -14,7 +14,6 @@ export class NotificationsService {
   async sendAlert(message: string, to: string) {
     const subject = '🚨 Alerta de Serviço';
     const html = '<b>' + message + '</b>';
-    const to = 'vicor32leonel@gmail.com';
 
     await this.telegramService.send(message);
     await this.emailService.send(message, subject, html, to);

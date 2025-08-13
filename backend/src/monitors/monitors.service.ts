@@ -6,7 +6,7 @@ import { SnmpService } from './snmp.service';
 import { WebhookService } from './webhook.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { MonitorResult, MonitorConfig } from './interfaces/monitor.interface';
-import { ServiceType, ServiceStatus, AlertLevel } from '@prisma/client';
+import { ServiceType, ServiceStatus, AlertLevel, $Enums } from '@prisma/client';
 
 @Injectable()
 export class MonitorsService implements OnModuleInit {
@@ -35,6 +35,7 @@ export class MonitorsService implements OnModuleInit {
         include: {
           configs: true,
           rules: true,
+          
         },
         where: {
           status: {
@@ -43,7 +44,21 @@ export class MonitorsService implements OnModuleInit {
         },
       });
 
-      this.logger.log(`Inicializando -${services.length}- monitores...`);
+        const servicess = await this.prisma.service.findMany({
+        include: {
+          SnmpConfig: true,
+          rules: true,
+        },
+        where: {
+          type: ServiceType.SNMP, // Filtra apenas serviços SNMP
+        },
+      });
+
+      // console.log("services: ", services);
+      // this.logger.log(`Inicializando -${services.length}- monitores...`);
+
+      console.log("servicess: ", servicess);
+      this.logger.log(`Inicializando -${servicess.length}- monitores...`);
 
       for (const service of services) {
         await this.startMonitoring(service);
@@ -146,11 +161,12 @@ export class MonitorsService implements OnModuleInit {
   /**
    * Salva métricas no banco de dados (TimescaleDB)
    */
-  private async saveMetrics(result: MonitorResult): Promise<void> {
+  private async saveMetrics(result: MonitorResult & { agentId?: string }): Promise<void> {
     try {
       await this.prisma.metric.create({
         data: {
           serviceId: result.serviceId,
+          // agentId: result.agentId, // novo campo opcional
           timestamp: result.timestamp,
           status: result.status,
           latency: result.latency,
@@ -201,7 +217,7 @@ private async checkAlertRules(
           });
 
           // Envia notificação
-          await this.notificationsService.sendAlert(alert.message);
+          await this.notificationsService.sendAlert(alert.message, "");
 
           this.logger.warn(
             `🚨 NOVO ALERTA para ${service.name}: ${alert.message}`,
@@ -214,7 +230,7 @@ private async checkAlertRules(
           if (timeSinceAlert > renotifyInterval) {
             await this.notificationsService.sendAlert(
               `🔄 LEMBRETE: ${service.name} ainda com problema há ${Math.round(timeSinceAlert / 60000)} minutos`
-            );
+            , "");
 
             this.logger.warn(`🔄 Reenvio de alerta para ${service.name}`);
           }
@@ -247,7 +263,7 @@ private async checkAlertRules(
         if (hadActiveAlert && new Date().getTime() - hadActiveAlert.triggeredAt.getTime() < 60000) {
           await this.notificationsService.sendAlert(
             `✅ RECUPERADO: ${service.name} - ${rule.field} voltou ao normal`
-          );
+          , "");
 
           this.logger.log(`✅ Serviço ${service.name} recuperado`);
         }

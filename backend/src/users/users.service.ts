@@ -17,7 +17,7 @@ const prisma = new PrismaClient();
 export class UsersService {
   async registerWithTemporaryPassword(
     data: RegisterUserDto,
-  ): Promise<LoginResponse> {
+  ): Promise<any> {
     try {
       const { name, email, role = 'USER' } = data;
       const trimmedName = name.trim();
@@ -77,7 +77,7 @@ export class UsersService {
     }
   }
 
-  async register(data: CreateUserDto): Promise<LoginResponse> {
+  async register(data: CreateUserDto): Promise<any> {
     try {
       const { name, email, password, role = 'USER' } = data;
 
@@ -134,7 +134,7 @@ export class UsersService {
     }
   }
 
-  async login(data: LoginDto): Promise<LoginResponse> {
+  async login(data: LoginDto): Promise<any> {
     try {
       const { email, password } = data;
       const email_trimmed = email.trim();
@@ -159,7 +159,7 @@ export class UsersService {
         console.log('User not found:', email_trimmed);
         return {
           success: false,
-          message: 'Credenciais inválidas',
+          message: 'Usuário não encontrado',
         };
       }
 
@@ -265,7 +265,7 @@ export class UsersService {
     }
   }
 
-  async getProfile(userId: number): Promise<UserResponseDto | null> {
+  async getProfile(userId: number): Promise<UserResponseDto | any> {
     try {
       const user = await prisma.user.findUnique({
         where: { id: userId },
@@ -281,11 +281,11 @@ export class UsersService {
       return user;
     } catch (error) {
       console.error('Erro ao buscar perfil do usuário:', error);
-      return null;
+      return [];
     }
   }
 
-  async findById(id: number): Promise<UserResponseDto | null> {
+  async findById(id: number): Promise<UserResponseDto | any> {
     try {
       const user = await prisma.user.findUnique({
         where: { id },
@@ -305,7 +305,7 @@ export class UsersService {
     }
   }
 
-  async findAll(): Promise<UserResponseDto[]> {
+  async findAll(): Promise<UserResponseDto[] | any> {
     try {
       return await prisma.user.findMany({
         select: {
@@ -323,7 +323,7 @@ export class UsersService {
     }
   }
 
-  async getAllUsers(): Promise<UserResponseDto[]> {
+  async getAllUsers(): Promise<UserResponseDto[] | any[]> {
     try {
       return await prisma.user.findMany({
         select: {
@@ -344,7 +344,7 @@ export class UsersService {
   async updateUser(
     userId: number,
     data: UpdateUserDto,
-  ): Promise<UserResponseDto | null> {
+  ): Promise<any> {
     try {
       const { name, email, role, isTemporaryPassword, status } = data;
 
@@ -411,7 +411,7 @@ export class UsersService {
       return user;
     } catch (error) {
       console.error('Erro ao atualizar usuário:', error);
-      return null;
+      return [];
     }
   }
 

@@ -9,6 +9,7 @@ import {
   ParseIntPipe,
   HttpStatus,
   Logger,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { PingService } from './ping.service';
@@ -18,7 +19,11 @@ import {
   PingServiceResponseDto,
   CreatePingDto,
   UpdatePingDto,
+  ola,
 } from './ping.entity';
+import { use } from 'passport';
+import { Roles } from '../../auth/roles.decorator';
+import { RolesGuard } from '../../auth/roles.guard';
 
 @ApiTags('ping')
 @Controller('ping')
@@ -28,10 +33,12 @@ export class PingController {
   constructor(private readonly pingService: PingService) {}
 
   @Post()
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Cadastrar novo serviço Ping' })
   @ApiResponse({ status: 201, description: 'Serviço Ping criado com sucesso' })
-  create(@Body() createPingDto: CreatePingDto) {
-    return this.pingService.create(createPingDto);
+  create(@Body() createPingDto: ola) {
+    return this.pingService.createPingService(createPingDto);
   }
 
   @Get()
@@ -50,7 +57,7 @@ export class PingController {
   @ApiOperation({ summary: 'Atualizar configuração de um serviço Ping' })
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updatePingDto: UpdatePingDto,
+    @Body() updatePingDto: CreatePingServiceDto,
   ) {
     return this.pingService.update(id, updatePingDto);
   }
