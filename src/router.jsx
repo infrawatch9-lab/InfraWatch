@@ -29,7 +29,6 @@ export default function Router() {
           >
             <Route index element={<HomepageAdmin />}/>
             <Route path="homepage_admin" element={<HomepageAdmin />}/>
-            <Route path="dashboard_admin" element={<DashboardAdmin />}/>
             <Route path="servers_admin" element={<ServersAdmin />}/>
             <Route path="networks_admin" element={<NetworksAdmin />}/>
             <Route path="roles" element={<RolesAdmin />}/>

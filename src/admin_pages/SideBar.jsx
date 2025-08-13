@@ -1,33 +1,34 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Home, Monitor, BarChart, History, Users, Settings, Moon, Power, FolderOpen } from 'lucide-react';
 import CollapseButton from '../components/CollapseButton';
 import { useNavigate } from 'react-router-dom';
 import SidebarItemWithSubmenu from '../components/SideBarWithSubMenu'
 import SidebarItem from '../components/SideBarItem';
+import { useSidebar } from '../contexts/SidebarContext';
 
 export default function Sidebar() {
-  const [isOpen, setIsOpen] = useState(true);
+  const { isOpen, toggleSidebar } = useSidebar();
   const navigate = useNavigate();
 
   return (
-    <div className={`bg-[#0B1440] text-white h-screen flex flex-col justify-between transition-all duration-300 ${isOpen ? 'w-64' : 'w-20'} p-4`}>
+    <div className={`bg-[#0B1440] text-white fixed left-0 top-0 h-screen flex flex-col justify-between transition-all duration-300 z-50 ${isOpen ? 'w-64' : 'w-20'} p-4 overflow-y-auto`}>
       
       {/* Topo */}
       <div>
         <div className="flex items-center space-x-2 mb-6 novo" style={{ display: "flex", gap: 20 }}>
           {isOpen && <img src="/img/logo_white.png" alt="Logo" className="w-8 h-8" />}
           {isOpen && <h1 className="text-lg font-semibold">InfraWatch</h1>}
-          <CollapseButton isOpen={isOpen} toggle={() => setIsOpen(!isOpen)} />
+          <CollapseButton isOpen={isOpen} toggle={toggleSidebar} />
         </div>
 
         <SidebarItem icon={<Home size={20} />} label="Homepage" isOpen={isOpen} to="/admin/homepage_admin"/>
-        <SidebarItem icon={<Monitor size={20} />} label="Dashboard" isOpen={isOpen} to="/admin/dashboard_admin"/>
         <SidebarItem icon={<BarChart size={20} />} label="Monitoramento" badge="1" isOpen={isOpen} to="/admin/monitor_admin"/>
         <SidebarItemWithSubmenu icon={<FolderOpen size={20} />} label="Relatórios" isOpen={isOpen}
           subItems={[
             { label: 'Servidores', to: "servers_admin" },
             { label: 'Redes', to: "networks_admin" },
-            { label: 'Roles', to: "roles" },
+            { label: 'Web hooks', to: "roles" },
+            { label: 'APIs', to: "roles" },
           ]}
         />
         <SidebarItem icon={<History size={20} />} label="Histórico" isOpen={isOpen} to="/admin/history_admin"/>
