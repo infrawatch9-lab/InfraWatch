@@ -28,7 +28,7 @@ export default function Sidebar() {
             { label: 'Servidores', to: "servers_admin" },
             { label: 'Redes', to: "networks_admin" },
             { label: 'Web hooks', to: "roles" },
-            { label: 'APIs', to: "roles" },
+            { label: 'APIs', to: "api_dashboard" },
           ]}
         />
         <SidebarItem icon={<History size={20} />} label="Histórico" isOpen={isOpen} to="/admin/history_admin"/>

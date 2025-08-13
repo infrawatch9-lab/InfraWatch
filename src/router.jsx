@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./login/Login";
 import Layout from "./admin_pages/Layout";
 import { HomepageAdmin } from './admin_pages/Homepage';
-import DashboardAdmin from './admin_pages/Dashboard';
+//import DashboardAdmin from './admin_pages/Dashboard';
 import { AuthProvider } from "./components/AuthContext";
 import MonitorAdmin from './admin_pages/Monitor';
 import HistoryAdmin from './admin_pages/History';
@@ -11,6 +11,7 @@ import SettingsAdmin from './admin_pages/Settings';
 import ServersAdmin from './admin_pages/Relatorio_pages/Servers';
 import NetworksAdmin from './admin_pages/Relatorio_pages/Networks';
 import RolesAdmin from './admin_pages/Relatorio_pages/Roles';
+import APIDashboard from './admin_pages/Dashboards/DashboardAPI';
 
 export default function Router() {
   return (
@@ -32,6 +33,7 @@ export default function Router() {
             <Route path="servers_admin" element={<ServersAdmin />}/>
             <Route path="networks_admin" element={<NetworksAdmin />}/>
             <Route path="roles" element={<RolesAdmin />}/>
+            <Route path="api_dashboard" element={<APIDashboard />}/>
             <Route path="monitor_admin" element={<MonitorAdmin />}/>
             <Route path="history_admin" element={<HistoryAdmin />}/>
             <Route path="users_admin" element={<UsersAdmin />}/>
