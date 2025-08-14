@@ -2,7 +2,6 @@ import {
   Injectable,
   Logger,
   NotFoundException,
-  BadRequestException,
 } from '@nestjs/common';
 import { exec } from 'child_process';
 import { promisify } from 'util';
@@ -10,12 +9,11 @@ import { PrismaService } from '../../database/prisma.service';
 import { ServiceType } from '@prisma/client';
 import {
   CreatePingServiceDto,
-  PingServiceResponseDto,
   ResponseAllPingServicesDto,
-  ola,
 } from './ping.entity';
 import { getDifferences } from './ping.utils';
 import { $Enums } from '@prisma/client';
+import { use } from 'passport';
 
 const execAsync = promisify(exec);
 
@@ -26,11 +24,24 @@ export class PingService {
   constructor(private readonly prisma: PrismaService) {}
 
   async createPingService(
-  data: ola,
-  ): Promise<PingServiceResponseDto> {
+  data: CreatePingServiceDto,
+  ): Promise<any> {
     try {
       const teamId = data.teamId || 1;
       
+        const checkIfServiceExists = await this.prisma.service.findFirst({
+        where: {
+          name: data.name,
+          type: ServiceType.PING,
+          teamId: teamId,
+        },
+      });
+
+      if (checkIfServiceExists) {
+        this.logger.warn(`Service with name ${data.name} already exists for team ID ${teamId}`);
+        return { message: 'Service already exists' };
+      }
+
       const result = await this.prisma.$transaction(async (prisma) => {
       let team = await prisma.team.findUnique({ where: { id: teamId } });
 
@@ -51,12 +62,13 @@ export class PingService {
       });
 
       // Se vieram emails para notificação
-      if (data.emailsToNotify?.length) {
+      if (data.usersToNotify?.length) {
         const users = await prisma.user.findMany({
-          where: { email: { in: data.emailsToNotify } },
+          where: { email: { in: data.usersToNotify } },
           select: { id: true },
         });
 
+        console.log(`Users found for notification: ${users.length}`);
         if (users.length) {
           await prisma.serviceUserNotification.createMany({
             data: users.map(u => ({
@@ -65,6 +77,8 @@ export class PingService {
             })),
           });
         }
+      } else {
+        this.logger.warn('No emails provided for notification');
       }
 
       // 2. Criar MonitoringConfig
@@ -87,8 +101,13 @@ export class PingService {
         },
       });
 
-        return { service, monitoringConfig, pingConfig };
+        return { service, monitoringConfig, pingConfig, usersToNotify: data.usersToNotify };
       });
+
+      if (!result.service) {
+        this.logger.warn('Serviço não foi criado corretamente.');
+        return { message: 'Serviço não foi criado corretamente.' };
+      }
 
       this.logger.log(`Serviço de ping criado: ${result.service.name}`);
 
@@ -96,10 +115,10 @@ export class PingService {
         id: result.service.id,
         name: result.service.name,
         description: result.service.description,
-        // endpoint: data.endpoint,
         status: result.service.status,
         teamId: result.service.teamId,
         createdAt: result.service.createdAt,
+        usersToNotify: result.usersToNotify,
         pingConfig: {
           id: result.pingConfig.id,
           serviceId: result.monitoringConfig.serviceId,
@@ -117,7 +136,7 @@ export class PingService {
     }
   }
 
-  async findAll(): Promise<ResponseAllPingServicesDto[]> {
+  async findAll(): Promise<any[]> {
     const services = await this.prisma.service.findMany({
       where: {
         type: ServiceType.PING,
@@ -228,57 +247,24 @@ export class PingService {
       throw new NotFoundException('Serviço de ping não encontrado');
     }
 
-  await this.prisma.$transaction(async (prisma) => {
-    const monitoringConfigs = await prisma.monitoringConfig.findMany({
-      where: { serviceId: id },
-      select: { id: true }
-    });
+    await this.prisma.$transaction(async (prisma) => {
+      const result = await prisma.service.delete({ where: { id } });
 
-    await prisma.pingConfig.deleteMany({
-      where: { monitoringId: { in: monitoringConfigs.map(c => c.id) } }
+      if (!result) {
+        throw new NotFoundException('Serviço de ping não encontrado');
+      }
     });
-
-    await prisma.monitoringConfig.deleteMany({
-      where: { serviceId: id },
-    });
-
-    await prisma.service.delete({
-      where: { id },
-    });
-  });
-    return { message: 'Serviço de ping removido com sucesso' };
+      return { message: 'Serviço de ping removido com sucesso' };
   }
 
   async removeAll(): Promise<any> {
-    const services = await this.prisma.service.findMany({
-      where: { type: ServiceType.PING },
-    });
+    const result = await this.prisma.service.deleteMany({ where: { type: ServiceType.PING } });
 
-    if (services.length === 0) {
-      throw new NotFoundException('Nenhum serviço de ping encontrado');
+    if (result.count === 0) {
+      throw new NotFoundException('Nenhum serviço de ping encontrado para remover');
     }
-
-    await this.prisma.$transaction(async (prisma) => {
-      for (const service of services) {
-        const monitoringConfigs = await prisma.monitoringConfig.findMany({
-          where: { serviceId: service.id },
-          select: { id: true }
-        });
-
-        await prisma.pingConfig.deleteMany({
-          where: { monitoringId: { in: monitoringConfigs.map(c => c.id) } }
-        });
-
-        await prisma.monitoringConfig.deleteMany({
-          where: { serviceId: service.id },
-        });
-      }
-
-      await prisma.service.deleteMany({
-        where: { type: ServiceType.PING },
-      });
-    });
 
     return { message: 'Todos os serviços de ping foram removidos com sucesso' };
   }
+
 }

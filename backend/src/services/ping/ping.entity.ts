@@ -5,18 +5,12 @@ import {
   ServiceHealthDto,
 } from '../service.common-entity';
 
-export interface CreatePingServiceDto extends BaseServiceDto {
-  endpoint: string;
-  pingConfig: CreatePingConfigDto;
-  usersToNotify?: string[];
-}
-
-export interface ola {
+export interface CreatePingServiceDto {
   name: string;
   description: string;
   teamId?: number;
   endpoint?: string;
-  emailsToNotify?: string[];
+  usersToNotify?: string[];
   pingConfig: {
     interval?: number;
     timeout?: number;

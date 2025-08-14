@@ -7,7 +7,6 @@ import {
   Body,
   Param,
   ParseIntPipe,
-  HttpStatus,
   Logger,
   UseGuards,
 } from '@nestjs/common';
@@ -15,13 +14,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { PingService } from './ping.service';
 import {
   CreatePingServiceDto,
-  UpdatePingConfigDto,
-  PingServiceResponseDto,
-  CreatePingDto,
-  UpdatePingDto,
-  ola,
 } from './ping.entity';
-import { use } from 'passport';
 import { Roles } from '../../auth/roles.decorator';
 import { RolesGuard } from '../../auth/roles.guard';
 
@@ -37,7 +30,7 @@ export class PingController {
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Cadastrar novo serviço Ping' })
   @ApiResponse({ status: 201, description: 'Serviço Ping criado com sucesso' })
-  create(@Body() createPingDto: ola) {
+  create(@Body() createPingDto: CreatePingServiceDto) {
     return this.pingService.createPingService(createPingDto);
   }
 

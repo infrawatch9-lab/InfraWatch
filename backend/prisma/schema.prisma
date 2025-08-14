@@ -53,9 +53,9 @@ model Service {
   createdAt   DateTime           @default(now())
   alerts      Alert[]
   rules       AlertRule[]        @relation("ServiceToAlertRules")
-  configs     MonitoringConfig[]
+  configs     MonitoringConfig[] 
   slas        SLA[]
-    usersToNotify ServiceUserNotification[]
+  usersToNotify ServiceUserNotification[]
   metrics     Metric[]
   logs        SystemLog[]
   Team        Team               @relation(fields: [teamId], references: [id])
@@ -108,8 +108,8 @@ model ServiceUserNotification {
   serviceId Int
   userId    Int
 
-  Service   Service @relation(fields: [serviceId], references: [id])
-  User      User    @relation(fields: [userId], references: [id])
+  Service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  User      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([serviceId, userId])
 }
@@ -157,7 +157,7 @@ model MonitoringConfig {
   interval       Int
   timeout        Int
   webhookUrl     String?
-  Service    Service  @relation(fields: [serviceId], references: [id])
+  Service     Service      @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   PingConfig     PingConfig?
   SnmpConfig     SnmpConfig?
 }
@@ -168,7 +168,7 @@ model PingConfig {
   ipAddress    String
   packetSize   Int?
   ttl          Int?
-  Monitoring   MonitoringConfig @relation(fields: [monitoringId], references: [id])
+  Monitoring   MonitoringConfig @relation(fields: [monitoringId], references: [id], onDelete: Cascade)
 }
 
 model SnmpConfig {
@@ -190,7 +190,7 @@ model SnmpConfig {
   expectedResponseTimeMs Int?
   createdAt              DateTime         @default(now())
   updatedAt              DateTime         @updatedAt
-  Monitoring             MonitoringConfig @relation(fields: [monitoringId], references: [id])
+  Monitoring   MonitoringConfig @relation(fields: [monitoringId], references: [id], onDelete: Cascade)
 }
 
 enum SnmpVersion {
