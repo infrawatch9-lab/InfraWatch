@@ -225,6 +225,8 @@ enum ServiceType {
   CUSTOM
   SNMP
   PING
+  WEBHOOK
+  HTTP
 }
 
 enum ServiceStatus {
@@ -232,6 +234,8 @@ enum ServiceStatus {
   DOWN
   DEGRADED
   PENDING
+  ACTIVE
+  PAUSED
 }
 
 enum AlertLevel {

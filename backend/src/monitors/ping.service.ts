@@ -10,17 +10,14 @@ const execAsync = promisify(exec);
 export class PingService {
   private readonly logger = new Logger(PingService.name);
 
-  async monitor(service: any, config: any): Promise<MonitorResult> {
+  async monitor(service: any, config: any): Promise<any> {
     const startTime = Date.now();
 
     try {
-      // Extrai hostname/IP do endpoint 
-      const hostname = this.extractHostname(service.endpoint);
-      
-      this.logger.debug(`Fazendo ping para ${hostname} (serviço: ${service.name})`);
+      this.logger.debug(`Fazendo ping para ${service.ipAddress} (serviço: ${service.name})`);
 
       // Executa ping com timeout
-      const command = this.buildPingCommand(hostname, config.timeout || 5000);
+      const command = this.buildPingCommand(service.ipAddress, config.timeout || 5000);
       const { stdout, stderr } = await execAsync(command);
       
       const latency = this.extractLatency(stdout);
@@ -34,7 +31,7 @@ export class PingService {
         timestamp: new Date(),
         metrics: {
           pingLatency: latency || undefined,
-          hostname: hostname,
+          hostname: service.ipAddress,
         }
       };
 

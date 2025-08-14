@@ -43,22 +43,8 @@ export class MonitorsService implements OnModuleInit {
           },
         },
       });
-
-        const servicess = await this.prisma.service.findMany({
-        include: {
-          SnmpConfig: true,
-          rules: true,
-        },
-        where: {
-          type: ServiceType.SNMP, // Filtra apenas serviços SNMP
-        },
-      });
-
       // console.log("services: ", services);
       // this.logger.log(`Inicializando -${services.length}- monitores...`);
-
-      console.log("servicess: ", servicess);
-      this.logger.log(`Inicializando -${servicess.length}- monitores...`);
 
       for (const service of services) {
         await this.startMonitoring(service);

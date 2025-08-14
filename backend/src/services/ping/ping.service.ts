@@ -3,8 +3,6 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { exec } from 'child_process';
-import { promisify } from 'util';
 import { PrismaService } from '../../database/prisma.service';
 import { ServiceType } from '@prisma/client';
 import {
@@ -13,15 +11,15 @@ import {
 } from './ping.entity';
 import { getDifferences } from './ping.utils';
 import { $Enums } from '@prisma/client';
-import { use } from 'passport';
-
-const execAsync = promisify(exec);
+import { restartMonitor } from '../../monitors_dois/monitor.utils';
 
 @Injectable()
 export class PingService {
   private readonly logger = new Logger(PingService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+  ) {}
 
   async createPingService(
   data: CreatePingServiceDto,
@@ -158,9 +156,60 @@ export class PingService {
     const service = await this.prisma.service.findUnique({
       where: { id },
       include: {
-        usersToNotify: {},
-        configs: {},
+        usersToNotify: {
+          include: {
+            User: true,
+          },
+        },
+        configs: {
+          include: {
+            PingConfig: true,
+            SnmpConfig: true,
+          },
+        },
+        rules: true,
+        alerts: true,
+        metrics: true,
+        slas: true,
+        logs: true,
+        Team: true,
       },
+    });
+
+    if (!service) {
+      throw new NotFoundException('Serviço de ping não encontrado');
+    }
+
+    return service;
+  }
+
+  async findOneEspecifico(
+    id: number,
+    includeRelations: string[] = [],
+    configType?: string // opcional, para definir o tipo da config
+  ): Promise<any> {
+    const include: Record<string, any> = {};
+
+    if (includeRelations.includes("usersToNotify")) {
+      include.usersToNotify = { include: { User: true } };
+    }
+
+    if (includeRelations.includes("configs")) {
+      include.configs = configType
+        ? { include: { [configType]: true } } // ex: pingConfig
+        : true; // se não passar tipo, traz todos
+    }
+
+    if (includeRelations.includes("rules")) include.rules = true;
+    if (includeRelations.includes("alerts")) include.alerts = true;
+    if (includeRelations.includes("metrics")) include.metrics = true;
+    if (includeRelations.includes("slas")) include.slas = true;
+    if (includeRelations.includes("logs")) include.logs = true;
+    if (includeRelations.includes("Team")) include.Team = true;
+
+    const service = await this.prisma.service.findUnique({
+      where: { id },
+      include,
     });
 
     if (!service) {
