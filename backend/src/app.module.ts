@@ -22,7 +22,7 @@ import { DashboardModule } from './dashboards/dashboard.module';
     MetricsModule,
     AuthModule,
     NotificationsModule,
-    MonitorsModule,
+    // MonitorsModule,
     ServicesModule,
     // SnmpModule,
   ],
