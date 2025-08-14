@@ -13,6 +13,9 @@ export default function APIDashboard() {
   const [filteredLogs, setFilteredLogs] = useState([]);
   const [filterColumn, setFilterColumn] = useState('all');
   const [filterValue, setFilterValue] = useState('');
+  const [terminalCommand, setTerminalCommand] = useState('');
+  const [terminalOutput, setTerminalOutput] = useState([]);
+  const [terminalHistory, setTerminalHistory] = useState([]);
 
   // Simulated data - replace with real API calls
   useEffect(() => {
@@ -68,6 +71,16 @@ export default function APIDashboard() {
     setMethodData(methods);
     setApiLogs(logs);
     setFilteredLogs(logs);
+
+    // Terminal initial output
+    const initialTerminalOutput = [
+      { type: 'info', text: '[2025-08-14 14:03:11] [INFO] Service \'nginx\' restarted successfully.' },
+      { type: 'warn', text: '[2025-08-14 14:03:15] [WARN] High CPU usage detected: 87%.' },
+      { type: 'error', text: '[2025-08-14 14:03:22] [ERROR] Elasticsearch connection failed: timeout reached.' },
+      { type: 'info', text: '[2025-08-14 14:03:31] [INFO] Backup completed in 3.24s.' },
+      { type: 'info', text: '[2025-08-14 14:03:42] [INFO] MySQL query executed: SELECT COUNT(*) FROM users;' },
+    ];
+    setTerminalOutput(initialTerminalOutput);
   }, [timeFilter]);
 
   // Filtrar logs baseado no filtro selecionado
@@ -109,6 +122,84 @@ export default function APIDashboard() {
       case 'PUT': return 'bg-yellow-600';
       case 'DELETE': return 'bg-red-600';
       default: return 'bg-gray-600';
+    }
+  };
+
+  const handleTerminalCommand = (e) => {
+    if (e.key === 'Enter' && terminalCommand.trim()) {
+      const command = terminalCommand.trim();
+      const timestamp = new Date().toLocaleString();
+      
+      // Add command to history
+      const newHistory = [...terminalHistory, command];
+      setTerminalHistory(newHistory);
+      
+      // Add command to output
+      const commandOutput = { type: 'command', text: `username % ${command}` };
+      
+      // Generate response based on command
+      let response = '';
+      switch (command.toLowerCase()) {
+        case 'services status':
+          response = `+-------------------------+----------+----------+----------+
+| name                    | port     | host     | status   |
++-------------------------+----------+----------+----------+
+| nginx                   | 80       | 127.0.0.1| active   |
+| mysql                   | 3306     | 127.0.0.1| active   |
+| redis                   | 6379     | 127.0.0.1| active   |
+| postgresql              | 5432     | 127.0.0.1| active   |
+| elasticsearch           | 9200     | 127.0.0.1| failed   |
+| docker                  | 2375     | 127.0.0.1| active   |
+| ftp                     | 21       | 127.0.0.1| inactive |
++-------------------------+----------+----------+----------+`;
+          break;
+        case 'logs all':
+          response = `[${timestamp}] [INFO] System monitoring active
+[${timestamp}] [WARN] Disk usage at 78%
+[${timestamp}] [INFO] API endpoint /health responded in 120ms`;
+          break;
+        case 'help':
+          response = `Available commands:
+- services status    Show all services status
+- logs all          Show recent logs
+- clear             Clear terminal
+- system info       Show system information
+- restart <service> Restart a service`;
+          break;
+        case 'clear':
+          setTerminalOutput([]);
+          setTerminalCommand('');
+          return;
+        case 'system info':
+          response = `System Information:
+OS: Ubuntu 20.04 LTS
+CPU: Intel i7-8700K @ 3.70GHz
+Memory: 16GB RAM (8.2GB used)
+Disk: 512GB SSD (389GB free)
+Uptime: 2 days, 14 hours, 23 minutes`;
+          break;
+        default:
+          if (command.startsWith('restart ')) {
+            const service = command.split(' ')[1];
+            response = `[${timestamp}] [INFO] Restarting service '${service}'...
+[${timestamp}] [INFO] Service '${service}' restarted successfully.`;
+          } else {
+            response = `bash: ${command}: command not found. Type 'help' for available commands.`;
+          }
+      }
+      
+      const responseOutput = { type: 'output', text: response };
+      
+      setTerminalOutput(prev => [...prev, commandOutput, responseOutput]);
+      setTerminalCommand('');
+      
+      // Auto scroll to bottom
+      setTimeout(() => {
+        const terminal = document.getElementById('terminal-output');
+        if (terminal) {
+          terminal.scrollTop = terminal.scrollHeight;
+        }
+      }, 100);
     }
   };
 
@@ -386,88 +477,117 @@ export default function APIDashboard() {
           </div>
         </div>
 
+<<<<<<< HEAD
         {/* API Logs Table */}
         <div className="bg-[#0B1440] rounded-lg p-6 mt-6 border border-[#3B5B75]">
+=======
+        {/* Interactive Terminal */}
+        <div className="bg-[#010E37] rounded-lg p-6 mt-6 border border-[#3B5B75]">
+>>>>>>> a25fc2151e1a3c9369030961db11128fbe173879
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-4">
-              {/* Dropdown para selecionar coluna */}
-              <select 
-                className="bg-[#0E1A3D] border border-[#3B5B75] rounded px-3 py-1 text-sm text-gray-300"
-                value={filterColumn}
-                onChange={(e) => setFilterColumn(e.target.value)}
-              >
-                <option value="all">Filtrar por...</option>
-                <option value="method">Method</option>
-                <option value="endpoint">Endpoint</option>
-                <option value="status">Status</option>
-                <option value="timestamp">Timestamp</option>
-                <option value="responseTime">Response Time</option>
-              </select>
-              
-              {/* Input para valor do filtro */}
-              {filterColumn !== 'all' && (
-                <input
-                  type="text"
-                  placeholder={`Filtrar por ${filterColumn}...`}
-                  className="bg-[#0E1A3D] border border-[#3B5B75] rounded px-3 py-1 text-sm text-gray-300 placeholder-gray-500"
-                  value={filterValue}
-                  onChange={(e) => setFilterValue(e.target.value)}
-                />
-              )}
-              
-              {/* Botão para limpar filtros */}
-              {(filterColumn !== 'all' || filterValue !== '') && (
-                <button 
-                  onClick={() => {
-                    setFilterColumn('all');
-                    setFilterValue('');
-                  }}
-                  className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors"
-                >
-                  Limpar
-                </button>
-              )}
+            <div className="flex items-center space-x-2">
+              <div className="flex space-x-2">
+                <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+              </div>
+              <span className="text-sm font-mono text-gray-300 ml-4">username@apache2_watch — 1548 x 48</span>
             </div>
-            
-            <button className="px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 transition-colors">
-              Analisar
+            <button 
+              onClick={() => setTerminalOutput([])}
+              className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors"
+            >
+              Clear
             </button>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="text-gray-400 border-b border-[#3B5B75]">
-                  <th className="text-left py-2">Timestamp</th>
-                  <th className="text-left py-2">Method</th>
-                  <th className="text-left py-2">Endpoint</th>
-                  <th className="text-left py-2">Status</th>
-                  <th className="text-left py-2">Response Time</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredLogs.map((log, index) => (
-                  <tr key={index} className="border-b border-[#3B5B75] hover:bg-[#0E1A3D]/50 transition-colors">
-                    <td className="py-2 text-gray-300">{log.timestamp}</td>
-                    <td className="py-2">
-                      <span className={`px-2 py-1 rounded text-xs text-white ${getMethodColor(log.method)}`}>
-                        {log.method}
-                      </span>
-                    </td>
-                    <td className="py-2 text-gray-300 font-mono">{log.endpoint}</td>
-                    <td className={`py-2 ${getStatusColor(log.status)}`}>{log.status}</td>
-                    <td className="py-2 text-gray-300">{log.responseTime}</td>
-                  </tr>
-                ))}
-                {filteredLogs.length === 0 && (
-                  <tr>
-                    <td colSpan="5" className="py-4 text-center text-gray-500">
-                      Nenhum resultado encontrado para o filtro aplicado
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+          <div className="bg-[#0E1A3D] rounded border border-[#3B5B75] p-4">
+            {/* Terminal Output */}
+            <div 
+              id="terminal-output"
+              className="h-80 overflow-y-auto font-mono text-sm text-gray-300 mb-4"
+              style={{ scrollbarWidth: 'thin', scrollbarColor: '#3B5B75 transparent' }}
+            >
+              {terminalOutput.map((line, index) => (
+                <div key={index} className="mb-1">
+                  {line.type === 'command' ? (
+                    <div className="text-green-400">{line.text}</div>
+                  ) : line.type === 'info' ? (
+                    <div>
+                      <span className="text-blue-400">[INFO]</span> {line.text.replace(/\[INFO\]/g, '')}
+                    </div>
+                  ) : line.type === 'warn' ? (
+                    <div>
+                      <span className="text-yellow-400">[WARN]</span> {line.text.replace(/\[WARN\]/g, '')}
+                    </div>
+                  ) : line.type === 'error' ? (
+                    <div>
+                      <span className="text-red-400">[ERROR]</span> {line.text.replace(/\[ERROR\]/g, '')}
+                    </div>
+                  ) : (
+                    <pre className="whitespace-pre-wrap text-gray-300">{line.text}</pre>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Command Input */}
+            <div className="flex items-center space-x-2">
+              <span className="text-green-400 font-mono">username %</span>
+              <input
+                type="text"
+                value={terminalCommand}
+                onChange={(e) => setTerminalCommand(e.target.value)}
+                onKeyPress={handleTerminalCommand}
+                className="flex-1 bg-transparent text-gray-300 font-mono outline-none border-none"
+                placeholder="Type a command (try 'services status' or 'help')"
+                autoFocus
+              />
+            </div>
+          </div>
+
+          {/* Quick Commands */}
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              onClick={() => {
+                setTerminalCommand('services status');
+                const e = { key: 'Enter' };
+                handleTerminalCommand(e);
+              }}
+              className="px-3 py-1 bg-[#0E1A3D] border border-[#3B5B75] text-gray-300 rounded text-xs hover:bg-[#3B5B75] transition-colors"
+            >
+              services status
+            </button>
+            <button
+              onClick={() => {
+                setTerminalCommand('logs all');
+                const e = { key: 'Enter' };
+                handleTerminalCommand(e);
+              }}
+              className="px-3 py-1 bg-[#0E1A3D] border border-[#3B5B75] text-gray-300 rounded text-xs hover:bg-[#3B5B75] transition-colors"
+            >
+              logs all
+            </button>
+            <button
+              onClick={() => {
+                setTerminalCommand('system info');
+                const e = { key: 'Enter' };
+                handleTerminalCommand(e);
+              }}
+              className="px-3 py-1 bg-[#0E1A3D] border border-[#3B5B75] text-gray-300 rounded text-xs hover:bg-[#3B5B75] transition-colors"
+            >
+              system info
+            </button>
+            <button
+              onClick={() => {
+                setTerminalCommand('help');
+                const e = { key: 'Enter' };
+                handleTerminalCommand(e);
+              }}
+              className="px-3 py-1 bg-[#0E1A3D] border border-[#3B5B75] text-gray-300 rounded text-xs hover:bg-[#3B5B75] transition-colors"
+            >
+              help
+            </button>
           </div>
         </div>
       </div>
