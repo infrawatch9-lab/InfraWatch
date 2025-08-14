@@ -231,7 +231,7 @@ export default function APIDashboard() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#0E1A3D]">
+    <div className="flex flex-col min-h-screen bg-[#081028]">
       {/* Topbar */}
       <TopBar />
       
@@ -250,15 +250,15 @@ export default function APIDashboard() {
           </div>
           
           <div className="flex items-center space-x-2">
-            <button className="px-3 py-1 bg-[#010E37] text-gray-300 rounded text-sm hover:bg-[#162050] transition-colors">New</button>
-            <button className="px-3 py-1 bg-[#010E37] text-gray-300 rounded text-sm hover:bg-[#162050] transition-colors">Show All</button>
-            <button className="px-3 py-1 bg-[#010E37] text-gray-300 rounded text-sm hover:bg-[#162050] transition-colors">Explorer</button>
+            <button className="px-3 py-1 bg-[#0B1440] text-gray-300 rounded text-sm hover:bg-[#162050] transition-colors">New</button>
+            <button className="px-3 py-1 bg-[#0B1440] text-gray-300 rounded text-sm hover:bg-[#162050] transition-colors">Show All</button>
+            <button className="px-3 py-1 bg-[#0B1440] text-gray-300 rounded text-sm hover:bg-[#162050] transition-colors">Explorer</button>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Main Chart */}
-          <div className="lg:col-span-2 bg-[#010E37] rounded-lg p-6 border border-[#3B5B75]">
+          <div className="lg:col-span-2 bg-[#0B1440] rounded-lg p-6 border border-[#3B5B75]">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-white">RESPONSE & ERRORS</h2>
               <div className="flex items-center space-x-4">
@@ -329,7 +329,7 @@ export default function APIDashboard() {
           {/* Sidebar Direita */}
           <div className="space-y-4">
             {/* HTTP Status Code */}
-            <div className="bg-[#010E37] p-6 rounded-lg shadow-lg border border-[#3B5B75]">
+            <div className="bg-[#0B1440] p-6 rounded-lg shadow-lg border border-[#3B5B75]">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-sm font-semibold text-white">HTTP status code</h3>
                 <span className="text-xs text-blue-400">últimos 24h</span>
@@ -357,7 +357,7 @@ export default function APIDashboard() {
             </div>
 
             {/* HTTP Methods */}
-            <div className="bg-[#010E37] p-6 rounded-lg shadow-lg border border-[#3B5B75]">
+            <div className="bg-[#0B1440] p-6 rounded-lg shadow-lg border border-[#3B5B75]">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-sm font-semibold text-white">HTTP Methods</h3>
                 <span className="text-xs text-blue-400">últimos 24h</span>
@@ -387,7 +387,7 @@ export default function APIDashboard() {
         </div>
 
         {/* API Logs Table */}
-        <div className="bg-[#010E37] rounded-lg p-6 mt-6 border border-[#3B5B75]">
+        <div className="bg-[#0B1440] rounded-lg p-6 mt-6 border border-[#3B5B75]">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-4">
               {/* Dropdown para selecionar coluna */}

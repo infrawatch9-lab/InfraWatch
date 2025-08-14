@@ -76,9 +76,4 @@ export default function Router() {
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/contact" element={<Contact />} />
-
-<<<<<<< HEAD
 */
-=======
-*/
->>>>>>> 959825ebbe9c2addcd91927b729b3d62fc93f921
