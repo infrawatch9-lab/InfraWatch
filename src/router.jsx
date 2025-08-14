@@ -1,7 +1,9 @@
+
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./login/Login";
 import Layout from "./admin_pages/Layout";
 import { HomepageAdmin } from './admin_pages/Homepage';
+//import DashboardAdmin from './admin_pages/Dashboard';
 import { AuthProvider } from "./components/AuthContext";
 import MonitorAdmin from './admin_pages/Monitor';
 import HistoryAdmin from './admin_pages/History';
@@ -10,10 +12,7 @@ import SettingsAdmin from './admin_pages/Settings';
 import ServersAdmin from './admin_pages/Relatorio_pages/Servers';
 import NetworksAdmin from './admin_pages/Relatorio_pages/Networks';
 import RolesAdmin from './admin_pages/Relatorio_pages/Roles';
-import WebhookDashboard from './admin_pages/Dashboards/DashboardWebhooks'
-import APIDashboard from './admin_pages/Dashboards/DashboardAPI'
-import NetworkDashboard from './admin_pages/Dashboards/DashboardNetworks'
-import ServerDashboard from './admin_pages/Dashboards/DashboardServers'
+import APIDashboard from './admin_pages/Dashboards/DashboardAPI';
 
 export default function Router() {
   return (
@@ -39,10 +38,7 @@ export default function Router() {
             <Route path="history_admin" element={<HistoryAdmin />}/>
             <Route path="users_admin" element={<UsersAdmin />}/>
             <Route path="settings_admin" element={<SettingsAdmin />}/>
-            <Route path="APIDashboard" element={<APIDashboard />} />
-            <Route path="ServerDashboard" element={<ServerDashboard />} />
-            <Route path="NetworkDashboard" element={<NetworkDashboard />} />
-            <Route path="WebhookDashboard" element={<WebhookDashboard />} />
+            <Route path="dashboard_api" element={<APIDashboard />}/>
           </Route>
         </Routes>
       </AuthProvider>
@@ -74,3 +70,4 @@ export default function Router() {
           <Route path="/contact" element={<Contact />} />
 
 */
+
