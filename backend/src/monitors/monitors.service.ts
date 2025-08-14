@@ -204,7 +204,6 @@ private async checkAlertRules(
 
           // Envia notificação
           await this.notificationsService.sendAlert(alert.message, "");
-
           this.logger.warn(
             `🚨 NOVO ALERTA para ${service.name}: ${alert.message}`,
           );
