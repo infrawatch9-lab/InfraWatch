@@ -33,12 +33,11 @@ export default function Router() {
             <Route path="servers_admin" element={<ServersAdmin />}/>
             <Route path="networks_admin" element={<NetworksAdmin />}/>
             <Route path="roles" element={<RolesAdmin />}/>
-            <Route path="api_dashboard" element={<APIDashboard />}/>
             <Route path="monitor_admin" element={<MonitorAdmin />}/>
             <Route path="history_admin" element={<HistoryAdmin />}/>
             <Route path="users_admin" element={<UsersAdmin />}/>
             <Route path="settings_admin" element={<SettingsAdmin />}/>
-            <Route path="dashboard_api" element={<DashboardAPI />}/>
+            <Route path="dashboard_api" element={<APIDashboard />}/>
           </Route>
         </Routes>
       </AuthProvider>

@@ -15,20 +15,10 @@ export default function APIDashboard() {
     // Main chart data
     const chartData = [
       { name: 'X0', response: 4.5, error: 1.2 },
-      { name: 'X1', response: 14.2, error: 1.8 },
+      { name: 'X1', response: 4.2, error: 1.8 },
       { name: 'X2', response: 3.8, error: 1.5 },
-      { name: 'X3', response: 24.1, error: 1.9 },
+      { name: 'X3', response: 4.1, error: 1.9 },
       { name: 'X4', response: 3.9, error: 1.4 },
-      { name: 'X5', response: 4.5, error: 1.2 },
-      { name: 'X6', response: 14.2, error: 1.8 },
-      { name: 'X7', response: 3.8, error: 1.5 },
-      { name: 'X8', response: 24.1, error: 1.9 },
-      { name: 'X9', response: 3.9, error: 1.4 },
-      { name: 'X10', response: 4.5, error: 1.2 },
-      { name: 'X11', response: 14.2, error: 1.8 },
-      { name: 'X12', response: 3.8, error: 1.5 },
-      { name: 'X13', response: 24.1, error: 1.9 },
-      { name: 'X14', response: 3.9, error: 1.4 },
     ];
 
     // HTTP Status codes data
@@ -259,15 +249,15 @@ export default function APIDashboard() {
           {/* Sidebar Direita */}
           <div className="space-y-4">
             {/* HTTP Status Code */}
-            <div className="bg-[#0B1440] p-6 rounded-lg shadow-lg">
-              <div className="flex items-center justify-between mb-6">
+            <div className="bg-[#0B1440] p-4 rounded-lg shadow-lg">
+              <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold text-white">HTTP status code</h3>
                 <span className="text-xs text-blue-400">últimos 24h</span>
               </div>
               
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {statusData.map((item) => (
-                  <div key={item.code} className="flex items-center justify-between py-2">
+                  <div key={item.code} className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <span className="text-sm font-mono text-gray-300">{item.code}</span>
                       <div className="w-24 h-2 bg-slate-700 rounded">
@@ -287,15 +277,15 @@ export default function APIDashboard() {
             </div>
 
             {/* HTTP Methods */}
-            <div className="bg-[#0B1440] p-6 rounded-lg shadow-lg">
-              <div className="flex items-center justify-between mb-6">
+            <div className="bg-[#0B1440] p-4 rounded-lg shadow-lg">
+              <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold text-white">HTTP Methods</h3>
                 <span className="text-xs text-blue-400">últimos 24h</span>
               </div>
               
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {methodData.map((item) => (
-                  <div key={item.method} className="flex items-center justify-between py-2">
+                  <div key={item.method} className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <span className="text-sm font-mono text-gray-300">{item.method}</span>
                       <div className="w-24 h-2 bg-slate-700 rounded">
@@ -317,7 +307,7 @@ export default function APIDashboard() {
         </div>
 
         {/* API Logs Table */}
-        <div className="bg-[#0B1440] rounded-lg p-6 mt-6">
+        <div className="bg-[#0B1440] rounded-lg p-6 mt-4">
           <div className="flex items-center justify-between mb-4">
             <button className="px-3 py-1 bg-[#162050] text-gray-300 rounded text-sm hover:bg-[#1a2456] transition-colors">
               Filter request, method
