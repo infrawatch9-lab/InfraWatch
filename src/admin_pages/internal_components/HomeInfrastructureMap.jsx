@@ -8,7 +8,7 @@ export default function InfrastructureMap() {
       </h2>
       
       {/* World Map Container */}
-      <div className="relative bg-[#1a2847] rounded-lg p-4 h-64 overflow-hidden">
+      <div className="relative bg-[#12255F] rounded-lg p-4 h-64 overflow-hidden">
         {/* Simplified World Map using CSS */}
         <div className="relative w-full h-full">
           {/* World map silhouette - simplified representation */}

@@ -45,7 +45,7 @@ export default function SystemOverview() {
   ];
 
   return (
-    <div className="bg-gradient-to-br from-[#0B1440] to-[#0F1937] p-6 rounded-xl shadow-2xl border border-slate-700/50 backdrop-blur-sm">
+    <div className="bg-[#0B1440] p-6 rounded-xl shadow-2xl border border-slate-700/50 backdrop-blur-sm">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold text-white flex items-center gap-3">
           <Activity className="w-6 h-6 text-blue-400" />
