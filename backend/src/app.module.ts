@@ -11,6 +11,7 @@ import { MonitorsModule } from './monitors_dois/monitor.module';
 import { DatabaseModule } from './database/database.module';
 import { SnmpModule } from './services/snmp/snmp.module';
 import { ServicesModule } from './services/services.module';
+import { SlaModule } from './sla/sla.module';
 import { DashboardModule } from './dashboards/dashboard.module';
 
 @Module({
@@ -24,6 +25,7 @@ import { DashboardModule } from './dashboards/dashboard.module';
     NotificationsModule,
     // MonitorsModule,
     ServicesModule,
+    SlaModule,
     // SnmpModule,
   ],
   controllers: [AppController, NotificationsController],
