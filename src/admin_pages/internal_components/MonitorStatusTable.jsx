@@ -18,7 +18,7 @@ export default function StatusTable({ data, searchTerm }) {
       {/* Table Header */}
       <div
         className="grid grid-cols-5 gap-4 p-4 border-b border-slate-600"
-        style={{ backgroundColor: "#020E36" }}
+        style={{ backgroundColor: "#0B1440" }}
       >
         <div className="text-white font-semibold text-sm">SLA</div>
         <div className="text-white font-semibold text-sm">LIMITE(META)</div>
@@ -33,9 +33,9 @@ export default function StatusTable({ data, searchTerm }) {
           <div
             key={index}
             className="grid grid-cols-5 gap-4 p-4 transition-colors cursor-pointer"
-            style={{ backgroundColor: "#020E36" }}
+            style={{ backgroundColor: "#0B1440" }}
             onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#06194d")}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#020E36")}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#0B1440")}
             onClick={() => onRowClick(item)}
           >
             <div className="text-slate-300 text-sm">{item.sla}</div>

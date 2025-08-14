@@ -8,7 +8,7 @@ import TopBar from '../components/Topbar';
 
 export function HomepageAdmin() {
   return (
-    <div className="flex flex-col min-h-screen bg-[#0B1A4E]">
+    <div className="flex flex-col min-h-screen bg-[#081028]">
       {/* Topbar */}
       <TopBar />
 
