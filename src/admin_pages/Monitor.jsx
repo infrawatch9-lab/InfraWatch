@@ -15,16 +15,16 @@ export default function MonitorAdmin() {
 
   // Dados simulados com serviços aleatórios
   const statusData = [
-    { sla: 'Tempo de Resposta', limite: 'Dois segundos', medido: 'Quatro segundos', status: 'Violado' },
-    { sla: 'Tempo de Resposta', limite: 'Dois segundos', medido: 'Quatro segundos', status: 'Violado' },
-    { sla: 'Tempo de Resposta', limite: 'Dois segundos', medido: 'Quatro segundos', status: 'Violado' },
-    { sla: 'Tempo de Resposta', limite: 'Dois segundos', medido: 'Quatro segundos', status: 'Violado' },
-    { sla: 'Tempo de Resposta', limite: 'Dois segundos', medido: 'Quatro segundos', status: 'Violado' },
-    { sla: 'Tempo de Resposta', limite: 'Dois segundos', medido: 'Quatro segundos', status: 'Violado' },
-    { sla: 'Tempo de Resposta', limite: 'Dois segundos', medido: 'Quatro segundos', status: 'Violado' },
-    { sla: 'Tempo de Resposta', limite: 'Dois segundos', medido: 'Quatro segundos', status: 'Violado' },
+    { sla: 'Tempo de Resposta', limite: 'Dois segundos', medido: 'Quatro segundos', status: 'Erro' },
+    { sla: 'Tempo de Resposta', limite: 'Dois segundos', medido: 'Quatro segundos', status: 'Erro' },
+    { sla: 'Tempo de Resposta', limite: 'Dois segundos', medido: 'Quatro segundos', status: 'Erro' },
+    { sla: 'Tempo de Resposta', limite: 'Dois segundos', medido: 'Quatro segundos', status: 'Erro' },
+    { sla: 'Tempo de Resposta', limite: 'Dois segundos', medido: 'Quatro segundos', status: 'Erro' },
+    { sla: 'Tempo de Resposta', limite: 'Dois segundos', medido: 'Quatro segundos', status: 'Erro' },
+    { sla: 'Tempo de Resposta', limite: 'Dois segundos', medido: 'Quatro segundos', status: 'Erro' },
+    { sla: 'Tempo de Resposta', limite: 'Dois segundos', medido: 'Quatro segundos', status: 'Erro' },
     { sla: 'Tempo de Resposta', limite: 'Dois segundos', medido: 'Dois vírgula zero um segundos', status: 'Em risco' },
-    { sla: 'Tempo de Resposta', limite: 'Dois segundos', medido: 'Quatro segundos', status: 'Violado' },
+    { sla: 'Tempo de Resposta', limite: 'Dois segundos', medido: 'Quatro segundos', status: 'Erro' },
     { sla: 'Uptime Mensal', limite: 'No mínimo 99,99%', medido: 'Disponibilidade garantida (>99,99%)', status: 'Cumprido' }
   ].map(item => ({
     ...item,

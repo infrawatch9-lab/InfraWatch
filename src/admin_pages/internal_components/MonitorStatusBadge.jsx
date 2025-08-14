@@ -3,7 +3,7 @@ import React from "react";
 export default function StatusBadge({ status }) {
   const getStatusConfig = (status) => {
     switch (status) {
-      case 'Violado':
+      case 'Erro':
         return { bg: 'bg-red-500', text: 'text-white', dot: 'bg-red-500' };
       case 'Em risco':
         return { bg: 'bg-yellow-500', text: 'text-white', dot: 'bg-yellow-500' };
