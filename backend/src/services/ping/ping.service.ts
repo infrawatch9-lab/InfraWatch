@@ -2,88 +2,110 @@ import {
   Injectable,
   Logger,
   NotFoundException,
-  BadRequestException,
 } from '@nestjs/common';
-import { exec } from 'child_process';
-import { promisify } from 'util';
 import { PrismaService } from '../../database/prisma.service';
-import { ServiceType, ServiceStatus, MonitoringMode } from '@prisma/client';
+import { ServiceType } from '@prisma/client';
 import {
   CreatePingServiceDto,
-  CreatePingConfigDto,
-  UpdatePingConfigDto,
-  PingServiceResponseDto,
-  PingTestDto,
-  PingTestResultDto,
-  PingHealthDto,
+  ResponseAllPingServicesDto,
 } from './ping.entity';
-
-const execAsync = promisify(exec);
+import { getDifferences } from './ping.utils';
+import { $Enums } from '@prisma/client';
+import { restartMonitor } from '../../monitors_dois/monitor.utils';
 
 @Injectable()
 export class PingService {
   private readonly logger = new Logger(PingService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+  ) {}
 
   async createPingService(
-    data: CreatePingServiceDto,
-  ): Promise<PingServiceResponseDto> {
+  data: CreatePingServiceDto,
+  ): Promise<any> {
     try {
       const teamId = data.teamId || 1;
-
-      const team = await this.prisma.team.findUnique({
-        where: { id: teamId },
+      
+        const checkIfServiceExists = await this.prisma.service.findFirst({
+        where: {
+          name: data.name,
+          type: ServiceType.PING,
+          teamId: teamId,
+        },
       });
 
-      if (!team) {
-        throw new NotFoundException('Equipe não encontrada');
+      if (checkIfServiceExists) {
+        this.logger.warn(`Service with name ${data.name} already exists for team ID ${teamId}`);
+        return { message: 'Service already exists' };
       }
 
       const result = await this.prisma.$transaction(async (prisma) => {
-        const service = await prisma.service.create({
-          data: {
-            name: data.name,
-            description: data.description || 'Serviço de ping',
-            type: ServiceType.SERVER,
-            teamId: teamId,
-          },
-        });
+      let team = await prisma.team.findUnique({ where: { id: teamId } });
 
-        await prisma.monitoringConfig.create({
-          data: {
-            serviceId: service.id,
-            frequency: data.pingConfig.frequency,
-            timeout: data.pingConfig.timeout,
-            webhookUrl: data.pingConfig.webhookUrl,
-          },
+      if (!team) {
+        team = await prisma.team.create({
+          data: { name: `Team ${teamId}` },
         });
+        this.logger.log(`Team created with ID: ${team.id}`);
+      }
 
-        const pingConfig = await prisma.pingConfig.create({
-          data: {
-            serviceId: service.id,
-            ipAddress: data.pingConfig.ipAddress,
-            packetSize: data.pingConfig.packetSize || 32,
-            ttl: data.pingConfig.ttl || 64,
-            monitoringMode: data.pingConfig.monitoringMode || 'agent',
-            cronExpression: data.pingConfig.cronExpression,
-            timezone: data.pingConfig.timezone,
-            startTime: data.pingConfig.startTime,
-            endTime: data.pingConfig.endTime,
-            agentVersion: data.pingConfig.agentVersion,
-            autoGenerate: data.pingConfig.autoGenerate,
-            interval:
-              data.pingConfig.interval || data.pingConfig.frequency || 60,
-            timeout: data.pingConfig.timeout || 5000,
-            retries: data.pingConfig.retries,
-            delay: data.pingConfig.delay,
-            alertAfterFailures: data.pingConfig.alertAfterFailures,
-            minAlertInterval: data.pingConfig.minAlertInterval,
-          },
-        });
-
-        return { service, pingConfig };
+      const service = await prisma.service.create({
+        data: {
+          name: data.name,
+          description: data.description,
+          type: ServiceType.PING,
+          teamId: team.id,
+        },
       });
+
+      // Se vieram emails para notificação
+      if (data.usersToNotify?.length) {
+        const users = await prisma.user.findMany({
+          where: { email: { in: data.usersToNotify } },
+          select: { id: true },
+        });
+
+        console.log(`Users found for notification: ${users.length}`);
+        if (users.length) {
+          await prisma.serviceUserNotification.createMany({
+            data: users.map(u => ({
+              serviceId: service.id,
+              userId: u.id,
+            })),
+          });
+        }
+      } else {
+        this.logger.warn('No emails provided for notification');
+      }
+
+      // 2. Criar MonitoringConfig
+      const monitoringConfig = await prisma.monitoringConfig.create({
+        data: {
+          serviceId: service.id,
+          interval: data.pingConfig.interval || 60,
+          timeout: data.pingConfig.timeout || 5000,
+          webhookUrl: data.pingConfig.webhookUrl,
+        },
+      });
+
+      // 3. Criar PingConfig
+      const pingConfig = await prisma.pingConfig.create({
+        data: {
+          monitoringId: monitoringConfig.id,
+          ipAddress: data.pingConfig.ipAddress,
+          packetSize: data.pingConfig.packetSize || 32,
+          ttl: data.pingConfig.ttl || 64,
+        },
+      });
+
+        return { service, monitoringConfig, pingConfig, usersToNotify: data.usersToNotify };
+      });
+
+      if (!result.service) {
+        this.logger.warn('Serviço não foi criado corretamente.');
+        return { message: 'Serviço não foi criado corretamente.' };
+      }
 
       this.logger.log(`Serviço de ping criado: ${result.service.name}`);
 
@@ -91,29 +113,19 @@ export class PingService {
         id: result.service.id,
         name: result.service.name,
         description: result.service.description,
-        endpoint: data.endpoint,
         status: result.service.status,
         teamId: result.service.teamId,
         createdAt: result.service.createdAt,
+        usersToNotify: result.usersToNotify,
         pingConfig: {
           id: result.pingConfig.id,
-          serviceId: result.pingConfig.serviceId,
+          serviceId: result.monitoringConfig.serviceId,
+          interval: result.monitoringConfig.interval,
+          timeout: result.monitoringConfig.timeout,
+          monitoringId: result.pingConfig.monitoringId,
           ipAddress: result.pingConfig.ipAddress,
           packetSize: result.pingConfig.packetSize || undefined,
           ttl: result.pingConfig.ttl || undefined,
-          monitoringMode: result.pingConfig.monitoringMode,
-          cronExpression: result.pingConfig.cronExpression || undefined,
-          timezone: result.pingConfig.timezone || undefined,
-          startTime: result.pingConfig.startTime || undefined,
-          endTime: result.pingConfig.endTime || undefined,
-          agentVersion: result.pingConfig.agentVersion || undefined,
-          autoGenerate: result.pingConfig.autoGenerate || undefined,
-          interval: result.pingConfig.interval,
-          timeout: result.pingConfig.timeout,
-          retries: result.pingConfig.retries || undefined,
-          delay: result.pingConfig.delay || undefined,
-          alertAfterFailures: result.pingConfig.alertAfterFailures || undefined,
-          minAlertInterval: result.pingConfig.minAlertInterval || undefined,
         },
       };
     } catch (error) {
@@ -122,16 +134,10 @@ export class PingService {
     }
   }
 
-  async getAllPingServices(): Promise<PingServiceResponseDto[]> {
+  async findAll(): Promise<any[]> {
     const services = await this.prisma.service.findMany({
       where: {
-        type: ServiceType.SERVER,
-        PingConfig: {
-          isNot: null,
-        },
-      },
-      include: {
-        PingConfig: true,
+        type: ServiceType.PING,
       },
     });
 
@@ -139,317 +145,175 @@ export class PingService {
       id: service.id,
       name: service.name,
       description: service.description,
-      endpoint: service.PingConfig?.ipAddress || '',
       status: service.status,
       teamId: service.teamId,
       createdAt: service.createdAt,
-      pingConfig: {
-        id: service.PingConfig!.id,
-        serviceId: service.PingConfig!.serviceId,
-        ipAddress: service.PingConfig!.ipAddress,
-        packetSize: service.PingConfig!.packetSize || undefined,
-        ttl: service.PingConfig!.ttl || undefined,
-        monitoringMode: service.PingConfig!.monitoringMode,
-        cronExpression: service.PingConfig!.cronExpression || undefined,
-        timezone: service.PingConfig!.timezone || undefined,
-        startTime: service.PingConfig!.startTime || undefined,
-        endTime: service.PingConfig!.endTime || undefined,
-        agentVersion: service.PingConfig!.agentVersion || undefined,
-        autoGenerate: service.PingConfig!.autoGenerate || undefined,
-        interval: service.PingConfig!.interval,
-        timeout: service.PingConfig!.timeout,
-        retries: service.PingConfig!.retries || undefined,
-        delay: service.PingConfig!.delay || undefined,
-        alertAfterFailures: service.PingConfig!.alertAfterFailures || undefined,
-        minAlertInterval: service.PingConfig!.minAlertInterval || undefined,
-      },
-    }));
+    } as ResponseAllPingServicesDto));
   }
 
-  async getPingServiceById(id: number): Promise<PingServiceResponseDto> {
+
+  async findOne(id: number): Promise<any> {
     const service = await this.prisma.service.findUnique({
       where: { id },
       include: {
-        PingConfig: true,
+        usersToNotify: {
+          include: {
+            User: true,
+          },
+        },
+        configs: {
+          include: {
+            PingConfig: true,
+            SnmpConfig: true,
+          },
+        },
+        rules: true,
+        alerts: true,
+        metrics: true,
+        slas: true,
+        logs: true,
+        Team: true,
       },
     });
 
-    if (!service || !service.PingConfig) {
+    if (!service) {
       throw new NotFoundException('Serviço de ping não encontrado');
     }
 
-    return {
-      id: service.id,
-      name: service.name,
-      description: service.description,
-      endpoint: service.PingConfig.ipAddress,
-      status: service.status,
-      teamId: service.teamId,
-      createdAt: service.createdAt,
-      pingConfig: {
-        id: service.PingConfig.id,
-        serviceId: service.PingConfig.serviceId,
-        ipAddress: service.PingConfig.ipAddress,
-        packetSize: service.PingConfig.packetSize || undefined,
-        ttl: service.PingConfig.ttl || undefined,
-        monitoringMode: service.PingConfig.monitoringMode,
-        cronExpression: service.PingConfig.cronExpression || undefined,
-        timezone: service.PingConfig.timezone || undefined,
-        startTime: service.PingConfig.startTime || undefined,
-        endTime: service.PingConfig.endTime || undefined,
-        agentVersion: service.PingConfig.agentVersion || undefined,
-        autoGenerate: service.PingConfig.autoGenerate || undefined,
-        interval: service.PingConfig.interval,
-        timeout: service.PingConfig.timeout,
-        retries: service.PingConfig.retries || undefined,
-        delay: service.PingConfig.delay || undefined,
-        alertAfterFailures: service.PingConfig.alertAfterFailures || undefined,
-        minAlertInterval: service.PingConfig.minAlertInterval || undefined,
-      },
-    };
+    return service;
   }
 
-  async updatePingConfig(
-    serviceId: number,
-    data: UpdatePingConfigDto,
-  ): Promise<PingServiceResponseDto> {
-    const existingService = await this.prisma.service.findUnique({
-      where: { id: serviceId },
-      include: { PingConfig: true },
-    });
+  async findOneEspecifico(
+    id: number,
+    includeRelations: string[] = [],
+    configType?: string // opcional, para definir o tipo da config
+  ): Promise<any> {
+    const include: Record<string, any> = {};
 
-    if (!existingService || !existingService.PingConfig) {
-      throw new NotFoundException('Serviço de ping não encontrado');
+    if (includeRelations.includes("usersToNotify")) {
+      include.usersToNotify = { include: { User: true } };
     }
 
-    const updatedConfig = await this.prisma.pingConfig.update({
-      where: { serviceId },
-      data: {
-        ...data,
-      },
-    });
+    if (includeRelations.includes("configs")) {
+      include.configs = configType
+        ? { include: { [configType]: true } } // ex: pingConfig
+        : true; // se não passar tipo, traz todos
+    }
 
-    return this.getPingServiceById(serviceId);
-  }
+    if (includeRelations.includes("rules")) include.rules = true;
+    if (includeRelations.includes("alerts")) include.alerts = true;
+    if (includeRelations.includes("metrics")) include.metrics = true;
+    if (includeRelations.includes("slas")) include.slas = true;
+    if (includeRelations.includes("logs")) include.logs = true;
+    if (includeRelations.includes("Team")) include.Team = true;
 
-  async deletePingService(id: number): Promise<void> {
     const service = await this.prisma.service.findUnique({
       where: { id },
-      include: { PingConfig: true },
+      include,
     });
 
-    if (!service || !service.PingConfig) {
+    if (!service) {
+      throw new NotFoundException('Serviço de ping não encontrado');
+    }
+
+    return service;
+  }
+
+  async update(
+    serviceId: number,
+    data: CreatePingServiceDto,
+  ): Promise<any> {
+    const existingService = await this.prisma.service.findUnique({
+      where: { id: serviceId },
+      include: { configs: true },
+    });
+
+    if (!existingService) {
+      throw new NotFoundException('Serviço de ping não encontrado');
+    }
+
+    const differences = getDifferences(existingService, data);
+    
+    console.log("Existente");
+    console.table(`{existingService: ${JSON.stringify(existingService)}, data: ${JSON.stringify(data)}}`);
+    
+    console.log("Actualizacoes");
+    console.table(`Differences: ${JSON.stringify(data)}`);
+    if (differences.length === 0) {
+      this.logger.log('Nenhuma diferença encontrada.');
+      return existingService;
+    }
+
+    this.logger.log(`Diferenças encontradas: ${differences.join(', ')}`);
+
+    // Atualiza Service, MonitoringConfig e PingConfig separadamente
+    const updatedService = await this.prisma.service.update({
+      where: { id: serviceId },
+      data: {
+        name: data.name,
+        description: data.description,
+        type: $Enums.ServiceType.PING,
+        teamId: data.teamId,
+      },
+    });
+
+    // Atualiza MonitoringConfig relacionado ao serviço
+    const monitoringConfig = await this.prisma.monitoringConfig.findFirst({
+      where: { serviceId: serviceId },
+    });
+
+    if (monitoringConfig && data.pingConfig) {
+      await this.prisma.monitoringConfig.update({
+        where: { id: monitoringConfig.id },
+        data: {
+          interval: data.pingConfig.interval,
+          timeout: data.pingConfig.timeout,
+          webhookUrl: data.pingConfig.webhookUrl,
+        },
+      });
+
+      // Atualiza PingConfig relacionado ao MonitoringConfig
+      await this.prisma.pingConfig.updateMany({
+        where: { monitoringId: monitoringConfig.id },
+        data: {
+          ipAddress: data.pingConfig.ipAddress,
+          packetSize: data.pingConfig.packetSize,
+          ttl: data.pingConfig.ttl,
+        },
+      });
+    }
+
+    // Retorna o serviço atualizado (pode ser expandido para incluir configs se necessário)
+    return updatedService;
+  }
+
+  async remove(id: number): Promise<any> {
+    const service = await this.prisma.service.findUnique({
+      where: { id },
+    });
+
+    if (!service) {
       throw new NotFoundException('Serviço de ping não encontrado');
     }
 
     await this.prisma.$transaction(async (prisma) => {
-      await prisma.pingConfig.delete({
-        where: { serviceId: id },
-      });
+      const result = await prisma.service.delete({ where: { id } });
 
-      await prisma.monitoringConfig.deleteMany({
-        where: { serviceId: id },
-      });
-
-      await prisma.service.delete({
-        where: { id },
-      });
-    });
-
-    this.logger.log(`Serviço de ping deletado: ${service.name}`);
-  }
-
-  async testConnectivity(data: PingTestDto): Promise<PingTestResultDto> {
-    const startTime = Date.now();
-
-    try {
-      const command = this.buildPingCommand(
-        data.hostname,
-        data.timeout || 5000,
-      );
-      const { stdout } = await execAsync(command);
-      const latency = this.extractLatency(stdout);
-
-      return {
-        success: true,
-        latency: latency || undefined,
-        hostname: data.hostname,
-        timestamp: new Date(),
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-        hostname: data.hostname,
-        timestamp: new Date(),
-      };
-    }
-  }
-
-  async executePing(service: any, config: any): Promise<PingHealthDto> {
-    const startTime = Date.now();
-
-    try {
-      const hostname = this.extractHostname(
-        config.ipAddress || service.endpoint,
-      );
-
-      this.logger.debug(
-        `Fazendo ping para ${hostname} (serviço: ${service.name})`,
-      );
-
-      const command = this.buildPingCommand(hostname, config.timeout || 5000);
-      const { stdout } = await execAsync(command);
-
-      const latency = this.extractLatency(stdout);
-
-      this.logger.log(`✅ Ping OK para ${service.name}: ${latency}ms`);
-
-      return {
-        serviceId: service.id,
-        status: ServiceStatus.UP,
-        latency: latency || Date.now() - startTime,
-        timestamp: new Date(),
-        metrics: {
-          pingLatency: latency || undefined,
-          hostname: hostname,
-        },
-      };
-    } catch (error) {
-      const latency = Date.now() - startTime;
-      const errMessage = error instanceof Error ? error.message : String(error);
-      this.logger.error(`❌ Ping falhou para ${service.name} (${errMessage})`);
-
-      return {
-        serviceId: service.id,
-        status: ServiceStatus.DOWN,
-        latency,
-        errorMessage: errMessage,
-        timestamp: new Date(),
-        metrics: {
-          hostname: this.extractHostname(config.ipAddress || service.endpoint),
-          errorCode:
-            typeof error === 'object' && error !== null && 'code' in error
-              ? (error as any).code
-              : undefined,
-        },
-      };
-    }
-  }
-
-  private buildPingCommand(hostname: string, timeout: number): string {
-    const timeoutSeconds = Math.ceil(timeout / 1000);
-
-    if (process.platform === 'win32') {
-      return `ping -n 1 -w ${timeout} ${hostname}`;
-    } else {
-      return `ping -c 1 -W ${timeoutSeconds} ${hostname}`;
-    }
-  }
-
-  private extractHostname(endpoint: string): string {
-    try {
-      const cleanEndpoint = endpoint.replace(/^https?:\/\//, '');
-      const hostname = cleanEndpoint.split(':')[0];
-      return hostname.split('/')[0];
-    } catch {
-      return endpoint;
-    }
-  }
-
-  private extractLatency(pingOutput: string): number | null {
-    const unixMatch = pingOutput.match(/time[<=](\d+\.?\d*)/);
-    if (unixMatch) {
-      return parseFloat(unixMatch[1]);
-    }
-
-    const windowsMatch = pingOutput.match(/Average = (\d+)ms/);
-    if (windowsMatch) {
-      return parseInt(windowsMatch[1], 10);
-    }
-
-    const timeMatch = pingOutput.match(/(\d+\.?\d*)\s*ms/);
-    if (timeMatch) {
-      return parseFloat(timeMatch[1]);
-    }
-
-    return null;
-  }
-
-  async create(data: CreatePingServiceDto): Promise<PingServiceResponseDto> {
-    return this.createPingService(data);
-  }
-
-  async findAll(): Promise<PingServiceResponseDto[]> {
-    return this.getAllPingServices();
-  }
-
-  async findOne(id: number): Promise<PingServiceResponseDto> {
-    return this.getPingServiceById(id);
-  }
-
-  async update(
-    id: number,
-    data: UpdatePingConfigDto,
-  ): Promise<PingServiceResponseDto> {
-    return this.updatePingConfig(id, data);
-  }
-
-  async remove(id: number): Promise<void> {
-    return this.deletePingService(id);
-  }
-
-  async removeAll(): Promise<void> {
-    try {
-      const pingServices = await this.prisma.service.findMany({
-        where: {
-          type: ServiceType.SERVER,
-          PingConfig: {
-            isNot: null,
-          },
-        },
-        select: { id: true, name: true },
-      });
-
-      if (pingServices.length === 0) {
-        this.logger.log('Nenhum serviço de ping encontrado para remoção');
-        return;
+      if (!result) {
+        throw new NotFoundException('Serviço de ping não encontrado');
       }
-
-      await this.prisma.$transaction(async (prisma) => {
-        const serviceIds = pingServices.map((s) => s.id);
-
-        await prisma.pingConfig.deleteMany({
-          where: { serviceId: { in: serviceIds } },
-        });
-
-        await prisma.monitoringConfig.deleteMany({
-          where: { serviceId: { in: serviceIds } },
-        });
-
-        await prisma.metric.deleteMany({
-          where: { serviceId: { in: serviceIds } },
-        });
-
-        await prisma.alert.deleteMany({
-          where: { serviceId: { in: serviceIds } },
-        });
-
-        await prisma.alertRule.deleteMany({
-          where: { serviceId: { in: serviceIds } },
-        });
-
-        await prisma.service.deleteMany({
-          where: { id: { in: serviceIds } },
-        });
-      });
-
-      this.logger.log(
-        `${pingServices.length} serviços de ping removidos com sucesso`,
-      );
-    } catch (error) {
-      this.logger.error('Erro ao remover todos os serviços de ping:', error);
-      throw error;
-    }
+    });
+      return { message: 'Serviço de ping removido com sucesso' };
   }
+
+  async removeAll(): Promise<any> {
+    const result = await this.prisma.service.deleteMany({ where: { type: ServiceType.PING } });
+
+    if (result.count === 0) {
+      throw new NotFoundException('Nenhum serviço de ping encontrado para remover');
+    }
+
+    return { message: 'Todos os serviços de ping foram removidos com sucesso' };
+  }
+
 }

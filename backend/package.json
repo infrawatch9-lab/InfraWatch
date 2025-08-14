@@ -20,6 +20,7 @@
     "@types/node": "^24.2.0",
     "@types/nodemailer": "^6.4.17",
     "@types/passport": "^1.0.17",
+    "@types/ping": "^0.4.4",
     "@types/supertest": "^6.0.3",
     "jest": "^30.0.5",
     "prisma": "^6.13.0",
@@ -52,6 +53,7 @@
     "nodemailer": "^7.0.5",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
+    "ping": "^0.4.4",
     "reflect-metadata": "^0.2.2",
     "rimraf": "^6.0.1",
     "swagger-ui-express": "^5.0.1"

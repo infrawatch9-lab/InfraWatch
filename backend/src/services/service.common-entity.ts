@@ -1,9 +1,10 @@
 import { ServiceType, ServiceStatus, MonitoringMode } from '@prisma/client';
+import { $Enums } from '@prisma/client';
 
 export interface BaseServiceDto {
   name: string;
   description?: string;
-  type: ServiceType;
+  type: $Enums.ServiceType;
   teamId: number;
 }
 
@@ -11,8 +12,8 @@ export interface ServiceResponseDto {
   id: number;
   name: string;
   description: string;
-  type: ServiceType;
-  status: ServiceStatus;
+  type: $Enums.ServiceType;
+  status: $Enums.ServiceStatus;
   teamId: number;
   createdAt: Date;
 }
@@ -36,8 +37,8 @@ export interface ServiceWithConfig {
   id: number;
   name: string;
   description: string;
-  type: ServiceType;
-  status: ServiceStatus;
+  type: $Enums.ServiceType;
+  status: $Enums.ServiceStatus;
   teamId: number;
   createdAt: Date;
   configs: any[];
