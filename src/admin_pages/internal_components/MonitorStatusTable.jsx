@@ -1,7 +1,7 @@
 import React from "react";
 import StatusBadge from "./MonitorStatusBadge";
 
-export default function StatusTable({ data, searchTerm }) {
+export default function StatusTable({ data, searchTerm, onRowClick }) {
   const filteredData = data.filter(item =>
     item.sla.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.limite.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -36,7 +36,7 @@ export default function StatusTable({ data, searchTerm }) {
             style={{ backgroundColor: "#0B1440" }}
             onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#06194d")}
             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#0B1440")}
-            onClick={() => onRowClick(item)}
+            onClick={() => onRowClick && onRowClick(item)}
           >
             <div className="text-slate-300 text-sm">{item.sla}</div>
             <div className="text-slate-300 text-sm">{item.limite}</div>

@@ -34,16 +34,16 @@ export default function MonitorAdmin() {
   const handleRowClick = (item) => {
     switch (item.servico) {
       case "APIs":
-        navigate("APIDashboard");
+        navigate("/admin/dashboard_api_admin");
         break;
       case "Servidores":
-        navigate("ServerDashboard");
+        navigate("/admin/dashboard_servers_admin");
         break;
       case "Redes":
-        navigate("NetworkDashboard");
+        navigate("/admin/dashboard_networks_admin");
         break;
       case "Web hooks":
-        navigate("WebhookDashboard");
+        navigate("/admin/dashboard_webhooks_admin");
         break;
       default:
         break;
