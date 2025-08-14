@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function ServersAdmin() {
+export default function ServersReport() {
     return (
       <div >
         <h1 className="text-2xl font-bold">Servers</h1>

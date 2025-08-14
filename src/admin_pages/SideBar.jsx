@@ -25,10 +25,10 @@ export default function Sidebar() {
         <SidebarItem icon={<BarChart size={20} />} label="Monitoramento" badge="1" isOpen={isOpen} to="/admin/monitor_admin"/>
         <SidebarItemWithSubmenu icon={<FolderOpen size={20} />} label="Relatórios" isOpen={isOpen}
           subItems={[
-            { label: 'Servidores', to: "servers_admin" },
-            { label: 'Redes', to: "networks_admin" },
-            { label: 'Web hooks', to: "roles" },
-            { label: 'APIs', to: "dashboard_api" },
+            { label: 'Servidores', to: "reports_servers_admin" },
+            { label: 'Redes', to: "reports_networks_admin" },
+            { label: 'Web hooks', to: "reports_webhooks_admin" },
+            { label: 'APIs', to: "reports_api_admin" },
           ]}
         />
         <SidebarItem icon={<History size={20} />} label="Histórico" isOpen={isOpen} to="/admin/history_admin"/>
