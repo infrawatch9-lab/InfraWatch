@@ -21,9 +21,10 @@ export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
   @Get('send-alert')
+  @Public()
   async sendAlert() {
     const message = 'Alerta de teste enviado!';
-    await this.notificationsService.sendAlert(message);
+    await this.notificationsService.sendAlert(message, 'gkombadev@gmail.com');
     return { success: true, message: 'Alertas enviados com sucesso!' };
   }
 

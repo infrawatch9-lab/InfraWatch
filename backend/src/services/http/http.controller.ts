@@ -7,15 +7,11 @@ import {
   Body,
   Param,
   ParseIntPipe,
-  HttpStatus,
   Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { HttpService } from './http.service';
 import {
-  CreateHttpServiceDto,
-  UpdateHttpConfigDto,
-  HttpServiceResponseDto,
   CreateHttpDto,
   UpdateHttpDto,
 } from './http.entity';
