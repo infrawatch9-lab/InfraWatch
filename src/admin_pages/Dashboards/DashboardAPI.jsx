@@ -9,6 +9,9 @@ export default function APIDashboard() {
   const [statusData, setStatusData] = useState([]);
   const [methodData, setMethodData] = useState([]);
   const [apiLogs, setApiLogs] = useState([]);
+  const [filteredLogs, setFilteredLogs] = useState([]);
+  const [filterColumn, setFilterColumn] = useState('all');
+  const [filterValue, setFilterValue] = useState('');
 
   // Simulated data - replace with real API calls
   useEffect(() => {
@@ -63,7 +66,33 @@ export default function APIDashboard() {
     setStatusData(statusCodes);
     setMethodData(methods);
     setApiLogs(logs);
+    setFilteredLogs(logs);
   }, [timeFilter]);
+
+  // Filtrar logs baseado no filtro selecionado
+  useEffect(() => {
+    if (filterColumn === 'all' || filterValue === '') {
+      setFilteredLogs(apiLogs);
+    } else {
+      const filtered = apiLogs.filter(log => {
+        switch (filterColumn) {
+          case 'method':
+            return log.method.toLowerCase().includes(filterValue.toLowerCase());
+          case 'endpoint':
+            return log.endpoint.toLowerCase().includes(filterValue.toLowerCase());
+          case 'status':
+            return log.status.toLowerCase().includes(filterValue.toLowerCase());
+          case 'timestamp':
+            return log.timestamp.toLowerCase().includes(filterValue.toLowerCase());
+          case 'responseTime':
+            return log.responseTime.toLowerCase().includes(filterValue.toLowerCase());
+          default:
+            return true;
+        }
+      });
+      setFilteredLogs(filtered);
+    }
+  }, [apiLogs, filterColumn, filterValue]);
 
   const getStatusColor = (status) => {
     if (status.includes('200')) return 'text-green-400';
@@ -319,9 +348,46 @@ export default function APIDashboard() {
         {/* API Logs Table */}
         <div className="bg-[#0B1440] rounded-lg p-6 mt-6">
           <div className="flex items-center justify-between mb-4">
-            <button className="px-3 py-1 bg-[#162050] text-gray-300 rounded text-sm hover:bg-[#1a2456] transition-colors">
-              Filter request, method
-            </button>
+            <div className="flex items-center space-x-4">
+              {/* Dropdown para selecionar coluna */}
+              <select 
+                className="bg-[#162050] border border-slate-700 rounded px-3 py-1 text-sm text-gray-300"
+                value={filterColumn}
+                onChange={(e) => setFilterColumn(e.target.value)}
+              >
+                <option value="all">Filtrar por...</option>
+                <option value="method">Method</option>
+                <option value="endpoint">Endpoint</option>
+                <option value="status">Status</option>
+                <option value="timestamp">Timestamp</option>
+                <option value="responseTime">Response Time</option>
+              </select>
+              
+              {/* Input para valor do filtro */}
+              {filterColumn !== 'all' && (
+                <input
+                  type="text"
+                  placeholder={`Filtrar por ${filterColumn}...`}
+                  className="bg-[#162050] border border-slate-700 rounded px-3 py-1 text-sm text-gray-300 placeholder-gray-500"
+                  value={filterValue}
+                  onChange={(e) => setFilterValue(e.target.value)}
+                />
+              )}
+              
+              {/* Botão para limpar filtros */}
+              {(filterColumn !== 'all' || filterValue !== '') && (
+                <button 
+                  onClick={() => {
+                    setFilterColumn('all');
+                    setFilterValue('');
+                  }}
+                  className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors"
+                >
+                  Limpar
+                </button>
+              )}
+            </div>
+            
             <button className="px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 transition-colors">
               Analisar
             </button>
@@ -339,7 +405,7 @@ export default function APIDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {apiLogs.map((log, index) => (
+                {filteredLogs.map((log, index) => (
                   <tr key={index} className="border-b border-slate-700 hover:bg-slate-800/30 transition-colors">
                     <td className="py-2 text-gray-300">{log.timestamp}</td>
                     <td className="py-2">
@@ -352,6 +418,13 @@ export default function APIDashboard() {
                     <td className="py-2 text-gray-300">{log.responseTime}</td>
                   </tr>
                 ))}
+                {filteredLogs.length === 0 && (
+                  <tr>
+                    <td colSpan="5" className="py-4 text-center text-gray-500">
+                      Nenhum resultado encontrado para o filtro aplicado
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
