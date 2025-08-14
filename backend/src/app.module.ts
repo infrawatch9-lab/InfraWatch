@@ -24,7 +24,7 @@ import { DashboardModule } from './dashboards/dashboard.module';
     NotificationsModule,
     MonitorsModule,
     ServicesModule,
-    SnmpModule,
+    // SnmpModule,
   ],
   controllers: [AppController, NotificationsController],
 })
