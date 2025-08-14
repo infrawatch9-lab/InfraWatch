@@ -70,3 +70,7 @@ export default function Router() {
           <Route path="/contact" element={<Contact />} />
 
 */
+<<<<<<< HEAD
+=======
+
+>>>>>>> a44389d7655f5b2092f028c2703b9e6abf3d6510

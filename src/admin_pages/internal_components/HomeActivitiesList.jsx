@@ -95,7 +95,7 @@ export default function ActivitiesList() {
   };
 
   return (
-    <div className="bg-gradient-to-br from-[#0B1440] to-[#0F1937] p-6 rounded-xl shadow-2xl border border-slate-700/50 backdrop-blur-sm">
+    <div className="bg-[#0B1440] p-6 rounded-xl shadow-2xl border border-slate-700/50 backdrop-blur-sm">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
