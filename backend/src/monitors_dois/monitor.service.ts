@@ -43,21 +43,45 @@ export class MonitorsService implements OnModuleInit {
   private async initializeMonitors() {
       const services = await this.prisma.service.findMany({
         where: { status: { not: ServiceStatus.PAUSED } },
-        include: { configs: true },
+        include: { 
+          configs: {
+            include: {
+              PingConfig: true,
+              SnmpConfig: true,
+            }
+          }
+        },
       });
 
+      this.logger.log(`🔍 Found ${services.length} services to monitor`);
+
       for (const service of services) {
+        this.logger.log(`📋 Processing service: ${service.name} (${service.type})`);
+        this.logger.log(`⚙️ Service configs: ${JSON.stringify(service.configs, null, 2)}`);
+        
         const handler = this.handlers[service.type];
-        if (handler) startMonitor(service, handler);
+        if (handler) {
+          startMonitor(service, handler);
+        } else {
+          this.logger.warn(`⚠️ No handler found for service type: ${service.type}`);
+        }
       }
     }
 
     public restartMonitorById(serviceId: number) {
       return this.prisma.service.findUnique({
         where: { id: serviceId },
-        include: { configs: true },
+        include: { 
+          configs: {
+            include: {
+              PingConfig: true,
+              SnmpConfig: true,
+            }
+          }
+        },
       }).then(service => {
         if (service) {
+          this.logger.log(`🔄 Restarting monitor for service: ${service.name}`);
           const handler = this.handlers[service.type];
           if (handler) restartMonitor(service, handler);
         }

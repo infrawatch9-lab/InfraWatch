@@ -29,11 +29,11 @@ export class PingHandler {
 
     this.logger.log(`Iniciando monitoramento PING para ${fullService.name} (${pingCfg.ipAddress})`);
 
- 
+    // Executa o primeiro ping imediatamente
+    await this.runPing(fullService.name, pingCfg.ipAddress);
 
-    setInterval(async () => {
-      await this.runPing(fullService.name, pingCfg.ipAddress);
-    }, pingCfg.interval * 1000);
+    // O setInterval será gerenciado pelo monitor.utils.ts, não aqui
+    // Removendo o setInterval duplicado
   }
 
   private async runPing(name: string, ip: string) {

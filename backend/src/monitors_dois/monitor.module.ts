@@ -9,7 +9,7 @@ import { ServicesModule } from '../services/services.module';
 
 @Module({
   imports: [
-    ServicesModule
+    forwardRef(() => ServicesModule)
   ],
   providers: [
     PrismaService,
@@ -19,6 +19,6 @@ import { ServicesModule } from '../services/services.module';
     SnmpHandler,
     WebhookHandler,
   ],
-  exports: [MonitorsService],
+  exports: [MonitorsService, PingHandler, HttpHandler, SnmpHandler, WebhookHandler],
 })
 export class MonitorsModule {}

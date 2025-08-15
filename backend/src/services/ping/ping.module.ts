@@ -9,4 +9,5 @@ import { DatabaseModule } from '../../database/database.module';
   providers: [PingService],
   exports: [PingService],
 })
+
 export class PingModule {}

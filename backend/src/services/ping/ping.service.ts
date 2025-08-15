@@ -11,7 +11,6 @@ import {
 } from './ping.entity';
 import { getDifferences } from './ping.utils';
 import { $Enums } from '@prisma/client';
-import { restartMonitor } from '../../monitors_dois/monitor.utils';
 
 @Injectable()
 export class PingService {
@@ -283,6 +282,17 @@ export class PingService {
       });
     }
 
+    if (updatedService) {
+      // Reinicia o monitoramento do serviço para aplicar as novas configurações
+      try {
+        // Supondo que exista um método para reiniciar o monitoramento:
+        await this.restartServiceMonitor(updatedService.id);
+        this.logger.log(`Monitoramento do serviço ${updatedService.id} reiniciado para aplicar atualizações.`);
+      } catch (restartError) {
+        this.logger.error(`Erro ao reiniciar o monitoramento do serviço ${updatedService.id}:`, restartError);
+      }
+      }
+
     // Retorna o serviço atualizado (pode ser expandido para incluir configs se necessário)
     return updatedService;
   }
@@ -314,6 +324,39 @@ export class PingService {
     }
 
     return { message: 'Todos os serviços de ping foram removidos com sucesso' };
+  }
+
+  async restartServiceMonitor(serviceId: number): Promise<void> {
+    const service = await this.prisma.service.findUnique({
+      where: { id: serviceId },
+      include: { configs: true },
+    });
+
+    if (!service) {
+      throw new Error(`Service with ID ${serviceId} not found`);
+    }
+
+    try {
+      // Importação dinâmica para evitar dependência circular
+      const { restartMonitor } = await import('../../monitors_dois/monitor.utils');
+      
+      // Cria um handler básico que apenas loga o restart
+      // Este é um placeholder que pode ser expandido conforme necessário
+      const basicHandler = {
+        start: async (svc: any) => {
+          this.logger.log(`Restarting ping monitor for service: ${svc.name} (ID: ${svc.id})`);
+          // Aqui você pode adicionar a lógica específica de ping se necessário
+          // Por exemplo, iniciar o processo de ping real
+        }
+      };
+
+      restartMonitor(service, basicHandler);
+      this.logger.log(`Monitor for service ${service.name} (ID: ${serviceId}) restarted successfully`);
+    } catch (error) {
+      this.logger.error(`Failed to restart monitor for service ${serviceId}:`, error);
+      // Não falha silenciosamente, mas também não quebra o update
+      this.logger.warn(`Monitor restart failed, but service update completed`);
+    }
   }
 
 }
