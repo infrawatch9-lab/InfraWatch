@@ -55,6 +55,8 @@ model Service {
   rules       AlertRule[]        @relation("ServiceToAlertRules")
   configs     MonitoringConfig[] 
   slas        SLA[]
+  Team        Team               @relation(fields: [teamId], references: [id])
+  SnmpConfig  SnmpConfig?
   usersToNotify ServiceUserNotification[]
   metrics     Metric[]
   logs        SystemLog[]
@@ -199,6 +201,37 @@ enum SnmpVersion {
   v3
 }
 
+model SnmpConfig {
+  id                     Int            @id @default(autoincrement())
+  serviceId              Int            @unique
+  host                   String
+  version                SnmpVersion
+  community              String?
+  username               String?
+  authProtocol           String?
+  authPassword           String?
+  privProtocol           String?
+  privPassword           String?
+  oid                    String
+  monitoringMode         MonitoringMode
+  cronExpression         String?
+  timezone               String?
+  agentVersion           String?
+  autoGenerate           Boolean?
+  interval               Int
+  timeout                Int
+  retries                Int?
+  delay                  Int?
+  alertAfterFailures     Int?
+  minAlertInterval       Int?
+  expectedResponseTimeMs Int?
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime
+  Service                Service        @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@index([serviceId])
+}
+
 enum Role {
   ADMIN
   USER
@@ -287,3 +320,12 @@ enum MonitoringMode {
   agent
   both
 }
+
+enum SnmpVersion {
+  v1
+  v2c
+  v3
+}
+
+}
+
