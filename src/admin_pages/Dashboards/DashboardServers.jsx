@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from 'react-i18next';
 
 // componentes internos
 import HeaderActions from "./dashboards_components/ServerHeaderActions";
@@ -8,6 +9,7 @@ import HttpMethodsCard from "./dashboards_components/ServerHttpMethodsCard";
 import InteractiveTerminal from "./dashboards_components/ServerInteractiveTerminal";
 
 export default function ServerDashboard() {
+  const { t } = useTranslation();
   const [timeFilter, setTimeFilter] = useState("Week");
   const [chartType, setChartType] = useState("line"); // 'line' | 'area' | 'bar'
   const [data, setData] = useState([]);

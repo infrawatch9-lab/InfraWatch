@@ -1,6 +1,7 @@
 import Sidebar from './SideBar';
 import { Outlet } from 'react-router-dom';
 import { SidebarProvider, useSidebar } from '../contexts/SidebarContext';
+import { useTranslation } from 'react-i18next';
 
 function LayoutContent() {
   const { isOpen } = useSidebar();
@@ -21,6 +22,7 @@ function LayoutContent() {
 }
 
 export default function Layout() {
+  const { t } = useTranslation();
   return (
     <SidebarProvider>
       <LayoutContent />

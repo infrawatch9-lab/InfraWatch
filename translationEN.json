@@ -1,16 +1,180 @@
-en: {
-        translation: {
-          welcome: "Welcome",
-          description: "This is a multilingual app",
-          button: {
-            change_language: "Change Language",
-            save: "Save",
-            cancel: "Cancel"
-          },
-          navigation: {
-            home: "Home",
-            about: "About",
-            contact: "Contact"
-          }
-        }
-      },
+{
+  "welcome": "Welcome",
+  "description": "This is a multilingual app",
+  "button": {
+    "change_language": "Change Language",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "navigation": {
+    "home": "Home",
+    "about": "About",
+    "contact": "Contact"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "webhooks_title": "WebHooks",
+    "webhooks_content": "Webhooks dashboard content here...",
+    "networks_title": "Networks",
+    "networks_content": "Networks dashboard content here..."
+  },
+  "resource_chart": {
+    "all_services": "All services",
+    "uptime_history": "Uptime and Downtime history",
+    "week": "Week",
+    "last_update": "Last update 2 minutes ago",
+    "avg_uptime": "Average uptime:",
+    "status": "Status:",
+    "operational": "Operational",
+    "database_service": "Database Service",
+    "api_gateway": "API Gateway",
+    "web_server": "Web Server",
+    "cache_service": "Cache Service"
+  },
+  "infrastructure_map": {
+    "title": "Infrastructure Distribution",
+    "servers": "Servers",
+    "networks": "Networks",
+    "failures": "Failures"
+  },
+  "server": {
+    "all_api_services": "All API services",
+    "new": "New",
+    "show_all": "Show All",
+    "explorer": "Explorer",
+    "http_methods": "HTTP Methods",
+    "last_24h": "last 24h",
+    "http_status_code": "HTTP status code",
+    "response": "Response",
+    "error": "Error",
+    "terminal": {
+      "service_restarted": "[INFO] Service 'nginx' restarted successfully.",
+      "high_cpu": "[WARN] High CPU usage detected: 87%.",
+      "elasticsearch_failed": "[ERROR] Elasticsearch connection failed: timeout reached.",
+      "backup_completed": "[INFO] Backup completed in 3.24s.",
+      "mysql_query": "[INFO] MySQL query executed: SELECT COUNT(*) FROM users;",
+      "services_status": "services status",
+      "logs_all": "logs all",
+      "help": "help",
+      "clear": "clear",
+      "system_info": "system info",
+      "available_commands": "Available commands:",
+      "cmd_services_status": "- services status    Show all services status",
+      "cmd_logs_all": "- logs all          Show recent logs",
+      "cmd_clear": "- clear             Clear terminal",
+      "cmd_system_info": "- system info       Show system information",
+      "cmd_restart": "- restart <service> Restart a service"
+    }
+  },
+  "api": {
+    "all_api_services": "All API services",
+    "new": "New",
+    "show_all": "Show All",
+    "explorer": "Explorer",
+    "http_methods": "HTTP Methods",
+    "last_24h": "last 24h",
+    "http_status_code": "HTTP status code",
+    "response": "Response",
+    "error": "Error",
+    "logs": {
+      "filter_by": "Filter by...",
+      "method": "Method",
+      "endpoint": "Endpoint",
+      "status": "Status",
+      "timestamp": "Timestamp",
+      "response_time": "Response Time",
+      "clear": "Clear",
+      "analyze": "Analyze",
+      "no_results": "No results found"
+    },
+    "chart": {
+      "response_errors": "RESPONSE & ERRORS"
+    }
+  },
+  "internal": {
+    "incident": "Incidents",
+    "critical": "Critical",
+    "incident_history": "Incident History",
+    "all": "All",
+    "escalar": "Escalate",
+    "analyze": "Analyze",
+    "sla": "SLA",
+    "limit": "LIMIT (GOAL)",
+    "measured": "MEASURED (ACTUAL)",
+    "status": "STATUS",
+    "service": "SERVICE",
+    "none": "-"
+  },
+  "status_badge": {
+    "error": "Error",
+    "at_risk": "At risk",
+    "fulfilled": "Fulfilled"
+  },
+  "system_overview": {
+    "title": "System Overview",
+    "services_failed": "Services Failed",
+    "active_alerts": "Active Alerts",
+    "availability": "Availability",
+    "increased": "Increased",
+    "decreased": "Decreased",
+    "last_24h": "in the last 24h",
+    "general_status": "System General Status",
+    "operational": "Operational"
+  },
+  "activities": {
+    "cpu_limit_updated": "CPU usage limit updated",
+    "now": "Just now",
+    "auth_service_restarted": "Authentication service restarted",
+    "minutes_ago": "{{count}} minutes ago",
+    "bug_reported": "Bug reported in log system",
+    "hours_ago": "{{count}} hours ago",
+    "data_modified": "Data modified on page {{page}}",
+    "today_time": "Today, {{time}}",
+    "page_deleted": "Page deleted in project {{project}}",
+    "date": "{{date}}",
+    "backup_completed": "Automatic backup completed",
+    "one_hour_ago": "1 hour ago",
+    "recent_activities": "Recent Activities",
+    "last_updates": "Last system updates",
+    "realtime": "Realtime",
+    "all": "All",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low",
+    "new_badge": "NEW",
+    "recent_badge": "RECENT",
+    "load_more": "Load more activities ({{count}} left)",
+    "footer_count": "{{count}} activit{{count !== 1 ? 'y' : 'ies'}}",
+    "see_all": "See all"
+  },
+  "monitor": {
+    "title": "Monitoring",
+    "subtitle": "Web Services Status",
+    "servers": "Servers",
+    "apis": "APIs",
+    "networks": "Networks",
+    "webhooks": "Web hooks",
+    "response_time": "Response Time",
+    "two_seconds": "Two seconds",
+    "four_seconds": "Four seconds",
+    "two_point_zero_one_seconds": "Two point zero one seconds",
+    "monthly_uptime": "Monthly Uptime",
+    "min_9999": "At least 99.99%",
+    "uptime_guaranteed": "Guaranteed availability (>99.99%)"
+  },
+  "sidebar": {
+    "brand": "InfraWatch",
+    "homepage": "Homepage",
+    "monitoring": "Monitoring",
+    "reports": "Reports",
+    "servers": "Servers",
+    "networks": "Networks",
+    "webhooks": "Webhooks",
+    "apis": "APIs",
+    "history": "History",
+    "users": "Users",
+    "settings": "Settings",
+    "dark_mode": "Dark mode",
+    "logout": "Logout"
+  }
+}

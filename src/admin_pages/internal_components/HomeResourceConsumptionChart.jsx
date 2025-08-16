@@ -1,6 +1,7 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Server, Activity, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const data = [
   { month: 'Jan', service1: 45, service2: 25, service3: 65, service4: 35 },
@@ -11,15 +12,15 @@ const data = [
   { month: 'Jun', service1: 65, service2: 45, service3: 75, service4: 85 }
 ];
 
-const services = [
-  { key: 'service1', label: 'Database Service', color: '#06B6D4', visible: true },
-  { key: 'service2', label: 'API Gateway', color: '#F59E0B', visible: true },
-  { key: 'service3', label: 'Web Server', color: '#10B981', visible: true },
-  { key: 'service4', label: 'Cache Service', color: '#8B5CF6', visible: true }
-];
-
 export default function ResourceConsumptionChart() {
-  const [selectedPeriod, setSelectedPeriod] = useState('Week');
+  const { t, i18n } = useTranslation();
+  const services = [
+    { key: 'service1', label: t('resource_chart.database_service'), color: '#06B6D4', visible: true },
+    { key: 'service2', label: t('resource_chart.api_gateway'), color: '#F59E0B', visible: true },
+    { key: 'service3', label: t('resource_chart.web_server'), color: '#10B981', visible: true },
+    { key: 'service4', label: t('resource_chart.cache_service'), color: '#8B5CF6', visible: true }
+  ];
+  const [selectedPeriod, setSelectedPeriod] = useState(t('resource_chart.week'));
   const [serviceVisibility, setServiceVisibility] = useState(
     services.reduce((acc, service) => ({ ...acc, [service.key]: true }), {})
   );
@@ -58,10 +59,10 @@ export default function ResourceConsumptionChart() {
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 text-gray-300">
             <button className="flex items-center gap-2 px-4 py-2 bg-[#162050] rounded-lg text-sm font-medium border border-slate-600/50 hover:bg-[#1a2456] transition-colors">
-              All services
+              {t('resource_chart.all_services')}
             </button>
             <span className="text-gray-500">|</span>
-            <span className="text-sm">Uptime and Downtime history</span>
+            <span className="text-sm">{t('resource_chart.uptime_history')}</span>
           </div>
         </div>
 
@@ -156,16 +157,16 @@ export default function ResourceConsumptionChart() {
         <div className="flex flex-col sm:flex-row justify-between items-center mt-4 pt-4 border-t border-slate-700/50 gap-4">
           <div className="flex items-center gap-2 text-gray-400 text-sm">
             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span>Última atualização há 2 minutos</span>
+            <span>{t('resource_chart.last_update')}</span>
           </div>
           <div className="flex items-center gap-6 text-sm">
             <div className="flex items-center gap-2">
-              <span className="text-gray-400">Uptime médio:</span>
+              <span className="text-gray-400">{t('resource_chart.avg_uptime')}</span>
               <span className="text-green-400 font-medium">96.8%</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-gray-400">Status:</span>
-              <span className="text-green-400 font-medium">Operational</span>
+              <span className="text-gray-400">{t('resource_chart.status')}</span>
+              <span className="text-green-400 font-medium">{t('resource_chart.operational')}</span>
             </div>
           </div>
         </div>

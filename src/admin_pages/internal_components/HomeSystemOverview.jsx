@@ -1,10 +1,12 @@
 import { Server, AlertTriangle, CheckCircle2, TrendingUp, Activity } from "lucide-react";
+import { useTranslation } from 'react-i18next';
 
 export default function SystemOverview() {
+  const { t } = useTranslation();
   const systemStats = [
     {
       id: 1,
-      label: "Serviços em Falha",
+      label: t("system_overview.services_failed"),
       value: "6",
       total: "10",
       percentage: 60,
@@ -17,7 +19,7 @@ export default function SystemOverview() {
     },
     {
       id: 2,
-      label: "Alertas Ativos",
+      label: t("system_overview.active_alerts"),
       value: "112",
       total: "203",
       percentage: 55,
@@ -30,7 +32,7 @@ export default function SystemOverview() {
     },
     {
       id: 3,
-      label: "Disponibilidade",
+      label: t("system_overview.availability"),
       value: "97",
       total: "100",
       percentage: 97,
@@ -49,7 +51,7 @@ export default function SystemOverview() {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold text-white flex items-center gap-3">
           <Activity className="w-6 h-6 text-blue-400" />
-          Visão Geral dos Sistemas
+          {t("system_overview.title")}
         </h2>
         <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
       </div>
@@ -69,7 +71,7 @@ export default function SystemOverview() {
                     <div className="flex items-center gap-2 mt-1">
                       <TrendingUp className={`w-3 h-3 ${stat.trend === 'up' ? 'text-green-400' : 'text-red-400'} ${stat.trend === 'down' ? 'rotate-180' : ''}`} />
                       <span className="text-xs text-gray-400">
-                        {stat.trend === 'up' ? 'Aumentou' : 'Diminuiu'} nas últimas 24h
+                        {stat.trend === 'up' ? t('system_overview.increased') : t('system_overview.decreased')} {t('system_overview.last_24h')}
                       </span>
                     </div>
                   </div>
@@ -106,10 +108,10 @@ export default function SystemOverview() {
       {/* Status geral */}
       <div className="mt-6 pt-4 border-t border-slate-700/50">
         <div className="flex items-center justify-between">
-          <span className="text-gray-400 text-sm">Status Geral do Sistema</span>
+          <span className="text-gray-400 text-sm">{t('system_overview.general_status')}</span>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="text-green-400 font-semibold text-sm">Operacional</span>
+            <span className="text-green-400 font-semibold text-sm">{t('system_overview.operational')}</span>
           </div>
         </div>
       </div>

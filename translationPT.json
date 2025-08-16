@@ -1,16 +1,180 @@
-pt: {
-        translation: {
-          welcome: "Bem-vindo",
-          description: "Este é um aplicativo multilíngue",
-          button: {
-            change_language: "Mudar Idioma",
-            save: "Salvar",
-            cancel: "Cancelar"
-          },
-          navigation: {
-            home: "Início",
-            about: "Sobre",
-            contact: "Contato"
-          }
-        }
-      },
+{
+  "welcome": "Bem-vindo",
+  "description": "Este é um aplicativo multilíngue",
+  "button": {
+    "change_language": "Mudar Idioma",
+    "save": "Salvar",
+    "cancel": "Cancelar"
+  },
+  "navigation": {
+    "home": "Início",
+    "about": "Sobre",
+    "contact": "Contato"
+  },
+  "dashboard": {
+    "title": "Painel de Controle",
+    "webhooks_title": "WebHooks",
+    "webhooks_content": "Conteúdo dos webhooks dashboards aqui...",
+    "networks_title": "Redes",
+    "networks_content": "Conteúdo das net dashboards aqui..."
+  },
+  "resource_chart": {
+    "all_services": "Todos os serviços",
+    "uptime_history": "Histórico de Uptime e Downtime",
+    "week": "Semana",
+    "last_update": "Última atualização há 2 minutos",
+    "avg_uptime": "Uptime médio:",
+    "status": "Status:",
+    "operational": "Operacional",
+    "database_service": "Banco de Dados",
+    "api_gateway": "API Gateway",
+    "web_server": "Servidor Web",
+    "cache_service": "Cache Service"
+  },
+  "infrastructure_map": {
+    "title": "Distribuição da Infraestrutura",
+    "servers": "Servidores",
+    "networks": "Redes",
+    "failures": "Falhas"
+  },
+  "server": {
+    "all_api_services": "Todos os serviços de API",
+    "new": "Novo",
+    "show_all": "Mostrar todos",
+    "explorer": "Explorador",
+    "http_methods": "Métodos HTTP",
+    "last_24h": "últimos 24h",
+    "http_status_code": "Código de status HTTP",
+    "response": "Resposta",
+    "error": "Erro",
+    "terminal": {
+      "service_restarted": "[INFO] Serviço 'nginx' reiniciado com sucesso.",
+      "high_cpu": "[WARN] Uso de CPU alto detectado: 87%.",
+      "elasticsearch_failed": "[ERROR] Falha na conexão com Elasticsearch: tempo esgotado.",
+      "backup_completed": "[INFO] Backup concluído em 3.24s.",
+      "mysql_query": "[INFO] Consulta MySQL executada: SELECT COUNT(*) FROM users;",
+      "services_status": "status dos serviços",
+      "logs_all": "todos os logs",
+      "help": "ajuda",
+      "clear": "limpar",
+      "system_info": "informações do sistema",
+      "available_commands": "Comandos disponíveis:",
+      "cmd_services_status": "- status dos serviços    Mostra o status de todos os serviços",
+      "cmd_logs_all": "- todos os logs          Mostra logs recentes",
+      "cmd_clear": "- limpar                 Limpa o terminal",
+      "cmd_system_info": "- informações do sistema Mostra informações do sistema",
+      "cmd_restart": "- reiniciar <serviço>    Reinicia um serviço"
+    }
+  },
+  "api": {
+    "all_api_services": "Todos os serviços de API",
+    "new": "Novo",
+    "show_all": "Mostrar todos",
+    "explorer": "Explorador",
+    "http_methods": "Métodos HTTP",
+    "last_24h": "últimos 24h",
+    "http_status_code": "Código de status HTTP",
+    "response": "Resposta",
+    "error": "Erro",
+    "logs": {
+      "filter_by": "Filtrar por...",
+      "method": "Método",
+      "endpoint": "Endpoint",
+      "status": "Status",
+      "timestamp": "Data/Hora",
+      "response_time": "Tempo de resposta",
+      "clear": "Limpar",
+      "analyze": "Analisar",
+      "no_results": "Nenhum resultado encontrado"
+    },
+    "chart": {
+      "response_errors": "RESPOSTA & ERROS"
+    }
+  },
+  "internal": {
+    "incident": "Incidentes",
+    "critical": "Críticos",
+    "incident_history": "Histórico de Incidentes",
+    "all": "Al",
+    "escalar": "Escalar",
+    "analyze": "Analisar",
+    "sla": "SLA",
+    "limit": "LIMITE(META)",
+    "measured": "MEDIDO(REAL)",
+    "status": "STATUS",
+    "service": "SERVIÇO",
+    "none": "-"
+  },
+  "status_badge": {
+    "error": "Erro",
+    "at_risk": "Em risco",
+    "fulfilled": "Cumprido"
+  },
+  "system_overview": {
+    "title": "Visão Geral dos Sistemas",
+    "services_failed": "Serviços em Falha",
+    "active_alerts": "Alertas Ativos",
+    "availability": "Disponibilidade",
+    "increased": "Aumentou",
+    "decreased": "Diminuiu",
+    "last_24h": "nas últimas 24h",
+    "general_status": "Status Geral do Sistema",
+    "operational": "Operacional"
+  },
+  "activities": {
+    "cpu_limit_updated": "Limite de uso de CPU atualizado",
+    "now": "Agora mesmo",
+    "auth_service_restarted": "Serviço de autenticação reiniciado",
+    "minutes_ago": "{{count}} minutos atrás",
+    "bug_reported": "Bug reportado no sistema de logs",
+    "hours_ago": "{{count}} horas atrás",
+    "data_modified": "Dados modificados na página {{page}}",
+    "today_time": "Hoje, {{time}}",
+    "page_deleted": "Página deletada no projeto {{project}}",
+    "date": "{{date}}",
+    "backup_completed": "Backup automático concluído",
+    "one_hour_ago": "1 hora atrás",
+    "recent_activities": "Atividades Recentes",
+    "last_updates": "Últimas atualizações do sistema",
+    "realtime": "Tempo real",
+    "all": "Todas",
+    "high": "Alta",
+    "medium": "Média",
+    "low": "Baixa",
+    "new_badge": "NOVO",
+    "recent_badge": "RECENTE",
+    "load_more": "Carregar mais atividades ({{count}} restantes)",
+    "footer_count": "{{count}} atividade{{count !== 1 ? 's' : ''}}",
+    "see_all": "Ver todas"
+  },
+  "monitor": {
+    "title": "Monitoramento",
+    "subtitle": "Status dos Serviços Web",
+    "servers": "Servidores",
+    "apis": "APIs",
+    "networks": "Redes",
+    "webhooks": "Web hooks",
+    "response_time": "Tempo de Resposta",
+    "two_seconds": "Dois segundos",
+    "four_seconds": "Quatro segundos",
+    "two_point_zero_one_seconds": "Dois vírgula zero um segundos",
+    "monthly_uptime": "Uptime Mensal",
+    "min_9999": "No mínimo 99,99%",
+    "uptime_guaranteed": "Disponibilidade garantida (>99,99%)"
+  },
+  "sidebar": {
+    "brand": "InfraWatch",
+    "homepage": "Início",
+    "monitoring": "Monitoramento",
+    "reports": "Relatórios",
+    "servers": "Servidores",
+    "networks": "Redes",
+    "webhooks": "Webhooks",
+    "apis": "APIs",
+    "history": "Histórico",
+    "users": "Usuários",
+    "settings": "Configurações",
+    "dark_mode": "Modo escuro",
+    "logout": "Sair"
+  }
+}

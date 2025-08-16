@@ -1,10 +1,12 @@
 import { useState } from "react";
 import {
-  UserPlus, UserCog, Mail, BadgeCheck, Ban, X,
+  UserCog, UserPlus, BadgeCheck, Ban, X,
 } from "lucide-react";
 import { Dialog } from "@headlessui/react";
+import { useTranslation } from 'react-i18next';
 
 export default function Users() {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [users, setUsers] = useState([
@@ -55,18 +57,17 @@ export default function Users() {
 
   return (
     <div className="pt-24 pb-10 px-6 max-w-7xl mx-auto">
-
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
           <UserCog className="text-blue-600 w-8 h-8" />
-          <h1 className="text-2xl font-bold text-gray-800">Gestão de Usuários</h1>
+          <h1 className="text-2xl font-bold text-gray-800">{t('users.title')}</h1>
         </div>
         <button
           onClick={openAddModal}
           className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition"
         >
           <UserPlus className="w-5 h-5" />
-          Adicionar Usuário
+          {t('users.add')}
         </button>
       </div>
 
@@ -74,11 +75,11 @@ export default function Users() {
         <table className="min-w-full table-auto text-left text-sm">
           <thead className="bg-blue-600 text-white">
             <tr>
-              <th className="px-6 py-3">Nome</th>
-              <th className="px-6 py-3">E-mail</th>
-              <th className="px-6 py-3">Função</th>
-              <th className="px-6 py-3">Status</th>
-              <th className="px-6 py-3 text-right">Ações</th>
+              <th className="px-6 py-3">{t('users.name')}</th>
+              <th className="px-6 py-3">{t('users.email')}</th>
+              <th className="px-6 py-3">{t('users.role')}</th>
+              <th className="px-6 py-3">{t('users.status')}</th>
+              <th className="px-6 py-3 text-right">{t('users.actions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -88,13 +89,13 @@ export default function Users() {
                 <td className="px-6 py-4 text-gray-600">{user.email}</td>
                 <td className="px-6 py-4">{user.role}</td>
                 <td className="px-6 py-4">
-                  {user.status === "Ativo" ? (
+                  {user.status === t('users.active') ? (
                     <span className="inline-flex items-center gap-1 text-green-600 font-medium">
-                      <BadgeCheck className="w-4 h-4" /> Ativo
+                      <BadgeCheck className="w-4 h-4" /> {t('users.active')}
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 text-red-600 font-medium">
-                      <Ban className="w-4 h-4" /> Inativo
+                      <Ban className="w-4 h-4" /> {t('users.inactive')}
                     </span>
                   )}
                 </td>
@@ -103,10 +104,10 @@ export default function Users() {
                     onClick={() => openEditModal(user)}
                     className="text-blue-600 hover:underline font-medium"
                   >
-                    Editar
+                    {t('users.edit')}
                   </button>
                   <button className="text-red-600 hover:underline font-medium">
-                    {user.status === "Ativo" ? "Desativar" : "Ativar"}
+                    {user.status === t('users.active') ? t('users.deactivate') : t('users.activate')}
                   </button>
                 </td>
               </tr>
@@ -121,7 +122,7 @@ export default function Users() {
           <Dialog.Panel className="bg-white w-full max-w-lg rounded-xl shadow-lg p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-gray-800">
-                {editingUser ? "Editar Usuário" : "Novo Usuário"}
+                {editingUser ? t('users.edit_user') : t('users.new_user')}
               </h2>
               <button onClick={() => setIsOpen(false)}>
                 <X className="w-5 h-5 text-gray-600 hover:text-gray-800" />
@@ -134,7 +135,7 @@ export default function Users() {
                   type="submit"
                   className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg transition"
                 >
-                  {editingUser ? "Salvar Alterações" : "Adicionar"}
+                  {editingUser ? t('users.save_changes') : t('users.add')}
                 </button>
               </div>
             </form>

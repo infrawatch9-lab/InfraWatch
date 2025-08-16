@@ -1,13 +1,15 @@
 import React from "react";
+import { useTranslation } from 'react-i18next';
 
 export default function StatusBadge({ status }) {
+  const { t } = useTranslation();
   const getStatusConfig = (status) => {
     switch (status) {
-      case 'Erro':
+      case t('status_badge.error'):
         return { bg: 'bg-red-500', text: 'text-white', dot: 'bg-red-500' };
-      case 'Em risco':
+      case t('status_badge.at_risk'):
         return { bg: 'bg-yellow-500', text: 'text-white', dot: 'bg-yellow-500' };
-      case 'Cumprido':
+      case t('status_badge.fulfilled'):
         return { bg: 'bg-green-500', text: 'text-white', dot: 'bg-green-500' };
       default:
         return { bg: 'bg-gray-500', text: 'text-white', dot: 'bg-gray-500' };

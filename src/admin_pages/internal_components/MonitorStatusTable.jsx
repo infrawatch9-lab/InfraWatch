@@ -1,7 +1,9 @@
 import React from "react";
 import StatusBadge from "./MonitorStatusBadge";
+import { useTranslation } from 'react-i18next';
 
 export default function StatusTable({ data, searchTerm, onRowClick }) {
+  const { t } = useTranslation();
   const filteredData = data.filter(item =>
     item.sla.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.limite.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -20,11 +22,11 @@ export default function StatusTable({ data, searchTerm, onRowClick }) {
         className="grid grid-cols-5 gap-4 p-4 border-b border-slate-600"
         style={{ backgroundColor: "#0B1440" }}
       >
-        <div className="text-white font-semibold text-sm">SLA</div>
-        <div className="text-white font-semibold text-sm">LIMITE(META)</div>
-        <div className="text-white font-semibold text-sm">MEDIDO(REAL)</div>
-        <div className="text-white font-semibold text-sm">STATUS</div>
-        <div className="text-white font-semibold text-sm">SERVIÇO</div>
+        <div className="text-white font-semibold text-sm">{t('internal.sla')}</div>
+        <div className="text-white font-semibold text-sm">{t('internal.limit')}</div>
+        <div className="text-white font-semibold text-sm">{t('internal.measured')}</div>
+        <div className="text-white font-semibold text-sm">{t('internal.status')}</div>
+        <div className="text-white font-semibold text-sm">{t('internal.service')}</div>
       </div>
 
       {/* Table Body */}
@@ -44,7 +46,7 @@ export default function StatusTable({ data, searchTerm, onRowClick }) {
             <div className="flex items-center">
               <StatusBadge status={item.status} />
             </div>
-            <div className="text-slate-300 text-sm">{item.servico || "-"}</div>
+            <div className="text-slate-300 text-sm">{item.servico || t('internal.none')}</div>
           </div>
         ))}
       </div>

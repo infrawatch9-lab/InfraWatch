@@ -1,10 +1,12 @@
 import { MapPin } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export default function InfrastructureMap() {
+  const { t } = useTranslation();
   return (
     <div className="bg-[#0B1440] p-4 rounded-lg shadow-lg">
       <h2 className="text-white font-semibold text-sm mb-4 uppercase tracking-wide">
-        DISTRIBUIÇÃO DA INFRAESTRUTURA
+        {t('infrastructure_map.title')}
       </h2>
       
       {/* World Map Container */}
@@ -83,15 +85,15 @@ export default function InfrastructureMap() {
       <div className="mt-4 flex justify-center gap-6 text-xs">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-          <span className="text-gray-400 uppercase">SERVIDORES</span>
+          <span className="text-gray-400 uppercase">{t('infrastructure_map.servers')}</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-          <span className="text-gray-400 uppercase">REDES</span>
+          <span className="text-gray-400 uppercase">{t('infrastructure_map.networks')}</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-          <span className="text-gray-400 uppercase">FALHAS</span>
+          <span className="text-gray-400 uppercase">{t('infrastructure_map.failures')}</span>
         </div>
       </div>
     </div>

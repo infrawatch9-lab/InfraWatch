@@ -1,6 +1,8 @@
 import { Bell, HelpCircle, Search } from "lucide-react";
+import { useTranslation } from 'react-i18next';
 
 export default function TopBar() {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center justify-between w-full p-4 bg-[#0B1440]">
       
@@ -9,7 +11,7 @@ export default function TopBar() {
         <Search className="text-gray-500 w-5 h-5 mr-2" />
         <input
           type="text"
-          placeholder="Pesquisar..."
+          placeholder={t('navigation.search') || 'Pesquisar...'}
           className="flex-1 outline-none text-gray-700"
         />
       </div>

@@ -1,20 +1,22 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export default function InteractiveTerminal({ className = "" }) {
+  const { t } = useTranslation();
   const [terminalCommand, setTerminalCommand] = useState("");
   const [terminalOutput, setTerminalOutput] = useState([]);
   const [terminalHistory, setTerminalHistory] = useState([]);
 
   useEffect(() => {
     const initialTerminalOutput = [
-      { type: "info", text: "[2025-08-14 14:03:11] [INFO] Service 'nginx' restarted successfully." },
-      { type: "warn", text: "[2025-08-14 14:03:15] [WARN] High CPU usage detected: 87%." },
-      { type: "error", text: "[2025-08-14 14:03:22] [ERROR] Elasticsearch connection failed: timeout reached." },
-      { type: "info", text: "[2025-08-14 14:03:31] [INFO] Backup completed in 3.24s." },
-      { type: "info", text: "[2025-08-14 14:03:42] [INFO] MySQL query executed: SELECT COUNT(*) FROM users;" },
+      { type: "info", text: t('server.terminal.service_restarted') },
+      { type: "warn", text: t('server.terminal.high_cpu') },
+      { type: "error", text: t('server.terminal.elasticsearch_failed') },
+      { type: "info", text: t('server.terminal.backup_completed') },
+      { type: "info", text: t('server.terminal.mysql_query') },
     ];
     setTerminalOutput(initialTerminalOutput);
-  }, []);
+  }, [t]);
 
   const handleTerminalCommand = (e) => {
     if (e.key === "Enter" && terminalCommand.trim()) {
@@ -27,7 +29,7 @@ export default function InteractiveTerminal({ className = "" }) {
 
       let response = "";
       switch (command.toLowerCase()) {
-        case "services status":
+        case t('server.terminal.services_status'):
           response = `+-------------------------+----------+----------+----------+
 | name                    | port     | host     | status   |
 +-------------------------+----------+----------+----------+
@@ -40,24 +42,24 @@ export default function InteractiveTerminal({ className = "" }) {
 | ftp                     | 21       | 127.0.0.1| inactive |
 +-------------------------+----------+----------+----------+`;
           break;
-        case "logs all":
+        case t('server.terminal.logs_all'):
           response = `[${timestamp}] [INFO] System monitoring active
 [${timestamp}] [WARN] Disk usage at 78%
 [${timestamp}] [INFO] API endpoint /health responded in 120ms`;
           break;
-        case "help":
-          response = `Available commands:
-- services status    Show all services status
-- logs all          Show recent logs
-- clear             Clear terminal
-- system info       Show system information
-- restart <service> Restart a service`;
+        case t('server.terminal.help'):
+          response = `${t('server.terminal.available_commands')}
+- ${t('server.terminal.cmd_services_status')}
+- ${t('server.terminal.cmd_logs_all')}
+- ${t('server.terminal.cmd_clear')}
+- ${t('server.terminal.cmd_system_info')}
+- ${t('server.terminal.cmd_restart')}`;
           break;
-        case "clear":
+        case t('server.terminal.clear'):
           setTerminalOutput([]);
           setTerminalCommand("");
           return;
-        case "system info":
+        case t('server.terminal.system_info'):
           response = `System Information:
 OS: Ubuntu 20.04 LTS
 CPU: Intel i7-8700K @ 3.70GHz
@@ -66,13 +68,7 @@ Disk: 512GB SSD (389GB free)
 Uptime: 2 days, 14 hours, 23 minutes`;
           break;
         default:
-          if (command.startsWith("restart ")) {
-            const service = command.split(" ")[1];
-            response = `[${timestamp}] [INFO] Restarting service '${service}'...
-[${timestamp}] [INFO] Service '${service}' restarted successfully.`;
-          } else {
-            response = `bash: ${command}: command not found. Type 'help' for available commands.`;
-          }
+          response = `bash: ${command}: command not found. Type 'help' for available commands.`;
       }
 
       const responseOutput = { type: "output", text: response };
@@ -158,10 +154,10 @@ Uptime: 2 days, 14 hours, 23 minutes`;
       {/* Quick Commands */}
       <div className="mt-4 flex flex-wrap gap-2">
         {[
-          "services status",
-          "logs all",
-          "system info",
-          "help",
+          t('server.terminal.services_status'),
+          t('server.terminal.logs_all'),
+          t('server.terminal.system_info'),
+          t('server.terminal.help'),
         ].map((cmd) => (
           <button
             key={cmd}

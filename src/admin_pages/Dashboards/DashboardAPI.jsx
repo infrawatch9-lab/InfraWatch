@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from 'react-i18next';
 import TopBar from "../../components/Topbar";
 import ChartSection from "./dashboards_components/APIChartSection";
 import StatusCard from "./dashboards_components/APIStatusCard";
@@ -7,6 +8,7 @@ import LogsTable from "./dashboards_components/APILogsTable";
 import HeaderActions from "./dashboards_components/APIHeaderActions";
 
 export default function APIDashboard() {
+  const { t } = useTranslation();
   const [timeFilter, setTimeFilter] = useState("Week");
   const [chartType, setChartType] = useState("line");
   const [data, setData] = useState([]);

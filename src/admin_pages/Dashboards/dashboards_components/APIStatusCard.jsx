@@ -1,11 +1,13 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 export default function StatusCard({ statusData }) {
+  const { t } = useTranslation();
   return (
     <div className="bg-[#0B1440] p-6 rounded-lg shadow-lg border border-[#3B5B75]">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-sm font-semibold text-white">HTTP status code</h3>
-        <span className="text-xs text-blue-400">últimos 24h</span>
+        <h3 className="text-sm font-semibold text-white">{t('api.http_status_code')}</h3>
+        <span className="text-xs text-blue-400">{t('api.last_24h')}</span>
       </div>
       <div className="space-y-4">
         {statusData.map(item => (

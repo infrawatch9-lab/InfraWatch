@@ -1,4 +1,5 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { useTranslation } from 'react-i18next';
 
 // Dados baseados na imagem fornecida - padrão mais realista
 const incidentData = [
@@ -17,6 +18,7 @@ const incidentData = [
 ];
 
 export default function IncidentHistoryChart() {
+  const { t } = useTranslation();
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
@@ -28,7 +30,7 @@ export default function IncidentHistoryChart() {
                 className="w-3 h-3 rounded-full" 
                 style={{ backgroundColor: entry.color }}
               />
-              <span className="text-gray-300">{entry.dataKey === 'blue' ? 'Incidentes' : 'Críticos'}:</span>
+              <span className="text-gray-300">{entry.dataKey === 'blue' ? t('internal.incident') : t('internal.critical')}:</span>
               <span className="font-medium text-white">{entry.value}</span>
             </div>
           ))}
@@ -42,16 +44,16 @@ export default function IncidentHistoryChart() {
     <div className="bg-[#0B1440] p-4 rounded-lg shadow-lg">
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-white font-semibold text-sm">Histórico de Incidentes</h2>
+        <h2 className="text-white font-semibold text-sm">{t('internal.incident_history')}</h2>
         <div className="flex gap-2 text-xs items-center">
           <button className="bg-[#162050] text-gray-300 px-3 py-1 rounded text-xs hover:bg-[#1a2456] hover:text-white transition-colors">
-            Al
+            {t('internal.all')}
           </button>
           <button className="bg-[#162050] text-gray-300 px-3 py-1 rounded text-xs hover:bg-[#1a2456] hover:text-white transition-colors">
-            Escalar
+            {t('internal.escalar')}
           </button>
           <button className="bg-[#162050] text-gray-300 px-3 py-1 rounded text-xs hover:bg-[#1a2456] hover:text-white transition-colors">
-            Analisar
+            {t('internal.analyze')}
           </button>
           <button className="text-gray-400 hover:text-white transition-colors text-lg leading-none">⋯</button>
         </div>

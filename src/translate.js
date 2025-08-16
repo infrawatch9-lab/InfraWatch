@@ -4,33 +4,23 @@ import translationEN from '../translationEN.json';
 import translationPT from '../translationPT.json';
 
 const resources = {
-  en: {
-    translation: translationEN,
-  },
-  pt: {
-    translation: translationPT,
-  },
+  en: { translation: translationEN },
+  pt: { translation: translationPT },
 };
 
 i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: 'pt', // Idioma padrão
+    lng: localStorage.getItem('i18nextLng') || 'pt', // idioma padrão salvo
+    fallbackLng: 'en',
     interpolation: {
-      escapeValue: false, // React já escapa
+      escapeValue: false,
+    },
+    detection: {
+      order: ['localStorage', 'navigator'],
+      caches: ['localStorage'],
     },
   });
 
 export default i18n;
-
-// MyComponent.jsx
-import { useTranslation } from 'react-i18next';
-
-function MyComponent() {
-  const { t } = useTranslation();
-
-  return (
-    <h1>{t('greeting')}</h1>
-  );
-}

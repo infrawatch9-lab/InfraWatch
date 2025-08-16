@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   LineChart,
   Line,
@@ -21,6 +22,7 @@ export default function ResponseErrorsCard({
   timeFilter,
   setTimeFilter,
 }) {
+  const { t } = useTranslation();
   const Chart = () => {
     switch (chartType) {
       case "area":
@@ -45,7 +47,7 @@ export default function ResponseErrorsCard({
                 stroke="#60A5FA"
                 fill="#60A5FA"
                 fillOpacity={0.6}
-                name="Response"
+                name={t('server.response')}
               />
               <Area
                 type="monotone"
@@ -54,7 +56,7 @@ export default function ResponseErrorsCard({
                 stroke="#34D399"
                 fill="#34D399"
                 fillOpacity={0.6}
-                name="Error"
+                name={t('server.error')}
               />
             </AreaChart>
           </ResponsiveContainer>
