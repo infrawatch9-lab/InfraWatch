@@ -1,0 +1,16 @@
+pt: {
+        translation: {
+          welcome: "Bem-vindo",
+          description: "Este é um aplicativo multilíngue",
+          button: {
+            change_language: "Mudar Idioma",
+            save: "Salvar",
+            cancel: "Cancelar"
+          },
+          navigation: {
+            home: "Início",
+            about: "Sobre",
+            contact: "Contato"
+          }
+        }
+      },

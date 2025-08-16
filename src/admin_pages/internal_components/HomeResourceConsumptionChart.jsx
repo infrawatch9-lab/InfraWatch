@@ -1,38 +1,50 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { TrendingUp, Server, Cpu, HardDrive, Wifi } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Server, Activity, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 
 const data = [
-  { time: '00:00', cpu: 30, memory: 45, network: 20, storage: 60 },
-  { time: '04:00', cpu: 15, memory: 35, network: 15, storage: 58 },
-  { time: '08:00', cpu: 40, memory: 60, network: 35, storage: 62 },
-  { time: '12:00', cpu: 35, memory: 55, network: 30, storage: 65 },
-  { time: '16:00', cpu: 50, memory: 70, network: 45, storage: 68 },
-  { time: '20:00', cpu: 65, memory: 80, network: 55, storage: 70 },
-  { time: '24:00', cpu: 45, memory: 65, network: 40, storage: 72 }
+  { month: 'Jan', service1: 45, service2: 25, service3: 65, service4: 35 },
+  { month: 'Feb', service1: 35, service2: 15, service3: 55, service4: 25 },
+  { month: 'Mar', service1: 55, service2: 35, service3: 75, service4: 45 },
+  { month: 'Apr', service1: 85, service2: 45, service3: 95, service4: 65 },
+  { month: 'May', service1: 75, service2: 65, service3: 85, service4: 55 },
+  { month: 'Jun', service1: 65, service2: 45, service3: 75, service4: 85 }
 ];
 
-const metrics = [
-  { key: 'cpu', label: 'CPU', color: '#8B5CF6', icon: Cpu, current: '45%' },
-  { key: 'memory', label: 'Memória', color: '#06B6D4', icon: HardDrive, current: '65%' },
-  { key: 'network', label: 'Rede', color: '#10B981', icon: Wifi, current: '40%' },
-  { key: 'storage', label: 'Armazenamento', color: '#F59E0B', icon: Server, current: '72%' }
+const services = [
+  { key: 'service1', label: 'Database Service', color: '#06B6D4', visible: true },
+  { key: 'service2', label: 'API Gateway', color: '#F59E0B', visible: true },
+  { key: 'service3', label: 'Web Server', color: '#10B981', visible: true },
+  { key: 'service4', label: 'Cache Service', color: '#8B5CF6', visible: true }
 ];
 
 export default function ResourceConsumptionChart() {
-  const [selectedPeriod, setSelectedPeriod] = useState('24h');
-  const [selectedMetric, setSelectedMetric] = useState('cpu');
+  const [selectedPeriod, setSelectedPeriod] = useState('Week');
+  const [serviceVisibility, setServiceVisibility] = useState(
+    services.reduce((acc, service) => ({ ...acc, [service.key]: true }), {})
+  );
+
+  const toggleServiceVisibility = (serviceKey) => {
+    setServiceVisibility(prev => ({
+      ...prev,
+      [serviceKey]: !prev[serviceKey]
+    }));
+  };
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-[#0B1440] border border-slate-600 rounded-lg p-3 shadow-xl">
-          <p className="text-gray-300 text-sm mb-2">{`Hora: ${label}`}</p>
-          {payload.map((entry, index) => (
-            <p key={index} className="text-sm" style={{ color: entry.color }}>
-              {`${entry.name}: ${entry.value}%`}
-            </p>
-          ))}
+          <p className="text-gray-300 text-sm mb-2 font-medium">{label}</p>
+          {payload.map((entry, index) => {
+            const service = services.find(s => s.key === entry.dataKey);
+            return (
+              <p key={index} className="text-sm flex items-center gap-2" style={{ color: entry.color }}>
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }}></span>
+                {`${service?.label}: ${entry.value}%`}
+              </p>
+            );
+          })}
         </div>
       );
     }
@@ -40,154 +52,122 @@ export default function ResourceConsumptionChart() {
   };
 
   return (
-    <div className="bg-gradient-to-br from-[#0B1440] to-[#0F1937] p-6 rounded-xl shadow-2xl border border-slate-700/50 backdrop-blur-sm">
+    <div className="bg-gradient-to-br from-[#0B1440] to-[#0F1937] rounded-xl shadow-2xl border border-slate-700/50 backdrop-blur-sm">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-green-500/10 rounded-lg">
-            <Server className="w-6 h-6 text-green-400" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-white">Consumo de Recursos</h2>
-            <p className="text-gray-400 text-sm">Monitoramento em tempo real</p>
+      <div className="flex justify-between items-center p-6 pb-4">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-gray-300">
+            <button className="flex items-center gap-2 px-4 py-2 bg-[#162050] rounded-lg text-sm font-medium border border-slate-600/50 hover:bg-[#1a2456] transition-colors">
+              All services
+            </button>
+            <span className="text-gray-500">|</span>
+            <span className="text-sm">Uptime and Downtime history</span>
           </div>
         </div>
 
-        <div className="flex gap-2">
-          {['1h', '6h', '24h', '7d'].map((period) => (
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <button className="flex items-center gap-2 px-4 py-2 bg-[#162050] rounded-lg text-sm font-medium text-gray-300 border border-slate-600/50 hover:bg-[#1a2456] transition-colors">
+              {selectedPeriod}
+              <ChevronDown className="w-4 h-4" />
+            </button>
+          </div>
+          <button className="p-2 text-gray-400 hover:text-gray-200 transition-colors">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Chart */}
+      <div className="px-6 pb-6">
+        <div className="bg-[#0A1235]/30 rounded-lg p-4 border border-slate-700/30">
+          <ResponsiveContainer width="100%" height={280}>
+            <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1E2A5C" strokeOpacity={0.6} />
+              <XAxis
+                dataKey="month"
+                stroke="#94A3B8"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+                tick={{ fill: '#94A3B8' }}
+              />
+              <YAxis
+                stroke="#94A3B8"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+                domain={[0, 100]}
+                ticks={[0, 20, 40, 60, 80, 100]}
+                tickFormatter={(value) => `${value}%`}
+                tick={{ fill: '#94A3B8' }}
+              />
+              <Tooltip content={<CustomTooltip />} />
+
+              {services.map((service) => (
+                serviceVisibility[service.key] && (
+                  <Line
+                    key={service.key}
+                    type="monotone"
+                    dataKey={service.key}
+                    stroke={service.color}
+                    strokeWidth={2.5}
+                    dot={{ r: 4, fill: service.color, strokeWidth: 2, stroke: '#0B1440' }}
+                    activeDot={{ 
+                      r: 6, 
+                      fill: service.color, 
+                      strokeWidth: 3, 
+                      stroke: '#0B1440',
+                      style: { filter: 'drop-shadow(0px 0px 8px rgba(255,255,255,0.3))' }
+                    }}
+                  />
+                )
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Services Legend */}
+        <div className="flex flex-wrap gap-4 mt-4 pt-4 border-t border-slate-700/50">
+          {services.map((service) => (
             <button
-              key={period}
-              onClick={() => setSelectedPeriod(period)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${selectedPeriod === period
-                  ? 'bg-blue-500 text-white shadow-lg'
-                  : 'bg-[#162050] text-gray-300 hover:bg-[#1a2456] hover:text-white'
-                }`}
+              key={service.key}
+              onClick={() => toggleServiceVisibility(service.key)}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
+                serviceVisibility[service.key]
+                  ? 'bg-slate-700/50 text-white'
+                  : 'bg-slate-800/30 text-gray-500 hover:text-gray-300'
+              }`}
             >
-              {period}
+              <span 
+                className={`w-3 h-3 rounded-full transition-opacity ${
+                  serviceVisibility[service.key] ? 'opacity-100' : 'opacity-50'
+                }`}
+                style={{ backgroundColor: service.color }}
+              ></span>
+              {service.label}
             </button>
           ))}
         </div>
-      </div>
 
-      {/* 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {metrics.map((metric) => {
-          const Icon = metric.icon;
-          const isSelected = selectedMetric === metric.key;
-          return (
-            <div
-              key={metric.key}
-              onClick={() => setSelectedMetric(metric.key)}
-              className={`p-4 rounded-lg cursor-pointer transition-all duration-300 hover:scale-105 ${isSelected
-                  ? 'bg-slate-700/50 border-2 border-blue-500'
-                  : 'bg-slate-800/30 border border-slate-700/50 hover:bg-slate-700/30'
-                }`}
-            >
-              <div className="flex items-center gap-3 mb-2">
-                <Icon className="w-5 h-5" style={{ color: metric.color }} />
-                <span className="text-gray-300 text-sm font-medium">{metric.label}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-white text-lg font-bold">{metric.current}</span>
-                <TrendingUp className="w-4 h-4 text-green-400" />
-              </div>
+        {/* Status Footer */}
+        <div className="flex flex-col sm:flex-row justify-between items-center mt-4 pt-4 border-t border-slate-700/50 gap-4">
+          <div className="flex items-center gap-2 text-gray-400 text-sm">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            <span>Última atualização há 2 minutos</span>
+          </div>
+          <div className="flex items-center gap-6 text-sm">
+            <div className="flex items-center gap-2">
+              <span className="text-gray-400">Uptime médio:</span>
+              <span className="text-green-400 font-medium">96.8%</span>
             </div>
-          );
-        })}
-      </div>
-      Metrics Cards */}
-
-      {/* 
-      <div className="bg-[#0A1235]/50 rounded-lg p-4">
-        <ResponsiveContainer width="100%" height={300}>
-          <AreaChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-            <defs>
-              {metrics.map((metric) => (
-                <linearGradient key={metric.key} id={`gradient-${metric.key}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={metric.color} stopOpacity={0.3} />
-                  <stop offset="95%" stopColor={metric.color} stopOpacity={0} />
-                </linearGradient>
-              ))}
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1E2A5C" />
-            <XAxis
-              dataKey="time"
-              stroke="#94A3B8"
-              fontSize={12}
-              tickLine={false}
-              axisLine={false}
-            />
-            <YAxis
-              stroke="#94A3B8"
-              fontSize={12}
-              tickLine={false}
-              axisLine={false}
-              domain={[0, 100]}
-              tickFormatter={(value) => `${value}%`}
-            />
-            <Tooltip content={<CustomTooltip />} />
-
-            {selectedMetric === 'cpu' && (
-              <Area
-                type="monotone"
-                dataKey="cpu"
-                stroke="#8B5CF6"
-                strokeWidth={3}
-                fill="url(#gradient-cpu)"
-                dot={{ r: 4, fill: "#8B5CF6", strokeWidth: 2, stroke: "#fff" }}
-                activeDot={{ r: 6, fill: "#8B5CF6", strokeWidth: 2, stroke: "#fff" }}
-              />
-            )}
-
-            {selectedMetric === 'memory' && (
-              <Area
-                type="monotone"
-                dataKey="memory"
-                stroke="#06B6D4"
-                strokeWidth={3}
-                fill="url(#gradient-memory)"
-                dot={{ r: 4, fill: "#06B6D4", strokeWidth: 2, stroke: "#fff" }}
-                activeDot={{ r: 6, fill: "#06B6D4", strokeWidth: 2, stroke: "#fff" }}
-              />
-            )}
-
-            {selectedMetric === 'network' && (
-              <Area
-                type="monotone"
-                dataKey="network"
-                stroke="#10B981"
-                strokeWidth={3}
-                fill="url(#gradient-network)"
-                dot={{ r: 4, fill: "#10B981", strokeWidth: 2, stroke: "#fff" }}
-                activeDot={{ r: 6, fill: "#10B981", strokeWidth: 2, stroke: "#fff" }}
-              />
-            )}
-
-            {selectedMetric === 'storage' && (
-              <Area
-                type="monotone"
-                dataKey="storage"
-                stroke="#F59E0B"
-                strokeWidth={3}
-                fill="url(#gradient-storage)"
-                dot={{ r: 4, fill: "#F59E0B", strokeWidth: 2, stroke: "#fff" }}
-                activeDot={{ r: 6, fill: "#F59E0B", strokeWidth: 2, stroke: "#fff" }}
-              />
-            )}
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
-      Chart */}
-
-      {/* Footer Info */}
-      <div className="flex flex-col sm:flex-row justify-between items-center mt-4 pt-4 border-t border-slate-700/50 gap-4">
-        <div className="flex items-center gap-2 text-gray-400 text-sm">
-          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-          <span>Atualizado há 30 segundos</span>
-        </div>
-        <div className="flex items-center gap-4 text-sm">
-          <span className="text-gray-400">Próxima atualização em:</span>
-          <span className="text-blue-400 font-medium">00:30</span>
+            <div className="flex items-center gap-2">
+              <span className="text-gray-400">Status:</span>
+              <span className="text-green-400 font-medium">Operational</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

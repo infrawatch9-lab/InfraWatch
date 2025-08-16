@@ -1,0 +1,16 @@
+en: {
+        translation: {
+          welcome: "Welcome",
+          description: "This is a multilingual app",
+          button: {
+            change_language: "Change Language",
+            save: "Save",
+            cancel: "Cancel"
+          },
+          navigation: {
+            home: "Home",
+            about: "About",
+            contact: "Contact"
+          }
+        }
+      },
