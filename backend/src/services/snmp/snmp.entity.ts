@@ -1,5 +1,6 @@
 import { $Enums } from '@prisma/client';
 
+
 export class CreateSnmpConfigDto {
     host: string = '';
     version: $Enums.SnmpVersion = $Enums.SnmpVersion.v2c;
@@ -22,6 +23,7 @@ export class CreateSnmpConfigDto {
     alertAfterFailures?: number;
     minAlertInterval?: number;
     expectedResponseTimeMs?: number;
+    webhookUrl?: string | null; // Default value for webhookUrl
 }
 
 
@@ -107,10 +109,22 @@ export class SnmpHealthDto {
     error?: string = ''; // Default value for error
 }
 
+export class CreateAlertRuleDto {
+  field!: string; // Ex: "latency", "cpu_usage", "memory_usage"
+  condition!: string; // Ex: "> 200", "< 80"
+  severity!: $Enums.AlertLevel; // INFO | WARNING | CRITICAL
+  createdBy!: number;
+  active?: boolean = true;
+}
+
+
 export class CreateServiceDto {
-  name!: string;
-  description?: string;
-  type!: $Enums.ServiceType; // Default value for type
-  teamId: number = 0; // Default value for teamId
-  snmp?: CreateSnmpConfigDto;
+    name!: string;
+    description?: string;
+    type!: $Enums.ServiceType; // Default value for type
+    teamId: number = 0; // Default value for teamId
+    usersToNotify?: string[]; // Default value for usersToNotify
+    snmp!: CreateSnmpConfigDto;
+    rules!: CreateAlertRuleDto[];
+    oid: string = ''; // Default value for oid
 }

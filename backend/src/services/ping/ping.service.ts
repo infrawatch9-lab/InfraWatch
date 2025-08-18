@@ -11,7 +11,6 @@ import {
 } from './ping.entity';
 import { getDifferences } from './ping.utils';
 import { $Enums } from '@prisma/client';
-import { restartMonitor } from '../../monitors_dois/monitor.utils';
 
 @Injectable()
 export class PingService {
