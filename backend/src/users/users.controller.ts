@@ -46,12 +46,28 @@ export class UsersController {
     },
   })
   @ApiResponse({
-    status: 200,
+    status: 201,
     description: 'Successful login',
     schema: {
       example: {
-        access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-        expires_in: 3600
+          "success": true,
+          "message": "Login realizado! ATENÇÃO: Você deve alterar sua senha provisória.",
+          "user": {
+            "id": 5,
+            "name": "Zacarias Casimiro",
+            "email": "zacarias@gmail.com",
+            "role": "USER",
+            "status": "ACTIVE",
+            "isTemporaryPassword": true,
+            "temporaryPasswordExpiry": "2025-08-19T15:01:50.731Z",
+            "createdAt": "2025-08-18T15:01:50.732Z",
+            "updatedAt": "2025-08-18T15:01:50.732Z"
+          },
+          "tokens": {
+            "accessToken": "eyJhbGciOiJIUHI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NSwidXNlcklkIjo1LCJlbWFpbCI6InphY2FyaWFzLm5hdHhvLjM5QGdtYWlsLmNvbSIsInJvbGUiOiJVU0VSIiwibmFtZSI6IlphY2FyaWFzIENhc2ltaXJvIiwic3RhdHVzIjoiQUNUSVZFIiwiaWF0IjoxNzU1NTI5NDE4LCJleHAiOjE3NTU2MTU4MTh9.FCrKLYp60VNwxZjmkXVvRtGEsVcMHlCpR_Fw4w5bpA4",
+            "refreshToken": "eyJhbGciOiJIUzl1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsInR5cGUiOiJyZWZyZXNoIiwiaWF0IjoxNzU1NTI5NDE4LCJleHAiOjE3NTYxMzQyMTh9.6YYTS4rUqIcnXoOHidCBt7cdBsr0a0IkmCDK_c6qiKo",
+            "expiresIn": 86400
+          }
       }
     }
   })
@@ -64,7 +80,7 @@ export class UsersController {
   @Roles('ADMIN')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Register user (Admin only)' })
-  @ApiBody({
+   @ApiBody({
     description: 'User registration data',
     type: CreateUserDto,
     examples: {
@@ -73,28 +89,29 @@ export class UsersController {
         value: {
           name: 'New User',
           email: 'newuser@example.com',
-          password: 'newuserpassword123',
           role: 'USER',
-          status: 'ACTIVE'
         }
       }
     },
   })
   @ApiResponse({
-    status: 200,
+    status: 201,
     description: 'User registered successfully',
     schema: {
       example: {
-        access_token: 'your-jwt-access-token',
-        refresh_token: 'your-jwt-refresh-token',
-        expires_in: 3600,
-        user: {
-          id: 1,
-          name: 'Zacarias Casimiro',
-          email: 'user@example.com',
-          role: 'USER',
-          status: 'ACTIVE'
-        }
+          "success": true,
+          "message": "Conta criada com sucesso! Verifique seu email para a senha provisória.",
+          "user": {
+            "id": 4,
+            "name": "Victor Leonel",
+            "email": "20221987@colitions.co.ao",
+            "role": "USER",
+            "status": "ACTIVE",
+            "isTemporaryPassword": true,
+            "temporaryPasswordExpiry": "2025-08-19T14:17:36.566Z",
+            "createdAt": "2025-08-18T14:17:36.569Z",
+            "updatedAt": "2025-08-18T14:17:36.569Z"
+          }
       }
     }
   })
@@ -103,9 +120,8 @@ export class UsersController {
     description: 'Bad request - Invalid registration data',
     schema: {
       example: {
-        statusCode: 400,
-        message: 'Email already exists',
-        error: 'Bad Request'
+        "success": false,
+        "message": "Usuário já existe com este email"
       }
     }
   })
@@ -117,23 +133,31 @@ export class UsersController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Refresh JWT token' })
   @ApiBody({
-  description: 'Refresh token payload',
-    schema: {
-      example: {
-        refreshToken: 'your-refresh-token'
+    description: 'Refresh token data',
+    type: Object,
+    examples: {
+      default: {
+        summary: 'Default refresh token example',
+        value: {
+          refreshToken: 'your-refresh-token-here'
+        }
       }
-    }
+    },
   })
   @ApiResponse({
-    status: 200,
-    description: 'Token refreshed successfully',
+    status: 201,
+    description: 'User registered successfully',
     schema: {
       example: {
-        access_token: 'new-jwt-access-token',
-        refresh_token: 'new-jwt-refresh-token',
-        expires_in: 3600
+          success: true,
+          message: "Token renovado com sucesso",
+          tokens: {
+            accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI8IkpXVCJ9.eyJpZCI6MSwidXNlcklkIjoxLCJlbWFpbCI6Imdrb21iYWRldkBnbWFpbC5jb20iLCJyb2xlIjoiQURNSU4iLCJuYW1lIjoiREVWIiwic3RhdHVzIjoiQUNUSVZFIiwiaWF0IjoxNzU1NTI4NDg4LCJleHAiOjE3NTU2MTQ4ODh9.93Q-_CpnHHHJUJ287LJ9FBuaG8J6GwFeSiVE90L_Hp8",
+            refreshToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ4.eyJ1c2VySWQiOjEsInR5cGUiOiJyZWZyZXNoIiwiaWF0IjoxNzU1NTI4NDg4LCJleHAiOjE3NTYxMzMyODh9.0G3g_fx31lYlFTuxTB8LrMcv0g2ljqXrR9f-aIuoekE",
+            expiresIn: 86400
+          }
+        }
       }
-    }
   })
   async refreshToken(@Body() body: { refreshToken: string }) {
     return this.usersService.refreshToken(body.refreshToken);
@@ -148,10 +172,11 @@ export class UsersController {
     schema: {
       example: {
         id: 1,
-        /*name: 'John Doe',
-        email: 'user@example.com',
+        name: 'John Doe',
+        email: 'Doejohn@example.com',
         role: 'USER',
-        status: 'ACTIVE'*/
+        createdAt: "2025-08-13T18:59:05.798Z",
+        updatedAt: "2025-08-13T19:00:07.873Z"
       }
     }
   })
@@ -162,7 +187,7 @@ export class UsersController {
   @Put('reset-password')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Reset user password' })
-  @ApiBody({
+    @ApiBody({
     description: 'Payload to reset password',
     type: ResetPasswordDto,
     examples: {
@@ -180,18 +205,8 @@ export class UsersController {
     description: 'Password reset successful',
     schema: {
       example: {
-        message: 'Password has been reset successfully'
-      }
-    }
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Bad request - Invalid payload or password',
-    schema: {
-      example: {
-        statusCode: 400,
-        message: 'Old password is incorrect',
-        error: 'Bad Request'
+          "success": true,
+          "message": "Senha alterada com sucesso"
       }
     }
   })
@@ -204,7 +219,7 @@ export class UsersController {
   @Roles('ADMIN')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update user settings' })
-  @ApiBody({
+    @ApiBody({
     description: 'Payload to update user settings',
     type: UpdateUserDto,
     examples: {
@@ -226,22 +241,11 @@ export class UsersController {
     schema: {
       example: {
         id: 1,
-        name: 'Updated Name',
-        email: 'updateduser@example.com',
+        name: 'John Doe',
+        email: 'Doejohn@example.com',
         role: 'USER',
-        status: 'ACTIVE'
-      }
-    }
-  })
-
-  @ApiResponse({
-    status: 400,
-    description: 'Bad request - Invalid update payload',
-    schema: {
-      example: {
-        statusCode: 400,
-        message: 'Invalid user data',
-        error: 'Bad Request'
+        createdAt: "2025-08-13T18:59:05.798Z",
+        updatedAt: "2025-08-13T19:00:07.873Z"
       }
     }
   })
@@ -256,25 +260,15 @@ export class UsersController {
   @ApiOperation({ summary: 'Get user by ID' })
   @ApiResponse({
     status: 200,
-    description: 'Returns user data by ID',
+    description: 'User updated successfully',
     schema: {
       example: {
         id: 1,
-        name: 'Zacarias Casimiro',
-        email: 'user@example.com',
+        name: 'John Doe',
+        email: 'Doejohn@example.com',
         role: 'USER',
-        status: 'ACTIVE'
-      }
-    }
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'User not found',
-    schema: {
-      example: {
-        statusCode: 404,
-        message: 'User not found',
-        error: 'Not Found'
+        createdAt: "2025-08-13T18:59:05.798Z",
+        updatedAt: "2025-08-13T19:00:07.873Z"
       }
     }
   })
@@ -289,24 +283,36 @@ export class UsersController {
   @ApiOperation({ summary: 'Get all users (Admin only)' })
   @ApiResponse({
     status: 200,
-    description: 'Returns a list of all users',
+    description: 'User updated successfully',
     schema: {
-      example: [
-        {
-          id: 1,
-          name: 'Zacarias Casimiro',
-          email: 'user1@example.com',
-          role: 'USER',
-          status: 'ACTIVE'
-        },
-        {
-          id: 2,
-          name: 'Mariana John',
-          email: 'user2@example.com',
-          role: 'ADMIN',
-          status: 'ACTIVE'
-        }
-      ]
+      example: {
+        users: [
+          {
+            "id": 1,
+            "name": "Ola Mundo",
+            "email": "olamundo@gmail.com",
+            "role": "ADMIN",
+            "createdAt": "2025-08-18T13:24:34.003Z",
+            "updatedAt": "2025-08-18T13:26:07.680Z"
+          },
+          {
+            "id": 2,
+            "name": "Hello World",
+            "email": "helloworld@gmail.com",
+            "role": "ADMIN",
+            "createdAt": "2025-08-18T13:34:30.585Z",
+            "updatedAt": "2025-08-18T13:34:30.585Z"
+          },
+          {
+            "id": 5,
+            "name": "Victor Leonel",
+            "email": "intra@isptec.co.ao",
+            "role": "USER",
+            "createdAt": "2025-08-18T14:17:36.569Z",
+            "updatedAt": "2025-08-18T14:17:36.569Z"
+          },
+        ]
+      }
     }
   })
   async getAllUsers() {
@@ -323,23 +329,19 @@ export class UsersController {
     description: 'User deleted successfully',
     schema: {
       example: {
-        message: 'User deleted successfully',
-        id: 1,
-        name: 'Zacarias Casimiro',
-        email: 'user1@example.com',
-        role: 'USER',
-        status: 'INACTIVE'
+        "success": true,
+        "message": "Usuário deletado com sucesso"
       }
     }
   })
   @ApiResponse({
-    status: 404,
-    description: 'User not found',
+    status: 403,
+    description: 'Permission denied - Only admins can delete users',
     schema: {
       example: {
-        statusCode: 404,
-        message: 'User not found',
-        error: 'Not Found'
+        "message": "Acesso negado: papel insuficiente",
+        "error": "Forbidden",
+        "statusCode": 403
       }
     }
   })
