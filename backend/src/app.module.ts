@@ -9,11 +9,13 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { DatabaseModule } from './database/database.module';
 import { ServicesModule } from './services/services.module';
 import { DashboardModule } from './dashboards/dashboard.module';
+import { WebhookModule } from './services/webhook/webhook.module';
 
 @Module({
   imports: [
     ScheduleModule.forRoot(),
     DatabaseModule,
+    WebhookModule,
     DashboardModule,
     UsersModule,
     MetricsModule,

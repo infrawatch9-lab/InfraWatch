@@ -163,7 +163,6 @@ export class PingService {
         configs: {
           include: {
             PingConfig: true,
-            SnmpConfig: true,
           },
         },
         rules: true,

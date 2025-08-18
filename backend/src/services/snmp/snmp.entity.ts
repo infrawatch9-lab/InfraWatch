@@ -1,6 +1,5 @@
 import { $Enums } from '@prisma/client';
 
-
 export class CreateSnmpConfigDto {
     host: string = '';
     version: $Enums.SnmpVersion = $Enums.SnmpVersion.v2c;
@@ -25,8 +24,6 @@ export class CreateSnmpConfigDto {
     expectedResponseTimeMs?: number;
     webhookUrl?: string | null; // Default value for webhookUrl
 }
-
-
 
 export class UpdateSnmpConfigDto {
     host?: string;
@@ -116,7 +113,6 @@ export class CreateAlertRuleDto {
   createdBy!: number;
   active?: boolean = true;
 }
-
 
 export class CreateServiceDto {
     name!: string;

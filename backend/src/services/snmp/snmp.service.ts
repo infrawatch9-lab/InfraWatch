@@ -197,6 +197,15 @@ export class SnmpService {
       throw new NotFoundException('Serviço de SNMP não encontrado');
     }
 
+      const service = await this.prisma.service.update({
+        where: { id: serviceId },
+        data: {
+            name: data.name,
+            description: data.description,
+            type: ServiceType.WEBHOOK,
+        },
+    });
+
     // Atualiza MonitoringConfig relacionado ao serviço
     const monitoringConfig = await this.prisma.monitoringConfig.findFirst({
       where: { serviceId: serviceId },
