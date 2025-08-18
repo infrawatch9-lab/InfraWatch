@@ -23,7 +23,6 @@ export class RolesGuard implements CanActivate {
     }
 
     const { user } = context.switchToHttp().getRequest<{ user: JwtPayload }>();
-    console.log('User from request:', user);
     if (!user || !requiredRoles.includes(user.role)) {
       throw new ForbiddenException('Acesso negado: papel insuficiente');
     }

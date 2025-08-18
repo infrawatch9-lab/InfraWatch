@@ -86,8 +86,8 @@ model AlertRule {
   createdBy     Int
   createdAt     DateTime   @default(now())
   alerts        Alert[]
-  createdByUser User       @relation("CreatedByUser", fields: [createdBy], references: [id])
-  Service       Service    @relation("ServiceToAlertRules", fields: [serviceId], references: [id])
+  createdByUser User       @relation("CreatedByUser", fields: [createdBy], references: [id], onDelete: Cascade)
+  Service       Service    @relation("ServiceToAlertRules", fields: [serviceId], references: [id], onDelete: Cascade)
 }
 
 model Alert {
@@ -98,9 +98,9 @@ model Alert {
   message       String
   resolved      Boolean        @default(false)
   userId        Int?
-  AlertRule     AlertRule      @relation(fields: [ruleId], references: [id])
-  Service       Service        @relation(fields: [serviceId], references: [id])
-  User          User?          @relation(fields: [userId], references: [id])
+  AlertRule     AlertRule      @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  Service       Service        @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  User          User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
   notifications Notification[]
 }
 

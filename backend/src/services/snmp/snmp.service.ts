@@ -244,9 +244,7 @@ export class SnmpService {
           },
         },
         usersToNotify: {
-          include: {
-            User: true,
-          },
+          
         },
         rules: true,
         alerts: true,
