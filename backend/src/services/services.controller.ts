@@ -20,9 +20,9 @@ import { HttpService } from './http/http.service';
 import { BaseServiceDto, CreateServiceDto } from './service.common-entity'
 
 
-@ApiTags('snmp')
-@Controller('snmp')
-export class SnmpController {
+@ApiTags('services')
+@Controller('services')
+export class ServicesController {
     constructor(
         private readonly snmpService: SnmpService,
         private readonly webhookService: WebhookService,
@@ -63,13 +63,17 @@ create(
 @ApiResponse({ status: 404, description: 'Serviços não encontrados' })
 @ApiResponse({ status: 500, description: 'Erro interno do servidor' })
 @ApiOperation({ summary: 'Listar todos os serviços' })
-findAll() {
-    return {
-      snmp: this.snmpService.findAll(),
-      webhook: this.webhookService.findAll(),
-      ping: this.pingService.findAll(),
-      http: this.httpService.findAll(),
-    };
+async findAll() {
+  console.log("Fetching all services");
+
+  const [snmp, webhook, ping, http] = await Promise.all([
+    this.snmpService.findAll(),
+    this.webhookService.findAll(),
+    this.pingService.findAll(),
+    this.httpService.findAll(),
+  ]);
+
+  return { snmp, webhook, ping, http };
 }
 
 @Get(':id')
@@ -80,13 +84,15 @@ findAll() {
 @ApiResponse({ status: 404, description: 'Serviço não encontrado' })
 @ApiResponse({ status: 500, description: 'Erro interno do servidor' })
 @ApiOperation({ summary: 'Obter um serviço pelo ID' })
-findOne(@Param('id', ParseIntPipe) id: number) {
-    return {
-        snmp: this.snmpService.findOne(id),
-        webhook: this.webhookService.findOne(id),
-        ping: this.pingService.findOne(id),
-        http: this.httpService.findOne(id),
-    };
+async findOne(@Param('id', ParseIntPipe) id: number) {
+  const [snmp, webhook, ping, http] = await Promise.all([
+    this.snmpService.findOne(id),
+    this.webhookService.findOne(id),
+    this.pingService.findOne(id),
+    this.httpService.findOne(id),
+  ]);
+
+  return { snmp, webhook, ping, http };
 }
 
 @Put(':id')
