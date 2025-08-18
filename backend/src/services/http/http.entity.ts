@@ -1,21 +1,5 @@
-import { ServiceType } from '@prisma/client';
-import { $Enums } from '@prisma/client';
-
-export class MonitoringConfigDto {
-  interval: number = 60;
-  timeout: number = 30;
-  retries: number = 3;
-  delay?: number;
-  alertAfterFailures?: number;
-  minAlertInterval?: number;
-
-  cronExpression?: string;
-  timezone?: string;
-  startTime?: string;
-  endTime?: string;
-
-  webhookUrl?: string;
-}
+import { ServiceType, $Enums } from '@prisma/client';
+import { BaseServiceDto } from '../service.common-entity';
 
 export class HttpConfigDto {
   endpoint!: string;
@@ -35,24 +19,8 @@ export class HttpConfigDto {
   expectedHeadersIncludes?: Record<string, string>;
 }
 
-export class CreateAlertRuleDto {
-  field!: string;
-  condition!: string;
-  severity!: $Enums.AlertLevel;
-  createdBy!: number;
-  active?: boolean = true;
-}
 
-export class CreateServiceDto {
-  name!: string;
-  description?: string;
-  type: ServiceType = ServiceType.HTTP;
-  monitoringConfig!: MonitoringConfigDto;
-  teamId?: number;
-  rules!: CreateAlertRuleDto[];
-  usersToNotify?: string[];
+export interface HttpDto extends BaseServiceDto {
+  type: 'HTTP';
   httpConfig?: HttpConfigDto;
 }
-
-
-

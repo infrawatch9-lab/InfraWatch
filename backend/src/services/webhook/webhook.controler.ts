@@ -13,7 +13,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagg
 import { RolesGuard } from '../../auth/roles.guard';
 import { Roles } from '../../auth/roles.decorator';
 import { WebhookService } from './webhook.service';
-import { CreateServiceDto } from './webhook.entity';
+import { WebhookDto } from './webhook.entity';
 
 
 @ApiTags('webhook')
@@ -27,7 +27,7 @@ export class WebhookController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Cadastrar novo serviço Webhook' })
   @ApiResponse({ status: 201, description: 'Serviço Webhook criado com sucesso' })
-  create(@Body() createServiceDto: CreateServiceDto) {
+  create(@Body() createServiceDto: WebhookDto) {
     return this.webhookService.create(createServiceDto);
   }
 
@@ -64,7 +64,7 @@ export class WebhookController {
   @ApiResponse({ status: 400, description: 'Erro ao atualizar serviço Webhook' })
   @ApiResponse({ status: 500, description: 'Erro interno do servidor' })
   @ApiOperation({ summary: 'Atualizar configuração de um serviço Webhook' })
-  update(@Param('id', ParseIntPipe) id: number, @Body() updateWebhookDto: CreateServiceDto) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() updateWebhookDto: WebhookDto) {
     return this.webhookService.update(id, updateWebhookDto);
   }
 

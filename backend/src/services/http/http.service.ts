@@ -5,9 +5,9 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import {
-  CreateServiceDto,
+  HttpDto,
 } from './http.entity';
-import { AlertLevel, ServiceType } from '@prisma/client';
+import { ServiceType } from '@prisma/client';
 import { $Enums } from '@prisma/client';
 
 @Injectable()
@@ -16,7 +16,7 @@ export class HttpService {
 
     constructor(private readonly prisma: PrismaService) {}
 
-  async create(createServiceDto: CreateServiceDto): Promise<any> {
+  async create(createServiceDto: HttpDto): Promise<any> {
     try {
 
       const teamId = createServiceDto.teamId || 1;
@@ -24,7 +24,7 @@ export class HttpService {
       const checkIfServiceExists = await this.prisma.service.findFirst({
         where: {
           name: createServiceDto.name,
-          type: ServiceType.HTTP,
+          type: $Enums.ServiceType.HTTP,
         },
       });
 
@@ -183,7 +183,7 @@ export class HttpService {
 
   async update(
     serviceId: number,
-    data: CreateServiceDto,
+    data: HttpDto,
   ): Promise<any> {
     const existingService = await this.prisma.service.findUnique({
       where: { id: serviceId },

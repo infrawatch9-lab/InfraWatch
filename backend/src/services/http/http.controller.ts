@@ -12,7 +12,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { HttpService } from './http.service';
 import {
-  CreateServiceDto,
+  HttpDto,
 } from './http.entity';
 
 @ApiTags('http')
@@ -25,7 +25,7 @@ export class HttpController {
   @Post()
   @ApiOperation({ summary: 'Cadastrar novo serviço HTTP' })
   @ApiResponse({ status: 201, description: 'Serviço HTTP criado com sucesso' })
-  create(@Body() createHttpDto: CreateServiceDto) {
+  create(@Body() createHttpDto: HttpDto) {
     return this.httpService.create(createHttpDto);
   }
 
@@ -45,7 +45,7 @@ export class HttpController {
   @ApiOperation({ summary: 'Atualizar configuração de um serviço HTTP' })
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateHttpDto: CreateServiceDto,
+    @Body() updateHttpDto: HttpDto,
   ) {
     return this.httpService.update(id, updateHttpDto);
   }

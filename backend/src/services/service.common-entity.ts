@@ -1,54 +1,43 @@
-import { ServiceType, ServiceStatus, MonitoringMode } from '@prisma/client';
+import { ServiceStatus } from '@prisma/client';
 import { $Enums } from '@prisma/client';
+import { CreatePingServiceDto } from './ping/ping.entity';
+import {  HttpDto } from './http/http.entity';
+import {  WebhookDto } from './webhook/webhook.entity';
+import {  SnmpDto} from './snmp/snmp.entity';
 
-export interface BaseServiceDto {
-  name: string;
-  description?: string;
-  type: $Enums.ServiceType;
-  teamId: number;
+export class CreateAlertRuleDto {
+  field!: string;
+  condition!: string;
+  severity!: $Enums.AlertLevel;
+  createdBy!: number;
+  active?: boolean = true;
 }
 
-export interface ServiceResponseDto {
-  id: number;
-  name: string;
-  description: string;
-  type: $Enums.ServiceType;
-  status: $Enums.ServiceStatus;
-  teamId: number;
-  createdAt: Date;
-}
-
-export interface BaseMonitoringConfigDto {
-  frequency: number;
-  timeout: number;
+export class MonitoringConfigDto {
+  interval!: number;
+  timeout!: number;
+  retries?: number;
+  delay?: number;
+  alertAfterFailures?: number;
+  minAlertInterval?: number;
+  cronExpression?: string;
+  timezone?: string;
+  startTime?: string;
+  endTime?: string;
   webhookUrl?: string;
 }
 
-export interface ServiceHealthDto {
-  serviceId: number;
-  status: ServiceStatus;
-  latency?: number;
-  errorMessage?: string;
-  timestamp: Date;
-  metrics?: Record<string, any>;
-}
-
-export interface ServiceWithConfig {
-  id: number;
+export interface BaseServiceDto {
   name: string;
   description: string;
-  type: $Enums.ServiceType;
-  status: $Enums.ServiceStatus;
-  teamId: number;
-  createdAt: Date;
-  configs: any[];
-  rules: any[];
-  PingConfig?: any;
+  teamId?: number;
+  usersToNotify: string[];
+  rules?: CreateAlertRuleDto[];
+  monitoringConfig: MonitoringConfigDto;
 }
 
-export interface CreateAlertRuleDto {
-  field: string;
-  condition: string;
-  severity: string;
-  active?: boolean;
-}
+export type CreateServiceDto =
+  | CreatePingServiceDto
+  | HttpDto
+  | SnmpDto
+  | WebhookDto;

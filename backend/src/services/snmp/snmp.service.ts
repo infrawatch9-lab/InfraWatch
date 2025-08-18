@@ -5,12 +5,9 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import {
-  UpdateSnmpConfigDto,
-  SnmpServiceResponseDto,
-  CreateServiceDto,
-  CreateSnmpConfigDto
+  SnmpDto,
 } from './snmp.entity';
-import { AlertLevel, ServiceType, SnmpVersion } from '@prisma/client';
+import { ServiceType, SnmpVersion } from '@prisma/client';
 import { $Enums } from '@prisma/client';
 
 @Injectable()
@@ -19,7 +16,7 @@ export class SnmpService {
 
     constructor(private readonly prisma: PrismaService) {}
 
-  async create(createServiceDto: CreateServiceDto): Promise<any> {
+  async create(createServiceDto: SnmpDto): Promise<any> {
     try {
 
       const teamId = createServiceDto.teamId || 1;
@@ -80,9 +77,9 @@ export class SnmpService {
         const monitoringConfig = await prisma.monitoringConfig.create({
           data: {
             serviceId: service.id,
-            interval: createServiceDto.snmp?.interval || 60,
-            timeout: createServiceDto.snmp?.timeout || 5000,
-            webhookUrl: createServiceDto.snmp?.webhookUrl || null,
+            interval: createServiceDto.snmpConfig?.interval || 60,
+            timeout: createServiceDto.snmpConfig?.timeout || 5000,
+            webhookUrl: createServiceDto.snmpConfig?.webhookUrl || null,
           },
         });
 
@@ -90,20 +87,20 @@ export class SnmpService {
         const snmpConfig = await prisma.snmpConfig.create({
         data: {
           monitoringId: monitoringConfig.id,
-          host: createServiceDto.snmp?.host || '',
-          version: createServiceDto.snmp?.version || SnmpVersion.v2c,
-          community: createServiceDto.snmp?.community || null,
-          username: createServiceDto.snmp?.username || null,
-          authProtocol: createServiceDto.snmp?.authProtocol || null,
-          authPassword: createServiceDto.snmp?.authPassword || null,
-          privProtocol: createServiceDto.snmp?.privProtocol || null,
-          privPassword: createServiceDto.snmp?.privPassword || null,
-          oid: createServiceDto.snmp?.oid || '',
-          retries: createServiceDto.snmp?.retries || null,
-          delay: createServiceDto.snmp?.delay || null,
-          alertAfterFailures: createServiceDto.snmp?.alertAfterFailures || null,
-          minAlertInterval: createServiceDto.snmp?.minAlertInterval || null,
-          expectedResponseTimeMs: createServiceDto.snmp?.expectedResponseTimeMs || null,
+          host: createServiceDto.snmpConfig?.host || '',
+          version: createServiceDto.snmpConfig?.version || SnmpVersion.v2c,
+          community: createServiceDto.snmpConfig?.community || null,
+          username: createServiceDto.snmpConfig?.username || null,
+          authProtocol: createServiceDto.snmpConfig?.authProtocol || null,
+          authPassword: createServiceDto.snmpConfig?.authPassword || null,
+          privProtocol: createServiceDto.snmpConfig?.privProtocol || null,
+          privPassword: createServiceDto.snmpConfig?.privPassword || null,
+          oid: createServiceDto.snmpConfig?.oid || '',
+          retries: createServiceDto.snmpConfig?.retries || null,
+          delay: createServiceDto.snmpConfig?.delay || null,
+          alertAfterFailures: createServiceDto.snmpConfig?.alertAfterFailures || null,
+          minAlertInterval: createServiceDto.snmpConfig?.minAlertInterval || null,
+          expectedResponseTimeMs: createServiceDto.snmpConfig?.expectedResponseTimeMs || null,
         },
       });
 
@@ -186,7 +183,7 @@ export class SnmpService {
 
   async update(
     serviceId: number,
-    data: CreateServiceDto,
+    data: SnmpDto,
   ): Promise<any> {
     const existingService = await this.prisma.service.findUnique({
       where: { id: serviceId },
@@ -211,13 +208,13 @@ export class SnmpService {
       where: { serviceId: serviceId },
     });
 
-    if (monitoringConfig && data.snmp) {
+    if (monitoringConfig && data.snmpConfig) {
       await this.prisma.monitoringConfig.update({
         where: { id: monitoringConfig.id },
         data: {
-          interval: data.snmp.interval,
-          timeout: data.snmp.timeout,
-          webhookUrl: data.snmp.webhookUrl,
+          interval: data.snmpConfig.interval,
+          timeout: data.snmpConfig.timeout,
+          webhookUrl: data.snmpConfig.webhookUrl,
         },
       });
 
@@ -226,20 +223,20 @@ export class SnmpService {
         where: { monitoringId: monitoringConfig.id },
         data: {
           monitoringId: monitoringConfig.id,
-          host: data.snmp?.host || '',
-          version: data.snmp?.version || SnmpVersion.v2c,
-          community: data.snmp?.community || null,
-          username: data.snmp?.username || null,
-          authProtocol: data.snmp?.authProtocol || null,
-          authPassword: data.snmp?.authPassword || null,
-          privProtocol: data.snmp?.privProtocol || null,
-          privPassword: data.snmp?.privPassword || null,
-          oid: data.snmp?.oid || '',
-          retries: data.snmp?.retries || null,
-          delay: data.snmp?.delay || null,
-          alertAfterFailures: data.snmp?.alertAfterFailures || null,
-          minAlertInterval: data.snmp?.minAlertInterval || null,
-          expectedResponseTimeMs: data.snmp?.expectedResponseTimeMs || null,
+          host: data.snmpConfig?.host || '',
+          version: data.snmpConfig?.version || SnmpVersion.v2c,
+          community: data.snmpConfig?.community || null,
+          username: data.snmpConfig?.username || null,
+          authProtocol: data.snmpConfig?.authProtocol || null,
+          authPassword: data.snmpConfig?.authPassword || null,
+          privProtocol: data.snmpConfig?.privProtocol || null,
+          privPassword: data.snmpConfig?.privPassword || null,
+          oid: data.snmpConfig?.oid || '',
+          retries: data.snmpConfig?.retries || null,
+          delay: data.snmpConfig?.delay || null,
+          alertAfterFailures: data.snmpConfig?.alertAfterFailures || null,
+          minAlertInterval: data.snmpConfig?.minAlertInterval || null,
+          expectedResponseTimeMs: data.snmpConfig?.expectedResponseTimeMs || null,
         },
       });
     }

@@ -7,7 +7,6 @@ import { PrismaService } from '../../database/prisma.service';
 import { ServiceType } from '@prisma/client';
 import {
   CreatePingServiceDto,
-  ResponseAllPingServicesDto,
 } from './ping.entity';
 import { getDifferences } from './ping.utils';
 import { $Enums } from '@prisma/client';
@@ -147,7 +146,7 @@ export class PingService {
       status: service.status,
       teamId: service.teamId,
       createdAt: service.createdAt,
-    } as ResponseAllPingServicesDto));
+    }));
   }
 
 

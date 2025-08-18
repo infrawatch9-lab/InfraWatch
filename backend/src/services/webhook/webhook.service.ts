@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import {
-  CreateServiceDto,
+  WebhookDto,
 } from './webhook.entity';
 import { ServiceType } from '@prisma/client';
 import { $Enums } from '@prisma/client';
@@ -16,7 +16,7 @@ export class WebhookService {
 
     constructor(private readonly prisma: PrismaService) {}
 
-  async create(createServiceDto: CreateServiceDto): Promise<any> {
+  async create(createServiceDto: WebhookDto): Promise<any> {
     try {
 
       const teamId = createServiceDto.teamId || 1;
@@ -174,7 +174,7 @@ export class WebhookService {
 
   async update(
     serviceId: number,
-    data: CreateServiceDto,
+    data: WebhookDto,
   ): Promise<any> {
     const existingService = await this.prisma.service.findUnique({
       where: { id: serviceId },
@@ -203,9 +203,9 @@ export class WebhookService {
       await this.prisma.monitoringConfig.update({
         where: { id: monitoringConfig.id },
         data: {
-          interval: data.monitoringConfig.interval,
-          timeout: data.monitoringConfig.timeout,
-          webhookUrl: data.monitoringConfig.webhookUrl,
+          interval: data.monitoringConfig?.interval,
+          timeout: data.monitoringConfig?.timeout,
+          webhookUrl: data.monitoringConfig?.webhookUrl,
         },
       });
 
