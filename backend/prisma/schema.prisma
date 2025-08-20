@@ -14,11 +14,11 @@ model User {
   email                    String                    @unique
   password                 String
   role                     Role                      @default(USER)
-  status                   Status                    @default(ACTIVE)
-  isTemporaryPassword      Boolean                   @default(false)
-  temporaryPasswordExpiry  DateTime?
   createdAt                DateTime                  @default(now())
   updatedAt                DateTime                  @updatedAt
+  isTemporaryPassword      Boolean                   @default(false)
+  status                   Status                    @default(ACTIVE)
+  temporaryPasswordExpiry  DateTime?
   alerts                   Alert[]
   createdAlertRules        AlertRule[]               @relation("CreatedByUser")
   notifications            Notification[]
@@ -46,11 +46,11 @@ model TeamMember {
 model Service {
   id            Int                       @id @default(autoincrement())
   name          String
-  description   String                    @default("Sem descrição")
   type          ServiceType
   status        ServiceStatus             @default(PENDING)
-  teamId        Int           
+  teamId        Int
   createdAt     DateTime                  @default(now())
+  description   String                    @default("Sem descrição")
   alerts        Alert[]
   rules         AlertRule[]               @relation("ServiceToAlertRules")
   configs       MonitoringConfig?
@@ -71,6 +71,7 @@ model Metric {
   status    ServiceStatus
   errorMsg  String?
   Service   Service       @relation(fields: [serviceId], references: [id])
+
   @@index([timestamp])
   @@map("metrics")
 }
@@ -109,6 +110,7 @@ model ServiceUserNotification {
   userId    Int
   Service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   User      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([serviceId, userId])
 }
 
@@ -149,16 +151,16 @@ model SystemLog {
 }
 
 model MonitoringConfig {
-  id                 Int         @id @default(autoincrement())
-  serviceId          Int         @unique
-  interval           Int
-  timeout            Int
-  webhookUrl         String?
-  Service            Service     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  PingConfig         PingConfig?
-  SnmpConfig         SnmpConfig?
-  HttpConfig         HttpConfig?
-  WebhookConfig      WebhookConfig?
+  id            Int            @id @default(autoincrement())
+  serviceId     Int            @unique
+  timeout       Int
+  webhookUrl    String?
+  interval      Int
+  HttpConfig    HttpConfig?
+  Service       Service        @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  PingConfig    PingConfig?
+  SnmpConfig    SnmpConfig?
+  WebhookConfig WebhookConfig?
 }
 
 model PingConfig {
@@ -193,39 +195,37 @@ model SnmpConfig {
 }
 
 model HttpConfig {
-  id                   Int      @id @default(autoincrement())
-  serviceId            Int      @unique
-  monitoringId         Int              @unique
-  endpoint             String
-  method               String   @default("GET")
-  headers              Json?    
-  body                 Json?    
-  authType             String?
-  authValue            String?
-  validateSSL          Boolean? @default(true)
-  followRedirects      Boolean? @default(true)
-
+  id                      Int              @id @default(autoincrement())
+  serviceId               Int              @unique
+  monitoringId            Int              @unique
+  endpoint                String
+  method                  String           @default("GET")
+  headers                 Json?
+  body                    Json?
+  authType                String?
+  authValue               String?
+  validateSSL             Boolean?         @default(true)
+  followRedirects         Boolean?         @default(true)
   expectedStatus          Int?
   expectedBodyIncludes    String?
   expectedResponseTimeMs  Int?
   expectedHeadersIncludes Json?
   retries                 Int?
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
   Monitoring              MonitoringConfig @relation(fields: [monitoringId], references: [id], onDelete: Cascade)
 }
 
 model WebhookConfig {
-  id                Int     @id @default(autoincrement())
-  monitoringId      Int              @unique
-  serviceId         Int     @unique
-  endpoint          String
-  method            String
-  secret            String?
-  headers           Json?
-  Monitoring        MonitoringConfig @relation(fields: [monitoringId], references: [id], onDelete: Cascade)
+  id           Int              @id @default(autoincrement())
+  monitoringId Int              @unique
+  serviceId    Int              @unique
+  endpoint     String
+  method       String
+  secret       String?
+  headers      Json?
+  Monitoring   MonitoringConfig @relation(fields: [monitoringId], references: [id], onDelete: Cascade)
 }
-
 
 enum SnmpVersion {
   v1
@@ -254,8 +254,8 @@ enum ServiceType {
   SERVER
   NETWORK
   WEBSITE
-  API
   DATABASE
+  API
   CUSTOM
   SNMP
   PING
@@ -290,9 +290,9 @@ enum NotificationType {
 
 enum NotificationChannel {
   EMAIL
-  SLACK
   PUSH
   SMS
+  SLACK
   TELEGRAM
   WEBHOOK
 }
