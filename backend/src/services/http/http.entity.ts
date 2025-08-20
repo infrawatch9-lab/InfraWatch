@@ -1,4 +1,3 @@
-import { ServiceType, $Enums } from '@prisma/client';
 import { BaseServiceDto } from '../service.common-entity';
 
 export class HttpConfigDto {

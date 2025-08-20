@@ -1,7 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { JwtPayloadAgent } from '../auth/auth.entity';
 import { PrismaClient } from '@prisma/client';
-import { CreateMetricDto } from './metrics.entity';
 
 const prisma = new PrismaClient();
 

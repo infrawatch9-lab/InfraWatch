@@ -11,11 +11,11 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-export async function sendEmail(to: string, subject: string, text: string, html: string) {
+export async function sendEmail(to: string[], subject: string, text: string, html: string) {
 
   const info = await transporter.sendMail({
     from: '"InfraWatch" <kombagildo@gmail.com>',
-    to: to,
+    to: to.join(', '),
     subject: subject,
     text: text,
     html: html,
@@ -26,8 +26,9 @@ export async function sendEmail(to: string, subject: string, text: string, html:
 
 @Injectable()
 export class EmailService {
-  async send(message: string, subject: string, html: string, to: string) {
+  async send(message: string, subject: string, html: string, to: string[]) {
     console.log(`[EMAIL] Alerta enviado: ${message}`);
+    console.log(`Enviando Email para: ${to}`);
     try {
       await sendEmail(to, subject, message, html);
     } catch (error) {

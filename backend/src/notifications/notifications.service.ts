@@ -11,7 +11,7 @@ export class NotificationsService {
     private readonly slackService: SlackService,
   ) {}
 
-  async sendAlert(message: string, to: string) {
+  async sendAlert(message: string, to: string[]) {
     const subject = '🚨 Alerta de Serviço';
     const html = '<b>' + message + '</b>';
 
@@ -35,7 +35,7 @@ export class NotificationsService {
     message: string,
     subject: string,
     html: string,
-    to: string,
+    to: string[],
   ) {
     await this.emailService.send(message, subject, html, to);
     console.log('Alerta enviado para o Email:', message);
