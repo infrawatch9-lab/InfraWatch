@@ -17,7 +17,7 @@ import { SnmpService } from './snmp/snmp.service';
 import { WebhookService } from './webhook/webhook.service';
 import { PingService } from './ping/ping.service';
 import { HttpService } from './http/http.service';
-import { BaseServiceDto, CreateServiceDto } from './service.common-entity'
+import { CreateServiceDto } from './service.common-entity'
 
 
 @ApiTags('services')
@@ -37,9 +37,9 @@ export class ServicesController {
 @ApiOperation({ summary: 'Cadastrar novo serviço' })
 @ApiResponse({ status: 201, description: 'Serviço criado com sucesso' })
 create(
-  @Body()
   @Body() createServiceDto: CreateServiceDto,
 ) {
+  console.log("Creating service with type:", createServiceDto.type);
   switch (createServiceDto.type) {
     case 'SNMP':
       return this.snmpService.create(createServiceDto);

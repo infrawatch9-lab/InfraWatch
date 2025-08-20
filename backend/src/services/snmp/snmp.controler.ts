@@ -13,7 +13,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagg
 import { RolesGuard } from '../../auth/roles.guard';
 import { Roles } from '../../auth/roles.decorator';
 import { SnmpService } from './snmp.service';
-import { CreateServiceDto } from './snmp.entity';
+import {  SnmpDto as CreateServiceDto } from './snmp.entity';
 
 
 @ApiTags('snmp')
