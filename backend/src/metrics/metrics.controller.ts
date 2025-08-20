@@ -22,22 +22,12 @@ export class MetricsController {
   }
 
   @Get(':host')
-  async getMetricsByHost(@Param('host') host: string) {
+  async getMetricsByHost(@Param('host') host: number) {
     try {
       const metrics = await this.metricsService.getMetricsByHost(host);
       return metrics;
     } catch (error) {
       console.error('Erro ao buscar métricas por host:', error);
-      throw new Error('Erro interno do servidor');
-    }
-  }
-
-  @Get()
-  async getAllMetrics() {
-    try {
-      return await this.metricsService.getAllMetrics();
-    } catch (error) {
-      console.error('Erro ao buscar todas as métricas:', error);
       throw new Error('Erro interno do servidor');
     }
   }

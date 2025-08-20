@@ -10,23 +10,7 @@ export class MetricsService {
   async saveMetrics(data: any) {
     try {
       // Determina o host baseado no formato dos dados
-      let agentHost = data.host;
-
-      // Se não tem host mas tem serviceId, usa um host baseado no serviceId
-      if (!agentHost && data.serviceId) {
-        agentHost = `service-${data.serviceId}`;
-      }
-
-      // Se ainda não tem host, usa 'default-agent'
-      if (!agentHost) {
-        agentHost = 'default-agent';
-      }
-
-      const agent = await prisma.agent.upsert({
-        where: { host: agentHost },
-        create: { host: agentHost },
-        update: {},
-      });
+      let id = data.serviceId;
 
       // Formato compatível com o teste e com o formato original
       const metricData = {
@@ -40,37 +24,29 @@ export class MetricsService {
         latency: data.latency || data.networkLatency || 0,
         logs: data.logs ?? [],
         alerts: data.alerts ?? [],
-        agentId: agent.id,
       };
 
-      await prisma.agentMetric.create({
-        data: metricData,
+      const metricSaved = await prisma.metric.create({
+        data: {
+          ...metricData,
+          status: data.status || 'OK', // Provide a default or use from input
+          Service: {
+            connect: { id: id }
+          }
+        }
       });
 
-      return { success: true, host: agentHost, serviceId: data.serviceId };
+      return { success: true, id: metricSaved.id };
     } catch (error) {
       console.error('Erro ao salvar métricas:', error);
       throw new Error('Erro interno do servidor');
     }
   }
 
-  async getMetricsByHost(host: string) {
-    return await prisma.agentMetric.findMany({
-      where: { agent: { host } },
+  async getMetricsByHost(id: number) {
+    return await prisma.metric.findMany({
+      where: { serviceId: id },
       orderBy: { timestamp: 'desc' },
     });
   }
-
-  async getAllMetrics() {
-    const metrics = await prisma.agentMetric.findMany({
-      orderBy: { timestamp: 'desc' },
-    });
-
-    // Converte BigInt para string para evitar erro de serialização JSON
-    return metrics.map((metric) => ({
-      ...metric,
-      bytesSent: metric.bytesSent.toString(),
-      bytesRecv: metric.bytesRecv.toString(),
-    }));
-  }
-}
+};

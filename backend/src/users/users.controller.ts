@@ -38,7 +38,6 @@ export class UsersController {
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
   @ApiBearerAuth()
-  @Public()
   @ApiOperation({ summary: 'Register user' })
   async registerWithTemporaryPassword(@Body() CreateUserDto: CreateUserDto) {
     return this.usersService.registerWithTemporaryPassword(CreateUserDto);

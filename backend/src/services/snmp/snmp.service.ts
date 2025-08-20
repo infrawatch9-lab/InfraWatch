@@ -2,14 +2,13 @@ import {
   Injectable,
   Logger,
   NotFoundException,
-  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import {
-  UpdateSnmpConfigDto,
-  SnmpServiceResponseDto,
-  CreateServiceDto,
+  SnmpDto,
 } from './snmp.entity';
+import { ServiceType, SnmpVersion } from '@prisma/client';
+import { $Enums } from '@prisma/client';
 
 @Injectable()
 export class SnmpService {
@@ -17,95 +16,278 @@ export class SnmpService {
 
     constructor(private readonly prisma: PrismaService) {}
 
-async create(createServiceDto: CreateServiceDto) {
-  try {
-    const service = await this.prisma.service.create({
-      data: {
-        name: createServiceDto.name,
-        description: createServiceDto.description,
-        type: createServiceDto.type,
-        teamId: createServiceDto.teamId,
-        SnmpConfig: createServiceDto.snmp
-          ? {
-              create: {
-                host: createServiceDto.snmp.host,
-                version: createServiceDto.snmp.version,
-                community: createServiceDto.snmp.community,
-                username: createServiceDto.snmp.username,
-                authProtocol: createServiceDto.snmp.authProtocol,
-                authPassword: createServiceDto.snmp.authPassword,
-                privProtocol: createServiceDto.snmp.privProtocol,
-                privPassword: createServiceDto.snmp.privPassword,
-                oid: createServiceDto.snmp.oid,
-                monitoringMode: createServiceDto.snmp.monitoringMode,
-                cronExpression: createServiceDto.snmp.cronExpression,
-                timezone: createServiceDto.snmp.timezone,
-                agentVersion: createServiceDto.snmp.agentVersion,
-                autoGenerate: createServiceDto.snmp.autoGenerate,
-                interval: createServiceDto.snmp.interval,
-                timeout: createServiceDto.snmp.timeout,
-                retries: createServiceDto.snmp.retries,
-                delay: createServiceDto.snmp.delay,
-                alertAfterFailures: createServiceDto.snmp.alertAfterFailures,
-                minAlertInterval: createServiceDto.snmp.minAlertInterval,
-                expectedResponseTimeMs: createServiceDto.snmp.expectedResponseTimeMs
-              }
-            }
-          : undefined
-      },
-      include: {
-        SnmpConfig: true
+  async create(createServiceDto: SnmpDto): Promise<any> {
+    try {
+
+      const teamId = createServiceDto.teamId || 1;
+
+      const checkIfServiceExists = await this.prisma.service.findFirst({
+        where: {
+          name: createServiceDto.name,
+          type: ServiceType.SNMP,
+        },
+      });
+
+      if (checkIfServiceExists)
+      {
+        this.logger.warn(`Service with name ${createServiceDto.name} already exists for team ID ${teamId}`);
+        return { message: 'Service already exists' };
       }
+
+      const result = await this.prisma.$transaction(async (prisma) => {
+        let team = await prisma.team.findUnique({ where: { id: teamId } });
+
+        if (!team) {
+          team = await prisma.team.create({
+            data: { name: `Team ${teamId}` },
+          });
+          this.logger.log(`Team created with ID: ${team.id}`);
+        }
+
+        const service = await prisma.service.create({
+          data: {
+            name: createServiceDto.name,
+            description: createServiceDto.description,
+            type: ServiceType.SNMP,
+            teamId: team.id,
+          },
+        });
+
+        // Se vieram emails para notificação
+        if (createServiceDto.usersToNotify?.length) {
+          const users = await prisma.user.findMany({
+            where: { email: { in: createServiceDto.usersToNotify } },
+            select: { id: true },
+          });
+
+          console.log(`Users found for notification: ${users.length}`);
+          if (users.length) {
+            await prisma.serviceUserNotification.createMany({
+              data: users.map(u => ({
+                serviceId: service.id,
+                userId: u.id,
+              })),
+            });
+          }
+        } else {
+          this.logger.warn('No emails provided for notification');
+        }
+
+        // 2. Criar MonitoringConfig
+        const monitoringConfig = await prisma.monitoringConfig.create({
+          data: {
+            serviceId: service.id,
+            interval: createServiceDto.snmpConfig?.interval || 60,
+            timeout: createServiceDto.snmpConfig?.timeout || 5000,
+            webhookUrl: createServiceDto.snmpConfig?.webhookUrl || null,
+          },
+        });
+
+        // 3. Criar SNMP Config
+        const snmpConfig = await prisma.snmpConfig.create({
+        data: {
+          monitoringId: monitoringConfig.id,
+          host: createServiceDto.snmpConfig?.host || '',
+          version: createServiceDto.snmpConfig?.version || SnmpVersion.v2c,
+          community: createServiceDto.snmpConfig?.community || null,
+          username: createServiceDto.snmpConfig?.username || null,
+          authProtocol: createServiceDto.snmpConfig?.authProtocol || null,
+          authPassword: createServiceDto.snmpConfig?.authPassword || null,
+          privProtocol: createServiceDto.snmpConfig?.privProtocol || null,
+          privPassword: createServiceDto.snmpConfig?.privPassword || null,
+          oid: createServiceDto.snmpConfig?.oid || '',
+          retries: createServiceDto.snmpConfig?.retries || null,
+          delay: createServiceDto.snmpConfig?.delay || null,
+          alertAfterFailures: createServiceDto.snmpConfig?.alertAfterFailures || null,
+          minAlertInterval: createServiceDto.snmpConfig?.minAlertInterval || null,
+          expectedResponseTimeMs: createServiceDto.snmpConfig?.expectedResponseTimeMs || null,
+        },
+      });
+
+      // 4. Criar alert rules
+      if (createServiceDto.rules?.length) {
+        await prisma.alertRule.createMany({
+          data: createServiceDto.rules.map(rule => ({
+            serviceId: service.id,
+            field: rule.field,
+            condition: rule.condition,
+            severity: $Enums.AlertLevel[rule.severity as keyof typeof $Enums.AlertLevel],
+            createdBy: rule.createdBy,
+            active: rule.active ?? true,
+          })),
+        });
+      }
+
+        return {
+          service,
+          monitoringConfig,
+          snmpConfig,
+          usersToNotify: createServiceDto.usersToNotify,
+        };
+      });
+
+      
+      return result;
+    } catch (error) {
+      this.logger.error('Error creating SNMP service', error);
+      throw new NotFoundException('Error creating SNMP service');
+    }
+  }
+
+    async findAll(): Promise<any[]> {
+      const services = await this.prisma.service.findMany({
+        where: {
+          type: ServiceType.SNMP,
+        },
+      });
+
+      return services.map((service) => ({
+        id: service.id,
+        name: service.name,
+        description: service.description,
+        status: service.status,
+        teamId: service.teamId,
+        createdAt: service.createdAt,
+      }));
+    }
+
+  async findOne(id: number): Promise<any> {
+    const service = await this.prisma.service.findUnique({
+      where: { id },
+      include: {
+        usersToNotify: {
+          include: {
+            User: true,
+          },
+        },
+        configs: {
+          include: {
+            SnmpConfig: true,
+          },
+        },
+        rules: true,
+        alerts: true,
+        metrics: true,
+        slas: true,
+        logs: true,
+        Team: true,
+      },
     });
 
+    if (!service) {
+      throw new NotFoundException('Serviço de SNMP não encontrado');
+    }
+
     return service;
-  } catch (error) {
-    this.logger.error('Error creating service with SNMP config', error);
-    throw new BadRequestException('Failed to create service with SNMP config');
   }
-}
 
-    async findAll(): Promise<SnmpServiceResponseDto[]> {
-        const configs = await this.prisma.snmpConfig.findMany();
-        return configs.map(config => ({ ...config }));
+  async update(
+    serviceId: number,
+    data: SnmpDto,
+  ): Promise<any> {
+    const existingService = await this.prisma.service.findUnique({
+      where: { id: serviceId },
+      include: { configs: true },
+    });
+
+    if (!existingService) {
+      throw new NotFoundException('Serviço de SNMP não encontrado');
     }
 
-    async findOne(id: number): Promise<SnmpServiceResponseDto> {
-        const snmpConfig = await this.prisma.snmpConfig.findUnique({
-            where: { id },
-        });
-        if (!snmpConfig) {
-            throw new NotFoundException(`SNMP config with id ${id} not found`);
-        }
-        return { ...snmpConfig };
+      const service = await this.prisma.service.update({
+        where: { id: serviceId },
+        data: {
+            name: data.name,
+            description: data.description,
+            type: ServiceType.WEBHOOK,
+        },
+    });
+
+    // Atualiza MonitoringConfig relacionado ao serviço
+    const monitoringConfig = await this.prisma.monitoringConfig.findFirst({
+      where: { serviceId: serviceId },
+    });
+
+    if (monitoringConfig && data.snmpConfig) {
+      await this.prisma.monitoringConfig.update({
+        where: { id: monitoringConfig.id },
+        data: {
+          interval: data.snmpConfig.interval,
+          timeout: data.snmpConfig.timeout,
+          webhookUrl: data.snmpConfig.webhookUrl,
+        },
+      });
+
+      // Atualiza SnmpConfig relacionado ao MonitoringConfig
+      await this.prisma.snmpConfig.updateMany({
+        where: { monitoringId: monitoringConfig.id },
+        data: {
+          monitoringId: monitoringConfig.id,
+          host: data.snmpConfig?.host || '',
+          version: data.snmpConfig?.version || SnmpVersion.v2c,
+          community: data.snmpConfig?.community || null,
+          username: data.snmpConfig?.username || null,
+          authProtocol: data.snmpConfig?.authProtocol || null,
+          authPassword: data.snmpConfig?.authPassword || null,
+          privProtocol: data.snmpConfig?.privProtocol || null,
+          privPassword: data.snmpConfig?.privPassword || null,
+          oid: data.snmpConfig?.oid || '',
+          retries: data.snmpConfig?.retries || null,
+          delay: data.snmpConfig?.delay || null,
+          alertAfterFailures: data.snmpConfig?.alertAfterFailures || null,
+          minAlertInterval: data.snmpConfig?.minAlertInterval || null,
+          expectedResponseTimeMs: data.snmpConfig?.expectedResponseTimeMs || null,
+        },
+      });
     }
 
-    async update(id: number, updateSnmpDto: UpdateSnmpConfigDto): Promise<SnmpServiceResponseDto> {
-        try {
-            const snmpConfig = await this.prisma.snmpConfig.update({
-                where: { id },
-                data: { ...updateSnmpDto },
-            });
-            return { ...snmpConfig };
-        } catch (error) {
-            this.logger.error('Error updating SNMP config', error);
-            throw new NotFoundException(`SNMP config with id ${id} not found`);
-        }
+    return this.prisma.service.findUnique({
+      where: { id: serviceId },
+      include: {
+        configs: {
+          include: {
+            SnmpConfig: true,
+          },
+        },
+        usersToNotify: {
+          
+        },
+        rules: true,
+        alerts: true,
+        metrics: true,
+        slas: true,
+        logs: true,
+        Team: true,
+      },
+    });
+  }
+
+  async remove(id: number): Promise<any> {
+    const service = await this.prisma.service.findUnique({
+      where: { id },
+    });
+
+    if (!service) {
+      throw new NotFoundException('Serviço de SNMP não encontrado');
     }
 
-    async remove(id: number): Promise<SnmpServiceResponseDto> {
-        try {
-            const deleted = await this.prisma.snmpConfig.delete({
-                where: { id },
-            });
-            return { ...deleted, version: deleted.version as SnmpServiceResponseDto['version'] };
-        } catch (error) {
-            this.logger.error('Error deleting SNMP config', error);
-            throw new NotFoundException(`SNMP config with id ${id} not found`);
-        }
+    await this.prisma.$transaction(async (prisma) => {
+      const result = await prisma.service.delete({ where: { id } });
+
+      if (!result) {
+        throw new NotFoundException('Serviço de SNMP não encontrado');
+      }
+    });
+      return { message: 'Serviço de SNMP removido com sucesso' };
+  }
+
+  async removeAll(): Promise<any> {
+    const result = await this.prisma.service.deleteMany({ where: { type: ServiceType.SNMP } });
+
+    if (result.count === 0) {
+      throw new NotFoundException('Nenhum serviço de SNMP encontrado para remover');
     }
 
-    async removeAll(): Promise<void> {
-        await this.prisma.snmpConfig.deleteMany({});
-    }
+    return { message: 'Todos os serviços de SNMP foram removidos com sucesso' };
+  }
 }

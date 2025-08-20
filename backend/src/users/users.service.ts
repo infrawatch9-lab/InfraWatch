@@ -33,6 +33,8 @@ export class UsersService {
         where: { email: trimmedEmail },
       });
 
+      console.log('Existing user:', existingUser);
+
       if (existingUser) {
         return {
           success: false,

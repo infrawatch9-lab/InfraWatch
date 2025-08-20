@@ -2,569 +2,290 @@ import {
   Injectable,
   Logger,
   NotFoundException,
-  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
-import { ServiceType, ServiceStatus } from '@prisma/client';
 import {
-  CreateHttpServiceDto,
-  CreateHttpConfigDto,
-  UpdateHttpConfigDto,
-  HttpServiceResponseDto,
-  HttpTestDto,
-  HttpTestResultDto,
-  HttpHealthDto,
+  HttpDto,
 } from './http.entity';
+import { ServiceType } from '@prisma/client';
+import { $Enums } from '@prisma/client';
 
 @Injectable()
 export class HttpService {
-  private readonly logger = new Logger(HttpService.name);
+    private readonly logger = new Logger(HttpService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+    constructor(private readonly prisma: PrismaService) {}
 
-  async createHttpService(
-    data: CreateHttpServiceDto,
-  ): Promise<HttpServiceResponseDto> {
+  async create(createServiceDto: HttpDto): Promise<any> {
     try {
-      const teamId = data.teamId || 1;
 
-      const team = await this.prisma.team.findUnique({
-        where: { id: teamId },
+      const teamId = createServiceDto.teamId || 1;
+      this.logger.log(`Creating HTTP service for team ID: ${teamId}`);
+      const checkIfServiceExists = await this.prisma.service.findFirst({
+        where: {
+          name: createServiceDto.name,
+          type: $Enums.ServiceType.HTTP,
+        },
       });
 
-      if (!team) {
-        throw new NotFoundException('Equipe não encontrada');
-      }
-
-      if (!this.isValidUrl(data.endpoint)) {
-        throw new BadRequestException('URL inválida');
+      console.log("name", createServiceDto.name);
+      if (checkIfServiceExists)
+      {
+        this.logger.warn(`Service with name ${createServiceDto.name} already exists for team ID ${teamId}`);
+        return { message: 'Service already exists' };
       }
 
       const result = await this.prisma.$transaction(async (prisma) => {
+        let team = await prisma.team.findUnique({ where: { id: teamId } });
+
+        if (!team) {
+          team = await prisma.team.create({
+            data: { name: `Team ${teamId}` },
+          });
+          this.logger.log(`Team created with ID: ${team.id}`);
+        }
+
         const service = await prisma.service.create({
           data: {
-            name: data.name,
-            description: data.description || 'Serviço HTTP',
-            type: this.getServiceTypeFromUrl(data.endpoint),
-            teamId: teamId,
+            name: createServiceDto.name,
+            description: createServiceDto.description,
+            type: ServiceType.HTTP,
+            teamId: team.id,
           },
         });
 
+        // Se vieram emails para notificação
+        if (createServiceDto.usersToNotify?.length) {
+          const users = await prisma.user.findMany({
+            where: { email: { in: createServiceDto.usersToNotify } },
+            select: { id: true },
+          });
+
+          console.log(`Users found for notification: ${users.length}`);
+          if (users.length) {
+            await prisma.serviceUserNotification.createMany({
+              data: users.map(u => ({
+                serviceId: service.id,
+                userId: u.id,
+              })),
+            });
+          }
+        } else {
+          this.logger.warn('No emails provided for notification');
+        }
+
+        // 2. Criar MonitoringConfig
         const monitoringConfig = await prisma.monitoringConfig.create({
           data: {
             serviceId: service.id,
-            frequency: data.httpConfig.frequency,
-            timeout: data.httpConfig.timeout,
-            webhookUrl: data.httpConfig.webhookUrl,
+            interval: createServiceDto.monitoringConfig?.interval || 60,
+            timeout: createServiceDto.monitoringConfig?.timeout || 5000,
+            webhookUrl: createServiceDto.monitoringConfig?.webhookUrl || null,
           },
         });
 
-        return { service, monitoringConfig, httpConfig: data.httpConfig };
+        // 3. Criar HTTP Config
+        const httpConfig = await prisma.httpConfig.create({
+          data: {
+            serviceId: service.id,
+            monitoringId: monitoringConfig.id,
+            endpoint: createServiceDto.httpConfig?.endpoint || '',
+            method: createServiceDto.httpConfig?.method || 'GET',
+            headers: createServiceDto.httpConfig?.headers || {},
+            body: createServiceDto.httpConfig?.body || {},
+            authType: createServiceDto.httpConfig?.authType || 'none',
+            authValue: createServiceDto.httpConfig?.authValue || '',
+            validateSSL: createServiceDto.httpConfig?.validateSSL || true,
+            followRedirects: createServiceDto.httpConfig?.followRedirects || true,
+            expectedStatus: createServiceDto.httpConfig?.expectedStatus || 200,
+            expectedBodyIncludes: createServiceDto.httpConfig?.expectedBodyIncludes || '',
+            expectedResponseTimeMs: createServiceDto.httpConfig?.expectedResponseTimeMs || 1000,
+            expectedHeadersIncludes: createServiceDto.httpConfig?.expectedHeadersIncludes || {},
+          },
+        });
+
+      // 4. Criar alert rules
+      if (createServiceDto.rules?.length) {
+        await prisma.alertRule.createMany({
+          data: createServiceDto.rules.map(rule => ({
+            serviceId: service.id,
+            field: rule.field,
+            condition: rule.condition,
+            severity: $Enums.AlertLevel[rule.severity as keyof typeof $Enums.AlertLevel],
+            createdBy: rule.createdBy,
+            active: rule.active ?? true,
+          })),
+        });
+      }
+
+        return {
+          service,
+          monitoringConfig,
+          httpConfig,
+          usersToNotify: createServiceDto.usersToNotify,
+        };
       });
 
-      this.logger.log(`Serviço HTTP criado: ${result.service.name}`);
-
-      return {
-        id: result.service.id,
-        name: result.service.name,
-        description: result.service.description,
-        endpoint: data.endpoint,
-        status: result.service.status,
-        teamId: result.service.teamId,
-        createdAt: result.service.createdAt,
-        httpConfig: {
-          id: result.monitoringConfig.id,
-          serviceId: result.service.id,
-          method: result.httpConfig.method || 'GET',
-          headers: result.httpConfig.headers,
-          body: result.httpConfig.body,
-          expectedStatusCodes: result.httpConfig.expectedStatusCodes,
-          followRedirects: result.httpConfig.followRedirects ?? true,
-          sslVerification: result.httpConfig.sslVerification ?? true,
-          timeout: result.httpConfig.timeout,
-          frequency: result.httpConfig.frequency,
-          retries: result.httpConfig.retries,
-          retryDelay: result.httpConfig.retryDelay,
-          webhookUrl: result.httpConfig.webhookUrl,
-        },
-      };
+      
+      return result;
     } catch (error) {
-      this.logger.error('Erro ao criar serviço HTTP:', error);
-      throw error;
+      this.logger.error('Error creating HTTP service', error);
+      throw new NotFoundException('Error creating HTTP service');
     }
   }
 
-  async getAllHttpServices(): Promise<HttpServiceResponseDto[]> {
-    const services = await this.prisma.service.findMany({
-      where: {
-        type: {
-          in: [ServiceType.WEBSITE, ServiceType.API],
+    async findAll(): Promise<any[]> {
+      const services = await this.prisma.service.findMany({
+        where: {
+          type: ServiceType.HTTP,
         },
-      },
-      include: {
-        configs: true,
-      },
-    });
+      });
 
-    return services.map((service) => {
-      const config = service.configs[0];
-      return {
+      return services.map((service) => ({
         id: service.id,
         name: service.name,
         description: service.description,
-        endpoint: '',
         status: service.status,
         teamId: service.teamId,
         createdAt: service.createdAt,
-        httpConfig: {
-          id: config?.id || 0,
-          serviceId: service.id,
-          method: 'GET',
-          headers: undefined,
-          body: undefined,
-          expectedStatusCodes: undefined,
-          followRedirects: true,
-          sslVerification: true,
-          timeout: config?.timeout || 5000,
-          frequency: config?.frequency || 60,
-          retries: undefined,
-          retryDelay: undefined,
-          webhookUrl: config?.webhookUrl || undefined,
-        },
-      };
-    });
-  }
+      }));
+    }
 
-  async getHttpServiceById(id: number): Promise<HttpServiceResponseDto> {
+  async findOne(id: number): Promise<any> {
     const service = await this.prisma.service.findUnique({
       where: { id },
       include: {
-        configs: true,
+        usersToNotify: {
+          include: {
+            User: true,
+          },
+        },
+        configs: {
+          include: {
+            HttpConfig: true,
+          },
+        },
+        rules: true,
+        alerts: true,
+        metrics: true,
+        slas: true,
+        logs: true,
+        Team: true,
       },
     });
 
     if (!service) {
-      throw new NotFoundException('Serviço HTTP não encontrado');
+      throw new NotFoundException('Serviço de HTTP não encontrado');
     }
 
-    const config = service.configs[0];
-
-    return {
-      id: service.id,
-      name: service.name,
-      description: service.description,
-      endpoint: '',
-      status: service.status,
-      teamId: service.teamId,
-      createdAt: service.createdAt,
-      httpConfig: {
-        id: config?.id || 0,
-        serviceId: service.id,
-        method: 'GET',
-        headers: undefined,
-        body: undefined,
-        expectedStatusCodes: undefined,
-        followRedirects: true,
-        sslVerification: true,
-        timeout: config?.timeout || 5000,
-        frequency: config?.frequency || 60,
-        retries: undefined,
-        retryDelay: undefined,
-        webhookUrl: config?.webhookUrl || undefined,
-      },
-    };
+    return service;
   }
 
-  async updateHttpConfig(
+  async update(
     serviceId: number,
-    data: UpdateHttpConfigDto,
-  ): Promise<HttpServiceResponseDto> {
+    data: HttpDto,
+  ): Promise<any> {
     const existingService = await this.prisma.service.findUnique({
       where: { id: serviceId },
       include: { configs: true },
     });
 
     if (!existingService) {
-      throw new NotFoundException('Serviço HTTP não encontrado');
+      throw new NotFoundException('Serviço de HTTP não encontrado');
     }
 
-    const config = existingService.configs[0];
-    if (config) {
+    const service = await this.prisma.service.update({
+      where: { id: serviceId },
+      data: {
+        name: data.name,
+        description: data.description,
+        type: ServiceType.HTTP,
+      },
+    });
+
+    // Atualiza MonitoringConfig relacionado ao serviço
+    const monitoringConfig = await this.prisma.monitoringConfig.findFirst({
+      where: { serviceId: serviceId },
+    });
+
+    if (monitoringConfig && data.httpConfig) {
       await this.prisma.monitoringConfig.update({
-        where: { id: config.id },
+        where: { id: monitoringConfig.id },
         data: {
-          frequency: data.frequency,
-          timeout: data.timeout,
-          webhookUrl: data.webhookUrl,
+          interval: data.monitoringConfig.interval,
+          timeout: data.monitoringConfig.timeout,
+          webhookUrl: data.monitoringConfig.webhookUrl,
+        },
+      });
+
+      // Atualiza HttpConfig relacionado ao MonitoringConfig
+      await this.prisma.httpConfig.updateMany({
+        where: { monitoringId: monitoringConfig.id },
+        data: {
+            monitoringId: monitoringConfig.id,
+            endpoint: data.httpConfig.endpoint,
+            method: data.httpConfig?.method || 'GET',
+            headers: data.httpConfig?.headers || {},
+            body: data.httpConfig?.body || {},
+            authType: data.httpConfig?.authType || 'none',
+            authValue: data.httpConfig?.authValue || '',
+            validateSSL: data.httpConfig?.validateSSL || true,
+            followRedirects: data.httpConfig?.followRedirects || true,
+            expectedStatus: data.httpConfig?.expectedStatus || 200,
+            expectedBodyIncludes: data.httpConfig?.expectedBodyIncludes || '',
+            expectedResponseTimeMs: data.httpConfig?.expectedResponseTimeMs || 1000,
+            expectedHeadersIncludes: data.httpConfig?.expectedHeadersIncludes || {},
         },
       });
     }
 
-    return this.getHttpServiceById(serviceId);
+    return this.prisma.service.findUnique({
+      where: { id: serviceId },
+      include: {
+        configs: {
+          include: {
+            HttpConfig: true,
+          },
+        },
+        usersToNotify: {
+          
+        },
+        rules: true,
+        alerts: true,
+        metrics: true,
+        slas: true,
+        logs: true,
+        Team: true,
+      },
+    });
   }
 
-  async deleteHttpService(id: number): Promise<void> {
+  async remove(id: number): Promise<any> {
     const service = await this.prisma.service.findUnique({
       where: { id },
-      include: { configs: true },
     });
 
     if (!service) {
-      throw new NotFoundException('Serviço HTTP não encontrado');
+      throw new NotFoundException('Serviço de HTTP não encontrado');
     }
 
     await this.prisma.$transaction(async (prisma) => {
-      await prisma.monitoringConfig.deleteMany({
-        where: { serviceId: id },
-      });
+      const result = await prisma.service.delete({ where: { id } });
 
-      await prisma.service.delete({
-        where: { id },
-      });
+      if (!result) {
+        throw new NotFoundException('Serviço de HTTP não encontrado');
+      }
     });
-
-    this.logger.log(`Serviço HTTP deletado: ${service.name}`);
+      return { message: 'Serviço de HTTP removido com sucesso' };
   }
 
-  /**
-   * Testa requisição HTTP sem salvar no banco
-   */
-  async testHttpRequest(data: HttpTestDto): Promise<HttpTestResultDto> {
-    const startTime = Date.now();
+  async removeAll(): Promise<any> {
+    const result = await this.prisma.service.deleteMany({ where: { type: ServiceType.HTTP } });
 
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(
-        () => controller.abort(),
-        data.timeout || 5000,
-      );
-
-      const headers = {
-        'User-Agent': 'InfraWatch-HTTP-Monitor/1.0',
-        Accept: 'application/json',
-        ...data.headers,
-      };
-
-      this.logger.debug(`Fazendo requisição HTTP para ${data.url}`);
-
-      const response = await fetch(data.url, {
-        method: data.method || 'GET',
-        headers,
-        body: data.body,
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-      const latency = Date.now() - startTime;
-
-      const expectedStatusCodes = data.expectedStatusCodes || [
-        200, 201, 202, 204,
-      ];
-      const isSuccess = expectedStatusCodes.includes(response.status);
-
-      const responseHeaders: Record<string, string> = {};
-      response.headers.forEach((value, key) => {
-        responseHeaders[key] = value;
-      });
-
-      return {
-        success: isSuccess,
-        statusCode: response.status,
-        latency,
-        url: data.url,
-        timestamp: new Date(),
-        responseHeaders,
-        responseSize: parseInt(response.headers.get('content-length') || '0'),
-        error: !isSuccess
-          ? `HTTP ${response.status}: ${response.statusText}`
-          : undefined,
-      };
-    } catch (error) {
-      const latency = Date.now() - startTime;
-      let errorMessage = (error as Error).message;
-
-      if ((error as Error).name === 'AbortError') {
-        errorMessage = `Timeout após ${data.timeout || 5000}ms`;
-      }
-
-      return {
-        success: false,
-        error: errorMessage,
-        url: data.url,
-        latency,
-        timestamp: new Date(),
-      };
-    }
-  }
-
-  /**
-   * Executa requisição HTTP para monitoramento (usado pelo sistema de monitoring)
-   */
-  async executeHttpRequest(service: any, config: any): Promise<HttpHealthDto> {
-    const startTime = Date.now();
-
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(
-        () => controller.abort(),
-        config.timeout || 5000,
-      );
-
-      const headers = {
-        'User-Agent': 'InfraWatch-Monitor/1.0',
-        Accept: 'application/json',
-        ...(config.headers && this.parseHeaders(config.headers)),
-      };
-
-      this.logger.debug(
-        `Fazendo request para ${service.endpoint} (serviço: ${service.name})`,
-      );
-
-      const response = await fetch(service.endpoint, {
-        method: config.method || 'GET',
-        headers,
-        body: config.body ? this.parseBody(config.body) : undefined,
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-      const latency = Date.now() - startTime;
-
-      const expectedStatusCodes = config.expectedStatusCodes
-        ? this.parseExpectedStatusCodes(config.expectedStatusCodes)
-        : [200, 201, 202, 204];
-
-      const isSuccess = expectedStatusCodes.includes(response.status);
-      const metrics = await this.extractResponseMetrics(response);
-
-      if (isSuccess) {
-        this.logger.log(`✅ Request OK para ${service.name}: ${latency}ms`);
-      }
-
-      return {
-        serviceId: service.id,
-        status: isSuccess ? ServiceStatus.UP : ServiceStatus.DOWN,
-        latency,
-        timestamp: new Date(),
-        metrics: {
-          httpStatus: response.status,
-          responseSize: parseInt(response.headers.get('content-length') || '0'),
-          ...metrics,
-        },
-        errorMessage: !isSuccess
-          ? `HTTP ${response.status}: ${response.statusText}`
-          : undefined,
-      };
-    } catch (error) {
-      const latency = Date.now() - startTime;
-
-      let errorMessage = (error as Error).message;
-      if ((error as Error).name === 'AbortError') {
-        errorMessage = `Timeout após ${config.timeout || 5000}ms`;
-      } else if (
-        typeof (error as any).code === 'string' &&
-        (error as any).code === 'ENOTFOUND'
-      ) {
-        errorMessage = `Host não encontrado: ${service.endpoint}`;
-      } else if (
-        typeof (error as any).code === 'string' &&
-        (error as any).code === 'ECONNREFUSED'
-      ) {
-        errorMessage = `Conexão recusada: ${service.endpoint}`;
-      }
-
-      this.logger.error(
-        `HTTP monitor falhou para ${service.name}:`,
-        errorMessage,
-      );
-
-      return {
-        serviceId: service.id,
-        status: ServiceStatus.DOWN,
-        latency,
-        errorMessage,
-        timestamp: new Date(),
-      };
-    }
-  }
-
-  private isValidUrl(url: string): boolean {
-    try {
-      new URL(url);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  private getServiceTypeFromUrl(url: string): ServiceType {
-    try {
-      const urlObj = new URL(url);
-      const hostname = urlObj.hostname.toLowerCase();
-
-      if (urlObj.pathname.includes('/api') || hostname.includes('api')) {
-        return ServiceType.API;
-      }
-
-      return ServiceType.WEBSITE;
-    } catch {
-      return ServiceType.WEBSITE;
-    }
-  }
-
-  private parseHeaders(headers: string): Record<string, string> {
-    try {
-      return JSON.parse(headers);
-    } catch {
-      return {};
-    }
-  }
-
-  private parseBody(body: string): string {
-    try {
-      return JSON.stringify(JSON.parse(body));
-    } catch {
-      return body;
-    }
-  }
-
-  private parseExpectedStatusCodes(codes: string): number[] {
-    try {
-      return JSON.parse(codes);
-    } catch {
-      return [200];
-    }
-  }
-
-  private async extractResponseMetrics(
-    response: Response,
-  ): Promise<Record<string, any>> {
-    const metrics: Record<string, any> = {};
-
-    try {
-      const contentType = response.headers.get('content-type');
-      if (contentType?.includes('application/json')) {
-        const responseData = await response.clone().json();
-
-        if (responseData.metrics) {
-          Object.assign(metrics, responseData.metrics);
-        }
-
-        if (responseData.performance) {
-          Object.assign(metrics, responseData.performance);
-        }
-
-        ['cpu', 'memory', 'disk', 'load', 'uptime'].forEach((key) => {
-          if (responseData[key] !== undefined) {
-            metrics[key] = responseData[key];
-          }
-        });
-      }
-
-      const serverTiming = response.headers.get('server-timing');
-      if (serverTiming) {
-        metrics.serverTiming = this.parseServerTiming(serverTiming);
-      }
-
-      metrics.contentType = contentType;
-    } catch (error) {
-      this.logger.debug(
-        'Não foi possível extrair métricas da resposta:',
-        (error as Error).message,
-      );
+    if (result.count === 0) {
+      throw new NotFoundException('Nenhum serviço de HTTP encontrado para remover');
     }
 
-    return metrics;
-  }
-
-  private parseServerTiming(serverTiming: string): Record<string, number> {
-    const timing: Record<string, number> = {};
-
-    try {
-      const entries = serverTiming.split(',');
-      entries.forEach((entry) => {
-        const [name, duration] = entry.trim().split(';dur=');
-        if (name && duration) {
-          timing[name] = parseFloat(duration);
-        }
-      });
-    } catch (error) {
-      this.logger.debug(
-        'Erro ao parsear Server-Timing:',
-        (error as Error).message,
-      );
-    }
-
-    return timing;
-  }
-
-  async create(data: CreateHttpServiceDto): Promise<HttpServiceResponseDto> {
-    return this.createHttpService(data);
-  }
-
-  async findAll(): Promise<HttpServiceResponseDto[]> {
-    return this.getAllHttpServices();
-  }
-
-  async findOne(id: number): Promise<HttpServiceResponseDto> {
-    return this.getHttpServiceById(id);
-  }
-
-  async update(
-    id: number,
-    data: UpdateHttpConfigDto,
-  ): Promise<HttpServiceResponseDto> {
-    return this.updateHttpConfig(id, data);
-  }
-
-  async remove(id: number): Promise<void> {
-    return this.deleteHttpService(id);
-  }
-
-  async removeAll(): Promise<void> {
-    try {
-      const httpServices = await this.prisma.service.findMany({
-        where: {
-          OR: [{ type: ServiceType.WEBSITE }, { type: ServiceType.API }],
-        },
-        select: { id: true, name: true },
-      });
-
-      if (httpServices.length === 0) {
-        this.logger.log('Nenhum serviço HTTP encontrado para remoção');
-        return;
-      }
-
-      await this.prisma.$transaction(async (prisma) => {
-        const serviceIds = httpServices.map((s) => s.id);
-
-        await prisma.monitoringConfig.deleteMany({
-          where: { serviceId: { in: serviceIds } },
-        });
-
-        await prisma.metric.deleteMany({
-          where: { serviceId: { in: serviceIds } },
-        });
-
-        await prisma.alert.deleteMany({
-          where: { serviceId: { in: serviceIds } },
-        });
-
-        await prisma.alertRule.deleteMany({
-          where: { serviceId: { in: serviceIds } },
-        });
-
-        await prisma.service.deleteMany({
-          where: { id: { in: serviceIds } },
-        });
-      });
-
-      this.logger.log(
-        `${httpServices.length} serviços HTTP removidos com sucesso`,
-      );
-    } catch (error) {
-      this.logger.error('Erro ao remover todos os serviços HTTP:', error);
-      throw error;
-    }
+    return { message: 'Todos os serviços de HTTP foram removidos com sucesso' };
   }
 }

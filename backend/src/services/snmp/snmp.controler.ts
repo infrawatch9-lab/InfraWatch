@@ -13,7 +13,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagg
 import { RolesGuard } from '../../auth/roles.guard';
 import { Roles } from '../../auth/roles.decorator';
 import { SnmpService } from './snmp.service';
-import { CreateServiceDto, UpdateSnmpConfigDto } from './snmp.entity';
+import {  SnmpDto as CreateServiceDto } from './snmp.entity';
 
 
 @ApiTags('snmp')
@@ -33,7 +33,7 @@ export class SnmpController {
 
   @Get()
   @UseGuards(RolesGuard)
-  @Roles('ADMIN', 'USER')
+  @Roles('ADMIN')
   @ApiBearerAuth()
   @ApiResponse({ status: 200, description: 'Lista de serviços SNMP' })
   @ApiResponse({ status: 404, description: 'Serviços SNMP não encontrados' })
@@ -64,7 +64,7 @@ export class SnmpController {
   @ApiResponse({ status: 400, description: 'Erro ao atualizar serviço SNMP' })
   @ApiResponse({ status: 500, description: 'Erro interno do servidor' })
   @ApiOperation({ summary: 'Atualizar configuração de um serviço SNMP' })
-  update(@Param('id', ParseIntPipe) id: number, @Body() updateSnmpDto: UpdateSnmpConfigDto) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() updateSnmpDto: CreateServiceDto) {
     return this.snmpService.update(id, updateSnmpDto);
   }
 
