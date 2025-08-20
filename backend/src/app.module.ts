@@ -23,6 +23,7 @@ import { DashboardModule } from './dashboards/dashboard.module';
     ServicesModule,
     SlaModule,
   ],
-  controllers: [AppController, NotificationsController],
+  controllers: [AppController],
 })
+
 export class AppModule {}
