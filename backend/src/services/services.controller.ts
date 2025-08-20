@@ -9,6 +9,7 @@ import {
   Delete,
   ParseIntPipe,
   BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { RolesGuard } from '../auth/roles.guard';
@@ -54,6 +55,31 @@ create(
   }
 }
 
+@Get(':id')
+@UseGuards(RolesGuard)
+@Roles('ADMIN', 'USER')
+@ApiBearerAuth()
+@ApiResponse({ status: 200, description: 'Serviço encontrado' })
+@ApiResponse({ status: 404, description: 'Serviço não encontrado' })
+@ApiResponse({ status: 500, description: 'Erro interno do servidor' })
+@ApiOperation({ summary: 'Buscar serviço pelo ID' })
+async findOne(@Param('id', ParseIntPipe) id: number) {
+  console.log("Fetching service with ID:", id);
+
+  const [ snmp, webhook, ping, http ] = await Promise.all([
+    this.snmpService.findOne(id),
+    this.webhookService.findOne(id),
+    this.pingService.findOne(id),
+    this.httpService.findOne(id),
+  ]);
+
+  const service = snmp || webhook || ping || http;
+  if (!service) {
+    throw new NotFoundException(`Serviço com ID ${id} não encontrado`);
+  }
+  return service;
+}
+
 
 @Get()
 @UseGuards(RolesGuard)
@@ -71,25 +97,6 @@ async findAll() {
     this.webhookService.findAll(),
     this.pingService.findAll(),
     this.httpService.findAll(),
-  ]);
-
-  return { snmp, webhook, ping, http };
-}
-
-@Get(':id')
-@UseGuards(RolesGuard)
-@Roles('ADMIN', 'USER')
-@ApiBearerAuth()
-@ApiResponse({ status: 200, description: 'Serviço encontrado'})
-@ApiResponse({ status: 404, description: 'Serviço não encontrado' })
-@ApiResponse({ status: 500, description: 'Erro interno do servidor' })
-@ApiOperation({ summary: 'Obter um serviço pelo ID' })
-async findOne(@Param('id', ParseIntPipe) id: number) {
-  const [snmp, webhook, ping, http] = await Promise.all([
-    this.snmpService.findOne(id),
-    this.webhookService.findOne(id),
-    this.pingService.findOne(id),
-    this.httpService.findOne(id),
   ]);
 
   return { snmp, webhook, ping, http };

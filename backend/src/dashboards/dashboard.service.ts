@@ -6,7 +6,6 @@ export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll() {
-    // Exemplo: retorna todos os serviços como "dashboards"
     return this.prisma.service.findMany({
       orderBy: { createdAt: 'desc' },
     });

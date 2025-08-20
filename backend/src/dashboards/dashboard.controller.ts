@@ -19,10 +19,9 @@ import { DashboardService } from './dashboard.service';
 export class DashboardController {
     constructor(private readonly dashboardService: DashboardService) {}
 
-    // dashboard para mostar todos os servicos cadastrados
     @Get()
     @UseGuards(RolesGuard)
-    @Roles('ADMIN', 'USER')
+    @Roles('ADMIN')
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Listar todos os dashboards' })
     @ApiResponse({ status: 200, description: 'Lista de dashboards' })
@@ -30,7 +29,6 @@ export class DashboardController {
         return this.dashboardService.findAll();
     }
     
-    // dashboard para obter um dashboard por ID
     @Get(':id')
     @UseGuards(RolesGuard)
     @Roles('ADMIN', 'USER')
