@@ -21,7 +21,9 @@ import { DashboardModule } from './dashboards/dashboard.module';
     AuthModule,
     NotificationsModule,
     ServicesModule,
+    SlaModule,
   ],
-  controllers: [AppController, NotificationsController],
+  controllers: [AppController],
 })
+
 export class AppModule {}
