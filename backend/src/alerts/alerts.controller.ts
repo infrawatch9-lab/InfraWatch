@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Param, ParseIntPipe, Sse, UseGuards } from
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
+import { Public } from '../auth/public.decorator';
 import { AlertService } from './alerts.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { fromEventPattern, Observable } from 'rxjs';
@@ -19,11 +20,21 @@ export class AlertController {
   @UseGuards(RolesGuard)
   @Roles('ADMIN', 'USER')
   streamAlerts(): Observable<{ data: any }> {
+    console.log('SSE connection established for alerts');
     return fromEventPattern(
-      (handler) => this.eventEmitter.on('alert.new', handler),
-      (handler) => this.eventEmitter.off('alert.new', handler),
+      (handler) => {
+        console.log('Registrando listener para alert.new');
+        this.eventEmitter.on('alert.new', handler);
+      },
+      (handler) => {
+        console.log('Removendo listener para alert.new');
+        this.eventEmitter.off('alert.new', handler);
+      },
     ).pipe(
-      map((alert) => ({ data: alert })),
+      map((alert) => {
+        console.log('Evento recebido no SSE:', alert);
+        return { data: alert };
+      }),
     );
   }
 

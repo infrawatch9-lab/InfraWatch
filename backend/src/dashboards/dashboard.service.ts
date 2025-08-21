@@ -9,7 +9,6 @@ export class DashboardService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  // Atualiza dashboard e dispara evento
   async updateDashboard(id: number, data: any) {
     const updated = await this.prisma.service.update({
       where: { id },
@@ -20,12 +19,6 @@ export class DashboardService {
     return updated;
   }
 
-  // Para SSE: lista todos os dashboards
-  async findAll() {
-    return this.prisma.service.findMany();
-  }
-
-  // Buscar um dashboard específico
   async findOne(id: number) {
     return this.prisma.service.findUnique({ where: { id } });
   }

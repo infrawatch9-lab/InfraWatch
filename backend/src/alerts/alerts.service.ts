@@ -18,6 +18,7 @@ export class AlertService {
         message: string;
         usersToNotify: string[]
     }) {
+
         const alert = await this.prisma.alert.create({
             data: {
                 serviceId: alertData.serviceId,
@@ -25,6 +26,8 @@ export class AlertService {
                 message: alertData.message,
             },
         });
+
+        console.log('Alert created:', alert);
         this.eventEmitter.emit('alert.new', alert);
         this.notificationsService.sendAlert(alertData.message, alertData.usersToNotify);
         return alert;

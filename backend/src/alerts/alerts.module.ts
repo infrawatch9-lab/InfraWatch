@@ -6,7 +6,7 @@ import { PrismaService } from '../database/prisma.service';
 import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
-  imports: [EventEmitterModule.forRoot(), NotificationsModule],
+  imports: [NotificationsModule],
   providers: [AlertService, PrismaService],
   controllers: [AlertController],
 })

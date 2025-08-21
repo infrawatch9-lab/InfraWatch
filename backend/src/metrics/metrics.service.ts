@@ -1,40 +1,30 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 const prisma = new PrismaClient();
 
 @Injectable()
 export class MetricsService {
+  constructor(private eventEmitter: EventEmitter2) {}
+
   async saveMetrics(data: any) {
     try {
-      // Determina o host baseado no formato dos dados
-      let id = data.serviceId;
+    const metricSaved = await prisma.metric.create({
+      data: {
+        serviceId: data.serviceId,
+        timestamp: data.timestamp ? new Date(data.timestamp) : new Date(),
+        cpu: data.metrics?.cpu,
+        memory: data.metrics?.memory,
+        latency: data.latency ? data.latency['8.8.8.8'] : undefined,
+        status: data.status || 'PENDING',
+        errorMsg: data.errorMsg || null,
+      },
+    });
 
-      // Formato compatível com o teste e com o formato original
-      const metricData = {
-        timestamp: new Date(data.timestamp || new Date()),
-        cpu: data.metrics?.cpu || data.cpuUsage || 0,
-        memory: data.metrics?.memory || data.memoryUsage || 0,
-        disk: data.metrics?.disk || data.diskUsage || 0,
-        uptime: data.metrics?.uptime_seconds || 0,
-        bytesSent: BigInt(data.metrics?.network?.bytes_sent || 0),
-        bytesRecv: BigInt(data.metrics?.network?.bytes_recv || 0),
-        latency: data.latency || data.networkLatency || 0,
-        logs: data.logs ?? [],
-        alerts: data.alerts ?? [],
-      };
-
-      const metricSaved = await prisma.metric.create({
-        data: {
-          ...metricData,
-          status: data.status || 'OK', // Provide a default or use from input
-          Service: {
-            connect: { id: id }
-          }
-        }
-      });
-
+      this.eventEmitter.emit('dashboard.updated', metricSaved);
       return { success: true, id: metricSaved.id };
+
     } catch (error) {
       console.error('Erro ao salvar métricas:', error);
       throw new Error('Erro interno do servidor');
@@ -43,7 +33,7 @@ export class MetricsService {
 
   async getMetricsByHost(id: number) {
     return await prisma.metric.findMany({
-      where: { serviceId: id },
+      where: { serviceId : id },
       orderBy: { timestamp: 'desc' },
     });
   }

@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { MetricsService } from './metrics.service';
 import { CreateMetricDto } from './metrics.entity';
 import { AgentAuthGuard } from '../auth/agent-auth.guard';
 import { Public } from '../auth/public.decorator';
+import { parse } from 'path';
 
 @Controller('metrics')
 export class MetricsController {
@@ -21,10 +22,10 @@ export class MetricsController {
     }
   }
 
-  @Get(':host')
-  async getMetricsByHost(@Param('host') host: number) {
+  @Get(':id')
+  async getMetricsByHost(@Param('id', ParseIntPipe) id: number) {
     try {
-      const metrics = await this.metricsService.getMetricsByHost(host);
+      const metrics = await this.metricsService.getMetricsByHost(id);
       return metrics;
     } catch (error) {
       console.error('Erro ao buscar métricas por host:', error);
