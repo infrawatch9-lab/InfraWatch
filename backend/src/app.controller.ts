@@ -1,14 +1,26 @@
 import { Controller, Get, Post, Body } from '@nestjs/common';
 import { Public } from './auth/public.decorator';
 import { MicroservicesGateway } from './ws/microservices.gateway';
+import { AlertService } from './alerts/alerts.service';
+import { EmailService } from './notifications/email.service';
 
 @Controller('health')
 export class AppController {
-
+  constructor(
+    private readonly alertService: AlertService,
+    private readonly emailService: EmailService,
+    private readonly gateway: MicroservicesGateway,
+  ) {}
   @Get()
   @Public()
   getHealth() {
     // Dentro de algum serviço ou controller para teste
+    this.alertService.createAlert({
+      serviceId: 8,
+      ruleId: 15,
+      message: 'Teste de alerta',
+      usersToNotify: ['kombagildo@gmail.com'],
+    });
     return {
       success: true,
       message: 'InfraWatch API is running',

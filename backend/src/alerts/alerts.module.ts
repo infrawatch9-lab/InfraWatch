@@ -9,6 +9,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
   imports: [NotificationsModule],
   providers: [AlertService, PrismaService],
   controllers: [AlertController],
+  exports: [AlertService],
 })
 
 export class AlertModule {}

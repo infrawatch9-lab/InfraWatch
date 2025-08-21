@@ -11,11 +11,11 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-export async function sendEmail(to: string[], subject: string, text: string, html: string) {
+export async function sendEmail(to: string | string[], subject: string, text: string, html: string) {
 
   const info = await transporter.sendMail({
     from: '"InfraWatch" <kombagildo@gmail.com>',
-    to: to.join(', '),
+    to: Array.isArray(to) ? to.join(', ') : to,
     subject: subject,
     text: text,
     html: html,
@@ -26,11 +26,11 @@ export async function sendEmail(to: string[], subject: string, text: string, htm
 
 @Injectable()
 export class EmailService {
-  async send(message: string, subject: string, html: string, to: string[]) {
+  async send(message: string, subject: string, html: string, to: string | string[]) {
     console.log(`[EMAIL] Alerta enviado: ${message}`);
     console.log(`Enviando Email para: ${to}`);
     try {
-      await sendEmail(to, subject, message, html);
+      await sendEmail(Array.isArray(to) ? to : [to], subject, message, html);
     } catch (error) {
       console.error('Erro ao enviar email:', error);
     }

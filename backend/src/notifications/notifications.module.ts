@@ -13,6 +13,6 @@ import { SlackService } from './slack.service';
     EmailService,
     SlackService,
   ],
-  exports: [NotificationsService],
+  exports: [NotificationsService, EmailService],
 })
 export class NotificationsModule {}

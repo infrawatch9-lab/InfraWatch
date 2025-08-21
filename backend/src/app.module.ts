@@ -12,6 +12,8 @@ import { SlaModule } from './sla/sla.module';
 import { DashboardModule } from './dashboards/dashboard.module';
 import { AlertModule } from './alerts/alerts.module';
 import { MicroservicesGateway } from './ws/microservices.gateway';
+import { EmailService } from './users/users-email.service';
+import { AlertService } from './alerts/alerts.service';
 
 @Module({
   imports: [
@@ -28,7 +30,7 @@ import { MicroservicesGateway } from './ws/microservices.gateway';
     AlertModule
   ],
   controllers: [AppController, WebSocketController],
-  providers: [MicroservicesGateway],
+  providers: [MicroservicesGateway, EmailService, AlertService],
 })
 
 export class AppModule {}
