@@ -9,12 +9,18 @@ import {
 } from './webhook.entity';
 import { ServiceType } from '@prisma/client';
 import { $Enums } from '@prisma/client';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { MicroservicesGateway } from '../../ws/microservices.gateway';
 
 @Injectable()
 export class WebhookService {
     private readonly logger = new Logger(WebhookService.name);
 
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(
+      private readonly prisma: PrismaService,
+      private readonly eventEmitter: EventEmitter2,
+      private readonly microservicesGateway: MicroservicesGateway,
+    ) {}
 
   async create(createServiceDto: WebhookDto): Promise<any> {
     try {
@@ -185,7 +191,7 @@ export class WebhookService {
       throw new NotFoundException('Serviço de Webhook não encontrado');
     }
 
-    const service = await this.prisma.service.update({
+    await this.prisma.service.update({
         where: { id: serviceId },
         data: {
             name: data.name,
@@ -223,7 +229,7 @@ export class WebhookService {
       });
     }
 
-    return this.prisma.service.findUnique({
+      const updatedService = await this.prisma.service.findUnique({
       where: { id: serviceId },
       include: {
         configs: {
@@ -231,7 +237,9 @@ export class WebhookService {
             WebhookConfig: true,
           },
         },
-        usersToNotify: {},
+        usersToNotify: {
+          
+        },
         rules: true,
         alerts: true,
         metrics: true,
@@ -240,6 +248,35 @@ export class WebhookService {
         Team: true,
       },
     });
+    
+    if (!updatedService) {
+      throw new NotFoundException('Serviço de SNMP atualizado não encontrado');
+    }
+    
+    const to_send = {
+      action: 'update',
+      id : updatedService.id,
+      name: updatedService.name,
+      description: updatedService.description,
+      type: updatedService.type,
+      status: updatedService.status,
+      teamId: updatedService.teamId,
+      configs: updatedService?.configs,
+      rules: updatedService.rules,
+    };
+    
+    this.microservicesGateway.handleMessageRest({
+      from: 'InfraWatch',
+      to: 'WebhookMonitoring',
+      payload: to_send,
+    });
+
+    this.eventEmitter.emit('dashboard.updated', {
+      serviceId,
+      data,
+    });
+
+    return updatedService;
   }
 
   async remove(id: number): Promise<any> {

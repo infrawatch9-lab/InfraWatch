@@ -10,14 +10,18 @@ import {
 } from './ping.entity';
 import { getDifferences } from './ping.utils';
 import { $Enums } from '@prisma/client';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { MicroservicesGateway } from '../../ws/microservices.gateway';
 
 @Injectable()
 export class PingService {
   private readonly logger = new Logger(PingService.name);
 
-  constructor(
+    constructor(
     private readonly prisma: PrismaService,
-  ) {}
+    private readonly eventEmitter: EventEmitter2,
+    private readonly microservicesGateway: MicroservicesGateway,
+    ) {}
 
   async createPingService(
   data: CreatePingServiceDto,
@@ -244,7 +248,7 @@ export class PingService {
     this.logger.log(`Diferenças encontradas: ${differences.join(', ')}`);
 
     // Atualiza Service, MonitoringConfig e PingConfig separadamente
-    const updatedService = await this.prisma.service.update({
+     await this.prisma.service.update({
       where: { id: serviceId },
       data: {
         name: data.name,
@@ -279,7 +283,54 @@ export class PingService {
         },
       });
     }
+        const updatedService = await this.prisma.service.findUnique({
+      where: { id: serviceId },
+      include: {
+        configs: {
+          include: {
+            PingConfig: true,
+          },
+        },
+        usersToNotify: {
+          
+        },
+        rules: true,
+        alerts: true,
+        metrics: true,
+        slas: true,
+        logs: true,
+        Team: true,
+      },
+    });
+    
+    if (!updatedService) {
+      throw new NotFoundException('Serviço de SNMP atualizado não encontrado');
+    }
+    
+    const to_send = {
+      action : 'update',
+      id : updatedService.id,
+      name: updatedService.name,
+      description: updatedService.description,
+      type: updatedService.type,
+      status: updatedService.status,
+      teamId: updatedService.teamId,
+      configs: updatedService?.configs,
+      rules: updatedService.rules,
+    };
+    
+    // atualiza o monitoramento por websocket
+    this.microservicesGateway.handleMessageRest({
+      from: 'InfraWatch',
+      to: 'PingMonitoring',
+      payload: to_send,
+    });
 
+    this.eventEmitter.emit('dashboard.updated', {
+      serviceId,
+      data,
+    });
+    
     // Retorna o serviço atualizado (pode ser expandido para incluir configs se necessário)
     return updatedService;
   }

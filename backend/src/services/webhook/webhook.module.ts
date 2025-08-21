@@ -2,9 +2,11 @@ import { Module } from '@nestjs/common';
 import { WebhookController } from './webhook.controler';
 import { WebhookService } from './webhook.service';
 import { DatabaseModule } from '../../database/database.module';
+import { MicroservicesModule } from '../../ws/ws.module';
+
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, MicroservicesModule],
   controllers: [WebhookController],
   providers: [WebhookService],
   exports: [WebhookService],

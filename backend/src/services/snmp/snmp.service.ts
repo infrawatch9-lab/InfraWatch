@@ -9,12 +9,18 @@ import {
 } from './snmp.entity';
 import { ServiceType, SnmpVersion } from '@prisma/client';
 import { $Enums } from '@prisma/client';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { MicroservicesGateway } from '../../ws/microservices.gateway';
 
 @Injectable()
 export class SnmpService {
     private readonly logger = new Logger(SnmpService.name);
 
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventEmitter: EventEmitter2,
+    private readonly microservicesGateway: MicroservicesGateway,
+    ) {}
 
     async create(createServiceDto: SnmpDto): Promise<any> {
       try {
@@ -236,7 +242,7 @@ export class SnmpService {
       });
     }
 
-    return this.prisma.service.findUnique({
+    const updatedService = await this.prisma.service.findUnique({
       where: { id: serviceId },
       include: {
         configs: {
@@ -255,6 +261,36 @@ export class SnmpService {
         Team: true,
       },
     });
+    
+    if (!updatedService) {
+      throw new NotFoundException('Serviço de SNMP atualizado não encontrado');
+    }
+    
+    const to_send = {
+      action: 'update',
+      id : updatedService.id,
+      name: updatedService.name,
+      description: updatedService.description,
+      type: updatedService.type,
+      status: updatedService.status,
+      teamId: updatedService.teamId,
+      configs: updatedService?.configs,
+      rules: updatedService.rules,
+    };
+    
+    // atualiza o monitoramento por websocket
+    this.microservicesGateway.handleMessageRest({
+      from: 'InfraWatch',
+      to: 'SnmpMonitoring',
+      payload: to_send,
+    });
+
+    this.eventEmitter.emit('dashboard.updated', {
+      serviceId,
+      data,
+    });
+
+    return updatedService;
   }
 
   async remove(id: number): Promise<any> {
