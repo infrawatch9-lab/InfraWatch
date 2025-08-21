@@ -1,3 +1,0 @@
-DATABASE_URL="postgresql://infrawatch:%3Cphp%3EInfraW4tch%3F%3E@ep-still-frog-af3pkc6v-pooler.c-2.us-west-2.aws.neon.tech/InfraWatch?sslmode=require&channel_binding=require"
-GMAIL_APP_PASSWORD="wmek wpdf uozu yntk"
-SLACK_WEBHOOK="https://hooks.slack.com/services/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"
