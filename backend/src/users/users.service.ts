@@ -23,10 +23,7 @@ export class UsersService {
       const trimmedName = name.trim();
       const trimmedEmail = email.trim();
       if (!trimmedName || !trimmedEmail) {
-        return {
-          success: false,
-          message: 'Nome e email são obrigatórios',
-        };
+        throw new Error('Nome e email são obrigatórios');
       }
 
       const existingUser = await prisma.user.findUnique({
@@ -36,10 +33,7 @@ export class UsersService {
       console.log('Existing user:', existingUser);
 
       if (existingUser) {
-        return {
-          success: false,
-          message: 'Usuário já existe com este email',
-        };
+        throw new Error('Usuário já existe com este email');
       }
       const temporaryPassword = generateTemporaryPassword();
       const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
@@ -72,10 +66,7 @@ export class UsersService {
       };
     } catch (error) {
       console.error('Erro no registro:', error);
-      return {
-        success: false,
-        message: 'Erro interno do servidor',
-      };
+      throw new Error('Erro interno do servidor');
     }
   }
 
@@ -88,19 +79,13 @@ export class UsersService {
       const trimmedPassword = password.trim();
 
       if (!trimmedName || !trimmedEmail || !trimmedPassword) {
-        return {
-          success: false,
-          message: 'Nome, email e password são obrigatórios',
-        };
+        throw new Error('Nome, email e password são obrigatórios');
       }
       const existingUser = await prisma.user.findUnique({
         where: { email: trimmedEmail },
       });
       if (existingUser) {
-        return {
-          success: false,
-          message: 'Usuário já existe com este email',
-        };
+        throw new Error('Usuário já existe com este email');
       }
       const hashedPassword = await bcrypt.hash(password, 10);
       const user = await prisma.user.create({
@@ -129,10 +114,7 @@ export class UsersService {
       };
     } catch (error) {
       console.error('Erro no registro:', error);
-      return {
-        success: false,
-        message: 'Erro interno do servidor',
-      };
+      throw new Error('Erro interno do servidor');
     }
   }
 
@@ -143,10 +125,7 @@ export class UsersService {
       const password_trimmed = password.trim();
 
       if (!email_trimmed || !password_trimmed) {
-        return {
-          success: false,
-          message: 'Email e password são obrigatórios',
-        };
+        throw new Error('Email e password são obrigatórios');
       }
 
       console.log('Login attempt with:', {
@@ -159,10 +138,7 @@ export class UsersService {
 
       if (!user) {
         console.log('User not found:', email_trimmed);
-        return {
-          success: false,
-          message: 'Usuário não encontrado',
-        };
+        throw new Error('Usuário não encontrado');
       }
 
       console.log('User found:', {
@@ -172,20 +148,13 @@ export class UsersService {
       });
 
       if (user.status === 'INACTIVE') {
-        return {
-          success: false,
-          message: 'Conta inativa. Entre em contato com o administrador.',
-        };
+        throw new Error('Conta inativa. Entre em contato com o administrador.');
       }
 
       // Verificar se a senha temporária expirou
       if (user.isTemporaryPassword && user.temporaryPasswordExpiry) {
         if (new Date() > user.temporaryPasswordExpiry) {
-          return {
-            success: false,
-            message:
-              'Senha provisória expirada. Entre em contato com o administrador.',
-          };
+          throw new Error('Senha provisória expirada. Entre em contato com o administrador.');
         }
       }
 
@@ -195,10 +164,7 @@ export class UsersService {
       );
       if (!isPasswordValid) {
         console.log('Password comparison failed for user:', email_trimmed);
-        return {
-          success: false,
-          message: 'Credenciais inválidas',
-        };
+        throw new Error('Senha incorreta');
       }
 
       const tokens = generateTokens({
@@ -227,10 +193,7 @@ export class UsersService {
       };
     } catch (error) {
       console.error('Erro no login:', error);
-      return {
-        success: false,
-        message: 'Erro interno do servidor',
-      };
+      throw new Error('Erro interno do servidor');
     }
   }
 
@@ -241,10 +204,7 @@ export class UsersService {
         where: { id: userId },
       });
       if (!user) {
-        return {
-          success: false,
-          message: 'Usuário não encontrado',
-        };
+        throw new Error('Usuário não encontrado');
       }
       const tokens = generateTokens({
         id: user.id,
@@ -260,10 +220,7 @@ export class UsersService {
       };
     } catch (error) {
       console.error('Erro no refresh token:', error);
-      return {
-        success: false,
-        message: 'Token de refresh inválido',
-      };
+       throw new Error('Erro ao renovar token');
     }
   }
 
@@ -283,7 +240,7 @@ export class UsersService {
       return user;
     } catch (error) {
       console.error('Erro ao buscar perfil do usuário:', error);
-      return [];
+      throw new Error('Erro ao buscar perfil do usuário');
     }
   }
 
@@ -303,7 +260,7 @@ export class UsersService {
       return user;
     } catch (error) {
       console.error('Erro ao buscar usuário:', error);
-      return null;
+      throw new Error('Erro ao buscar usuário'); 
     }
   }
 
@@ -321,7 +278,7 @@ export class UsersService {
       });
     } catch (error) {
       console.error('Erro ao listar usuários:', error);
-      return [];
+      throw new Error('Erro ao listar usuários');
     }
   }
 
@@ -339,7 +296,7 @@ export class UsersService {
       });
     } catch (error) {
       console.error('Erro ao listar usuários:', error);
-      return [];
+      throw new Error('Erro ao listar usuários');
     }
   }
 
@@ -413,7 +370,7 @@ export class UsersService {
       return user;
     } catch (error) {
       console.error('Erro ao atualizar usuário:', error);
-      return [];
+      throw new Error('Erro ao atualizar usuário');
     }
   }
 
@@ -426,17 +383,11 @@ export class UsersService {
       const { currentPassword, newPassword } = data;
 
       if (!currentPassword || !newPassword) {
-        return {
-          success: false,
-          message: 'Senha atual e nova senha são obrigatórias',
-        };
+        throw new Error('Senha atual e nova senha são obrigatórias');
       }
 
       if (newPassword.length < 6) {
-        return {
-          success: false,
-          message: 'Nova senha deve ter pelo menos 6 caracteres',
-        };
+        throw new Error('Nova senha deve ter pelo menos 6 caracteres');
       }
 
       const user = await prisma.user.findUnique({
@@ -444,10 +395,7 @@ export class UsersService {
       });
 
       if (!user) {
-        return {
-          success: false,
-          message: 'Usuário não encontrado',
-        };
+        throw new Error('Usuário não encontrado');
       }
 
       // Verificar senha atual
@@ -456,10 +404,7 @@ export class UsersService {
         user.password,
       );
       if (!isCurrentPasswordValid) {
-        return {
-          success: false,
-          message: 'Senha atual incorreta',
-        };
+        throw new Error('Senha atual incorreta');
       }
 
       // Hash da nova senha
@@ -485,10 +430,7 @@ export class UsersService {
       };
     } catch (error) {
       console.error('Erro ao redefinir senha:', error);
-      return {
-        success: false,
-        message: 'Erro interno do servidor',
-      };
+      throw new Error('Erro interno do servidor');
     }
   }
 
@@ -499,10 +441,7 @@ export class UsersService {
       });
 
       if (!user) {
-        return {
-          success: false,
-          message: 'Usuário não encontrado',
-        };
+        throw new Error('Usuário não encontrado');
       }
 
       await prisma.user.delete({
@@ -515,10 +454,7 @@ export class UsersService {
       };
     } catch (error) {
       console.error('Erro ao deletar usuário:', error);
-      return {
-        success: false,
-        message: 'Erro interno do servidor',
-      };
+      throw new Error('Erro interno do servidor');
     }
   }
 }
