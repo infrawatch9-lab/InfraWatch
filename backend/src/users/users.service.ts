@@ -148,7 +148,9 @@ export class UsersService {
       });
 
       if (user.status === 'INACTIVE') {
-        throw new Error('Usuário inativo. Entre em contato com o administrador.');
+        const error: any = new Error('Usuário inativo. Entre em contato com o administrador.');
+        error.statusCode = 404;
+        throw error;
       }
 
       // Verificar se a senha temporária expirou
