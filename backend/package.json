@@ -13,6 +13,9 @@
     "test:sla-ts": "ts-node src/sla/sla-debug.ts",
     "start:dev": "nest start --watch"
   },
+  "prisma": {
+    "schema": "prisma/schema.prisma"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -26,6 +29,7 @@
     "@types/nodemailer": "^6.4.17",
     "@types/passport": "^1.0.17",
     "@types/ping": "^0.4.4",
+    "@types/socket.io": "^3.0.1",
     "@types/supertest": "^6.0.3",
     "jest": "^30.0.5",
     "prisma": "^6.14.0",
@@ -44,8 +48,10 @@
     "@nestjs/jwt": "^11.0.0",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.1.5",
+    "@nestjs/platform-socket.io": "^11.1.6",
     "@nestjs/schedule": "^6.0.0",
     "@nestjs/swagger": "^11.2.0",
+    "@nestjs/websockets": "^11.1.6",
     "@prisma/client": "^6.14.0",
     "@types/bcrypt": "^6.0.0",
     "@types/express": "^4.17.23",
@@ -64,6 +70,7 @@
     "ping": "^0.4.4",
     "reflect-metadata": "^0.2.2",
     "rimraf": "^6.0.1",
+    "socket.io": "^4.8.1",
     "swagger-ui-express": "^5.0.1"
   }
 }
