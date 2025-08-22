@@ -7,6 +7,7 @@ COPY backend/package*.json ./backend/
 
 WORKDIR /app/backend
 RUN npm install
+RUN npx prisma generate
 
 COPY backend ./ 
 
