@@ -146,6 +146,7 @@ export class PingService {
     return services.map((service) => ({
       id: service.id,
       name: service.name,
+      type: service.type,
       description: service.description,
       status: service.status,
       teamId: service.teamId,
@@ -254,7 +255,6 @@ export class PingService {
         name: data.name,
         description: data.description,
         type: $Enums.ServiceType.PING,
-        teamId: data.teamId,
       },
     });
 

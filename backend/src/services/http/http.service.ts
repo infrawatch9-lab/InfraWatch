@@ -149,6 +149,7 @@ export class HttpService {
       return services.map((service) => ({
         id: service.id,
         name: service.name,
+        type: service.type,
         description: service.description,
         status: service.status,
         teamId: service.teamId,
