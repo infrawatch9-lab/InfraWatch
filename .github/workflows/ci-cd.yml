@@ -1,0 +1,44 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - prod
+  pull_request:
+    branches:
+      - prod
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Login GHCR
+        run: echo "${{ secrets.DEPLOY }}" | podman login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Login Docker Hub
+        run: echo "${{ secrets.DOCKERHUB_PATH }}" | podman login docker.io -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+
+      - name: Build and Push Image
+        run: |
+          if [ "${GITHUB_REF##*/}" == "staging" ]; then
+            IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/infrawatch-monitor-snmp:staging
+          else
+            IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/infrawatch-monitor-snmp:latest
+          fi
+          podman build -t $IMAGE .
+          podman push $IMAGE
+
+      - name: Trigger deploy workflow
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.DEPLOY }}
+          repository: infrawatch9-lab/Deploy_Repo
+          event-type: microservice-updated
+          client-payload: |
+            {
+              "service": "${{ github.repository }}",
+              "tag": "${{ github.ref_name }}"
+            }
