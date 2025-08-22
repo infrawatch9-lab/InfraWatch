@@ -98,8 +98,8 @@ async findAll() {
     this.pingService.findAll(),
     this.httpService.findAll(),
   ]);
-
-  return { snmp, webhook, ping, http };
+  const services = [...snmp, ...webhook, ...ping, ...http];
+  return { services };
 }
 
 @Put(':id')

@@ -404,6 +404,14 @@ export class UsersService {
     try {
       const { name, email, role, isTemporaryPassword, status } = data;
 
+      if (!data.id || !name || !email || !role || !status) {
+        throw {
+          success: false,
+          message: 'ID, nome, email, cargo e status são obrigatórios',
+          statusCode: 400,
+        };
+      }
+
       const trimmedName = name.trim();
       const trimmedEmail = email.trim();
 
@@ -472,6 +480,7 @@ export class UsersService {
           name: true,
           email: true,
           role: true,
+          status: true,
           createdAt: true,
           updatedAt: true,
         },
