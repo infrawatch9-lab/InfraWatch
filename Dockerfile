@@ -3,12 +3,12 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-COPY Backend/package*.json ./Backend/
+COPY backend/package*.json ./backend/
 
-WORKDIR /app/Backend
+WORKDIR /app/backend
 RUN npm install
 
-COPY Backend ./ 
+COPY backend ./ 
 
 RUN npm run build
 RUN npm prune --production
@@ -17,10 +17,10 @@ RUN npm prune --production
 # ===== Imagem final =====
 FROM node:20-alpine
 
-WORKDIR /app/Backend
+WORKDIR /app/backend
 
 
-COPY --from=builder /app/Backend ./
+COPY --from=builder /app/backend ./
 
 RUN npm install -g nodemon
 
