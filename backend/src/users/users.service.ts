@@ -23,7 +23,11 @@ export class UsersService {
       const trimmedName = name.trim();
       const trimmedEmail = email.trim();
       if (!trimmedName || !trimmedEmail) {
-        throw new Error('Nome e email são obrigatórios');
+        throw {
+          success: false,
+          message: 'Nome e email são obrigatórios',
+          statusCode: 400,
+        };
       }
 
       const existingUser = await prisma.user.findUnique({
@@ -33,7 +37,11 @@ export class UsersService {
       console.log('Existing user:', existingUser);
 
       if (existingUser) {
-        throw new Error('Usuário já existe com este email');
+        throw {
+          success: false,
+          message: 'Já existe uma conta com este email',
+          statusCode: 409,
+        };
       }
       const temporaryPassword = generateTemporaryPassword();
       const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
@@ -66,7 +74,17 @@ export class UsersService {
       };
     } catch (error) {
       console.error('Erro no registro:', error);
-      throw new Error('Erro interno do servidor');
+      
+      // Se o erro já tem a estrutura esperada, propague-o
+      if (error && typeof error === 'object' && 'success' in error) {
+        throw error;
+      }
+      
+      throw {
+        success: false,
+        message: 'Erro interno do servidor. Tente novamente mais tarde.',
+        statusCode: 500,
+      };
     }
   }
 
@@ -79,13 +97,21 @@ export class UsersService {
       const trimmedPassword = password.trim();
 
       if (!trimmedName || !trimmedEmail || !trimmedPassword) {
-        throw new Error('Nome, email e password são obrigatórios');
+        throw {
+          success: false,
+          message: 'Nome, email e senha são obrigatórios',
+          statusCode: 400,
+        };
       }
       const existingUser = await prisma.user.findUnique({
         where: { email: trimmedEmail },
       });
       if (existingUser) {
-        throw new Error('Usuário já existe com este email');
+        throw {
+          success: false,
+          message: 'Já existe uma conta com este email',
+          statusCode: 409,
+        };
       }
       const hashedPassword = await bcrypt.hash(password, 10);
       const user = await prisma.user.create({
@@ -114,7 +140,17 @@ export class UsersService {
       };
     } catch (error) {
       console.error('Erro no registro:', error);
-      throw new Error('Erro interno do servidor');
+      
+      // Se o erro já tem a estrutura esperada, propague-o
+      if (error && typeof error === 'object' && 'success' in error) {
+        throw error;
+      }
+      
+      throw {
+        success: false,
+        message: 'Erro interno do servidor. Tente novamente mais tarde.',
+        statusCode: 500,
+      };
     }
   }
 
@@ -125,7 +161,11 @@ export class UsersService {
       const password_trimmed = password.trim();
 
       if (!email_trimmed || !password_trimmed) {
-        throw new Error('Email e password são obrigatórios');
+        throw {
+          success: false,
+          message: 'Email e senha são obrigatórios',
+          statusCode: 400,
+        };
       }
 
       console.log('Login attempt with:', {
@@ -138,7 +178,11 @@ export class UsersService {
 
       if (!user) {
         console.log('User not found:', email_trimmed);
-        throw new Error('Usuário não encontrado');
+        throw {
+          success: false,
+          message: 'Email ou senha incorretos',
+          statusCode: 401,
+        };
       }
 
       console.log('User found:', {
@@ -148,15 +192,21 @@ export class UsersService {
       });
 
       if (user.status === 'INACTIVE') {
-        const error: any = new Error('Usuário inativo. Entre em contato com o administrador.');
-        error.statusCode = 404;
-        throw error;
+        throw {
+          success: false,
+          message: 'Sua conta está inativa. Entre em contato com o administrador para reativá-la.',
+          statusCode: 403,
+        };
       }
 
       // Verificar se a senha temporária expirou
       if (user.isTemporaryPassword && user.temporaryPasswordExpiry) {
         if (new Date() > user.temporaryPasswordExpiry) {
-          throw new Error('Senha provisória expirada. Entre em contato com o administrador.');
+          throw {
+            success: false,
+            message: 'Sua senha provisória expirou. Entre em contato com o administrador para obter uma nova.',
+            statusCode: 401,
+          };
         }
       }
 
@@ -166,7 +216,11 @@ export class UsersService {
       );
       if (!isPasswordValid) {
         console.log('Password comparison failed for user:', email_trimmed);
-        throw new Error('Senha incorreta');
+        throw {
+          success: false,
+          message: 'Email ou senha incorretos',
+          statusCode: 401,
+        };
       }
 
       const tokens = generateTokens({
@@ -195,7 +249,18 @@ export class UsersService {
       };
     } catch (error) {
       console.error('Erro no login:', error);
-      throw new Error('Erro interno do servidor');
+      
+      // Se o erro já tem a estrutura esperada, propague-o
+      if (error && typeof error === 'object' && 'success' in error) {
+        throw error;
+      }
+      
+      // Caso contrário, crie um erro genérico estruturado
+      throw {
+        success: false,
+        message: 'Erro interno do servidor. Tente novamente mais tarde.',
+        statusCode: 500,
+      };
     }
   }
 
@@ -206,7 +271,11 @@ export class UsersService {
         where: { id: userId },
       });
       if (!user) {
-        throw new Error('Usuário não encontrado');
+        throw {
+          success: false,
+          message: 'Token inválido ou usuário não encontrado',
+          statusCode: 401,
+        };
       }
       const tokens = generateTokens({
         id: user.id,
@@ -222,7 +291,17 @@ export class UsersService {
       };
     } catch (error) {
       console.error('Erro no refresh token:', error);
-       throw new Error('Erro ao renovar token');
+      
+      // Se o erro já tem a estrutura esperada, propague-o
+      if (error && typeof error === 'object' && 'success' in error) {
+        throw error;
+      }
+      
+      throw {
+        success: false,
+        message: 'Token inválido ou expirado',
+        statusCode: 401,
+      };
     }
   }
 
@@ -242,7 +321,11 @@ export class UsersService {
       return user;
     } catch (error) {
       console.error('Erro ao buscar perfil do usuário:', error);
-      throw new Error('Erro ao buscar perfil do usuário');
+      throw {
+        success: false,
+        message: 'Erro ao buscar perfil do usuário',
+        statusCode: 404,
+      };
     }
   }
 
@@ -262,7 +345,11 @@ export class UsersService {
       return user;
     } catch (error) {
       console.error('Erro ao buscar usuário:', error);
-      throw new Error('Erro ao buscar usuário'); 
+      throw {
+        success: false,
+        message: 'Erro ao buscar usuário',
+        statusCode: 404,
+      };
     }
   }
 
@@ -280,7 +367,11 @@ export class UsersService {
       });
     } catch (error) {
       console.error('Erro ao listar usuários:', error);
-      throw new Error('Erro ao listar usuários');
+      throw {
+        success: false,
+        message: 'Erro ao listar usuários',
+        statusCode: 500,
+      };
     }
   }
 
@@ -317,7 +408,11 @@ export class UsersService {
       const trimmedEmail = email.trim();
 
       if (!trimmedEmail || !trimmedName) {
-        throw new Error('Nome e email são obrigatórios');
+        throw {
+          success: false,
+          message: 'Nome e email são obrigatórios',
+          statusCode: 400,
+        };
       }
 
       let password: string | undefined = undefined;
@@ -335,7 +430,11 @@ export class UsersService {
       }
 
       if (trimmedName && trimmedName.length === 0) {
-        throw new Error('Nome não pode ser vazio');
+        throw {
+          success: false,
+          message: 'Nome não pode ser vazio',
+          statusCode: 400,
+        };
       }
 
       if (trimmedEmail && trimmedEmail.length === 0) {
@@ -343,7 +442,11 @@ export class UsersService {
           where: { email },
         });
         if (existingUser && existingUser.id !== data.id) {
-          throw new Error('Email já está em uso por outro usuário');
+          throw {
+            success: false,
+            message: 'Email já está em uso por outro usuário',
+            statusCode: 409,
+          };
         }
       }
 
@@ -376,7 +479,17 @@ export class UsersService {
       return user;
     } catch (error) {
       console.error('Erro ao atualizar usuário:', error);
-      throw new Error('Erro ao atualizar usuário');
+      
+      // Se o erro já tem a estrutura esperada, propague-o
+      if (error && typeof error === 'object' && 'success' in error) {
+        throw error;
+      }
+      
+      throw {
+        success: false,
+        message: 'Erro ao atualizar usuário',
+        statusCode: 500,
+      };
     }
   }
 
@@ -389,11 +502,19 @@ export class UsersService {
       const { currentPassword, newPassword } = data;
 
       if (!currentPassword || !newPassword) {
-        throw new Error('Senha atual e nova senha são obrigatórias');
+        throw {
+          success: false,
+          message: 'Senha atual e nova senha são obrigatórias',
+          statusCode: 400,
+        };
       }
 
       if (newPassword.length < 6) {
-        throw new Error('Nova senha deve ter pelo menos 6 caracteres');
+        throw {
+          success: false,
+          message: 'A nova senha deve ter pelo menos 6 caracteres',
+          statusCode: 400,
+        };
       }
 
       const user = await prisma.user.findUnique({
@@ -401,7 +522,11 @@ export class UsersService {
       });
 
       if (!user) {
-        throw new Error('Usuário não encontrado');
+        throw {
+          success: false,
+          message: 'Usuário não encontrado',
+          statusCode: 404,
+        };
       }
 
       // Verificar senha atual
@@ -410,7 +535,11 @@ export class UsersService {
         user.password,
       );
       if (!isCurrentPasswordValid) {
-        throw new Error('Senha atual incorreta');
+        throw {
+          success: false,
+          message: 'Senha atual incorreta',
+          statusCode: 400,
+        };
       }
 
       // Hash da nova senha
@@ -436,7 +565,17 @@ export class UsersService {
       };
     } catch (error) {
       console.error('Erro ao redefinir senha:', error);
-      throw new Error('Erro interno do servidor');
+      
+      // Se o erro já tem a estrutura esperada, propague-o
+      if (error && typeof error === 'object' && 'success' in error) {
+        throw error;
+      }
+      
+      throw {
+        success: false,
+        message: 'Erro interno do servidor. Tente novamente mais tarde.',
+        statusCode: 500,
+      };
     }
   }
 
@@ -447,7 +586,11 @@ export class UsersService {
       });
 
       if (!user) {
-        throw new Error('Usuário não encontrado');
+        throw {
+          success: false,
+          message: 'Usuário não encontrado',
+          statusCode: 404,
+        };
       }
 
       await prisma.user.delete({
@@ -460,7 +603,17 @@ export class UsersService {
       };
     } catch (error) {
       console.error('Erro ao deletar usuário:', error);
-      throw new Error('Erro interno do servidor');
+      
+      // Se o erro já tem a estrutura esperada, propague-o
+      if (error && typeof error === 'object' && 'success' in error) {
+        throw error;
+      }
+      
+      throw {
+        success: false,
+        message: 'Erro interno do servidor. Tente novamente mais tarde.',
+        statusCode: 500,
+      };
     }
   }
 }
