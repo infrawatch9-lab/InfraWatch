@@ -290,6 +290,7 @@ export class UsersService {
           name: true,
           email: true,
           role: true,
+          status: true,
           createdAt: true,
           updatedAt: true,
         },
@@ -301,7 +302,6 @@ export class UsersService {
   }
 
   async updateUser(
-    userId: number,
     data: UpdateUserDto,
   ): Promise<any> {
     try {
@@ -336,7 +336,7 @@ export class UsersService {
         const existingUser = await prisma.user.findUnique({
           where: { email },
         });
-        if (existingUser && existingUser.id !== userId) {
+        if (existingUser && existingUser.id !== data.id) {
           throw new Error('Email já está em uso por outro usuário');
         }
       }
@@ -356,7 +356,7 @@ export class UsersService {
       }
 
       const user = await prisma.user.update({
-        where: { id: userId },
+        where: { id: data.id },
         data: updateData,
         select: {
           id: true,

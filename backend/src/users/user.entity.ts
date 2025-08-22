@@ -57,6 +57,7 @@ export interface LoginResponse {
 }
 
 export interface UpdateUserDto {
+  id: number;
   name: string;
   email: string;
   role?: "ADMIN" | "USER";

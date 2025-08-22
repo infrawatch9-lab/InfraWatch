@@ -73,7 +73,7 @@ export class UsersController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update user settings' })
   async updateUser(@Request() req: any, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.updateUser(req.user.id, updateUserDto);
+    return this.usersService.updateUser(updateUserDto);
   }
 
   @Get(':id')
