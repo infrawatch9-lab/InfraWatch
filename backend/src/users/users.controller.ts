@@ -9,6 +9,7 @@ import {
   Request,
   ParseIntPipe,
   Delete,
+  HttpCode,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { RolesGuard } from '../auth/roles.guard';
@@ -29,6 +30,7 @@ export class UsersController {
 
   @Post('login')
   @Public()
+  @HttpCode(200)
   @ApiOperation({ summary: 'User login' })
   async login(@Body() loginDto: LoginDto) {
     return this.usersService.login(loginDto);
