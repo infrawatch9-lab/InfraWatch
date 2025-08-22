@@ -148,7 +148,11 @@ export class UsersService {
       });
 
       if (user.status === 'INACTIVE') {
-        throw new Error('Conta inativa. Entre em contato com o administrador.');
+        throw {
+          success: false,
+          message: 'Conta inativa. Entre em contato com o administrador.',
+          statusCode: 403,
+        };
       }
 
       // Verificar se a senha temporária expirou
@@ -297,7 +301,11 @@ export class UsersService {
       });
     } catch (error) {
       console.error('Erro ao listar usuários:', error);
-      throw new Error('Erro ao listar usuários');
+      throw {
+        success: false,
+        message: 'Erro ao listar usuários',
+        statusCode: 404,
+      };
     }
   }
 
