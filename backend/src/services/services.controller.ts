@@ -19,7 +19,7 @@ import { WebhookService } from './webhook/webhook.service';
 import { PingService } from './ping/ping.service';
 import { HttpService } from './http/http.service';
 import { CreateServiceDto } from './service.common-entity'
-
+import { PrismaService } from '../database/prisma.service';
 
 @ApiTags('services')
 @Controller('services')
@@ -29,6 +29,7 @@ export class ServicesController {
         private readonly webhookService: WebhookService,
         private readonly pingService: PingService,
         private readonly httpService: HttpService,
+        private readonly prisma: PrismaService,
     ) {}
 
 @Post()
@@ -136,14 +137,32 @@ update(@Param('id', ParseIntPipe) id: number, @Body() createServiceDto: CreateSe
 @ApiResponse({ status: 400, description: 'Erro ao remover serviço' })
 @ApiResponse({ status: 403, description: 'Acesso negado' })
 @ApiOperation({ summary: 'Remover serviço pelo ID' })
-remove(@Param('id', ParseIntPipe) id: number) {
-    return {
-        snmp: this.snmpService.remove(id),
-        webhook: this.webhookService.remove(id),
-        ping: this.pingService.remove(id),
-        http: this.httpService.remove(id),
-    };
+async remove(@Param('id', ParseIntPipe) id: number) {
+  // Primeiro identificar se existe e de qual tipo é
+  const service = await this.prisma.service.findUnique({
+    where: { id },
+    select: { type: true }, // supondo que tenha um campo "type"
+  });
+
+  if (!service) {
+    throw new NotFoundException('Serviço não encontrado');
+  }
+
+  // Agora deleta no service correto
+  switch (service.type) {
+    case 'SNMP':
+      return await this.snmpService.remove(id);
+    case 'WEBHOOK':
+      return await this.webhookService.remove(id);
+    case 'PING':
+      return await this.pingService.remove(id);
+    case 'HTTP':
+      return await this.httpService.remove(id);
+    default:
+      throw new BadRequestException('Tipo de serviço inválido');
+  }
 }
+
 
 @Delete()
 @UseGuards(RolesGuard)
