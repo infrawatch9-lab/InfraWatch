@@ -208,11 +208,11 @@ getDashboard(@Param('id') id: number) {
 })
 @ApiResponse({ status: 200, description: 'Conexão SSE de teste estabelecida.' })
 testSse(): Observable<{ data: any }> {
-  return  {
+  return  ({
     cpuData: { label: "Intel Xeon", usage: 67 },
     ram: { label: "DDR4 32GB", usage: 12, total: 32 },
     disk: { usage: 120, unit: "GB", free: 40, inUse: 60 },
-  };
+  });
 
     // Limpeza caso o cliente desconecte
     return () => clearInterval(interval);
