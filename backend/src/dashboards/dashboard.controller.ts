@@ -14,6 +14,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { DashboardService } from './dashboard.service';
 import { Public } from '../auth/public.decorator';
+import { of } from 'rxjs';
 
 @ApiTags('Dashboard - Sistema de Dashboards')
 @Controller('dashboard')
