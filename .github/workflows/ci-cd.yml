@@ -24,9 +24,9 @@ jobs:
       - name: Build and Push Image
         run: |
           if [ "${GITHUB_REF##*/}" == "staging" ]; then
-            IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/infrawatch-monitor-backend:staging
+            IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/infrawatch-backend:staging
           else
-            IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/infrawatch-monitor-backend:latest
+            IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/infrawatch-backend:latest
           fi
           podman build -t $IMAGE .
           podman push $IMAGE
