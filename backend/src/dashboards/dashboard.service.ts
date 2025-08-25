@@ -10,10 +10,12 @@ export class DashboardService {
   ) {}
 
   async updateDashboard(id: number, data: any) {
-    const updated = await this.prisma.service.update({
+    /*const updated = await this.prisma.service.update({
       where: { id },
       data,
-    });
+    });*/
+
+    const updated = { "teste" : "teste" }; 
 
     this.eventEmitter.emit('dashboard.updated', updated);
     return updated;
