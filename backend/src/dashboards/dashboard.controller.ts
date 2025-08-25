@@ -23,7 +23,7 @@ export class DashboardController {
     private readonly dashboardService: DashboardService,
   ) {}
 
-@Sse('dashboards/stream')
+@Sse('/stream')
 // @UseGuards(RolesGuard)
 // @Roles('ADMIN', 'USER')
 // @ApiBearerAuth()
