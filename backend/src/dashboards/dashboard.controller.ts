@@ -23,7 +23,7 @@ export class DashboardController {
     private readonly dashboardService: DashboardService,
   ) {}
 
-@Sse('/stream')
+@Sse('dash/stream')
 // @UseGuards(RolesGuard)
 // @Roles('ADMIN', 'USER')
 // @ApiBearerAuth()
@@ -200,7 +200,7 @@ getDashboard(@Param('id') id: number) {
   return this.dashboardService.findOne(id);
 }
 
-@Sse('test-sse')
+@Sse('dash/test-sse')
 @Public()
 @ApiOperation({
   summary: 'Teste de SSE',
