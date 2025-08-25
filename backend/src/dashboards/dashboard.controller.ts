@@ -200,4 +200,29 @@ getDashboard(@Param('id') id: number) {
   return this.dashboardService.findOne(id);
 }
 
+  @Sse('test-sse')
+@Public()
+@ApiOperation({
+  summary: 'Teste de SSE',
+  description: 'Rota para testar envio de eventos SSE com valores mockados a cada 2 segundos.'
+})
+@ApiResponse({ status: 200, description: 'Conexão SSE de teste estabelecida.' })
+testSse(): Observable<{ data: any }> {
+  return new Observable<{ data: any }>((subscriber) => {
+    let count = 0;
+    const interval = setInterval(() => {
+      count++;
+      subscriber.next({ data: { message: `SSE de teste #${count}`, timestamp: new Date().toISOString() } });
+      // Encerra após 10 mensagens de teste
+      if (count >= 10) {
+        clearInterval(interval);
+        subscriber.complete();
+      }
+    }, 2000);
+
+    // Limpeza caso o cliente desconecte
+    return () => clearInterval(interval);
+  });
+}
+
 }
