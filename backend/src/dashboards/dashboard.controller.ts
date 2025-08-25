@@ -13,6 +13,7 @@ import {
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { DashboardService } from './dashboard.service';
+import { Public } from '../auth/public.decorator';
 
 @ApiTags('Dashboard - Sistema de Dashboards')
 @Controller('dashboard')
@@ -23,9 +24,10 @@ export class DashboardController {
   ) {}
 
 @Sse('dashboards/stream')
-@UseGuards(RolesGuard)
-@Roles('ADMIN', 'USER')
-@ApiBearerAuth()
+// @UseGuards(RolesGuard)
+// @Roles('ADMIN', 'USER')
+// @ApiBearerAuth()
+@Public()
 @ApiOperation({ 
   summary: 'Stream de dashboards em tempo real (SSE)',
   description: 'Conecta-se ao stream de Server-Sent Events para receber atualizações de dashboards em tempo real. Requer autenticação JWT.'
