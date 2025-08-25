@@ -207,7 +207,7 @@ getDashboard(@Param('id') id: number) {
   description: 'Rota para testar envio de eventos SSE retornando um JSON fixo.'
 })
 @ApiResponse({ status: 200, description: 'Conexão SSE de teste estabelecida.' })
-testSse(): Observable<{ data: any }> {
+testSse() {
 
     const data = {
       cpuData: { label: "Intel Xeon", usage: 67 },
