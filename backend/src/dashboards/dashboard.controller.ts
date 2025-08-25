@@ -204,18 +204,16 @@ getDashboard(@Param('id') id: number) {
 @Public()
 @ApiOperation({
   summary: 'Teste de SSE',
-  description: 'Rota para testar envio de eventos SSE com valores mockados a cada 2 segundos.'
+  description: 'Rota para testar envio de eventos SSE retornando um JSON fixo.'
 })
 @ApiResponse({ status: 200, description: 'Conexão SSE de teste estabelecida.' })
 testSse(): Observable<{ data: any }> {
-  return  ({
-    cpuData: { label: "Intel Xeon", usage: 67 },
-    ram: { label: "DDR4 32GB", usage: 12, total: 32 },
-    disk: { usage: 120, unit: "GB", free: 40, inUse: 60 },
-  });
-
-    // Limpeza caso o cliente desconecte
-    return () => clearInterval(interval);
+  return of({
+    data: {
+      cpuData: { label: "Intel Xeon", usage: 67 },
+      ram: { label: "DDR4 32GB", usage: 12, total: 32 },
+      disk: { usage: 120, unit: "GB", free: 40, inUse: 60 },
+    }
   });
 }
 
