@@ -200,7 +200,7 @@ getDashboard(@Param('id') id: number) {
   return this.dashboardService.findOne(id);
 }
 
-  @Sse('test-sse')
+@Sse('test-sse')
 @Public()
 @ApiOperation({
   summary: 'Teste de SSE',
