@@ -207,7 +207,7 @@ getDashboard(@Param('id') id: number) {
 @Public()
 testSse(): Observable<{ data: any }> {
   const data = {
-    cpuData: { label: "Intel Xeon", usage: 67 },
+    cpuData: { label: "Intel Vicor", usage: 67 },
     ram: { label: "DDR4 32GB", usage: 12, total: 32 },
     disk: { usage: 120, unit: "GB", free: 40, inUse: 60 },
   };
