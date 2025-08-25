@@ -208,7 +208,7 @@ getDashboard(@Param('id') id: number) {
 })
 @ApiResponse({ status: 200, description: 'Conexão SSE de teste estabelecida.' })
 testSse(): Observable<{ data: any }> {
-  return of({
+  return ({
     data: {
       cpuData: { label: "Intel Xeon", usage: 67 },
       ram: { label: "DDR4 32GB", usage: 12, total: 32 },
