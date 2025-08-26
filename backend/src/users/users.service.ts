@@ -15,11 +15,9 @@ import {
 const prisma = new PrismaClient();
 
 export class UsersService {
-  async registerWithTemporaryPassword(
-    data: RegisterUserDto,
-  ): Promise<any> {
+  async registerWithTemporaryPassword(data: RegisterUserDto): Promise<any> {
     try {
-      const { name, email, role = 'USER' } = data;
+      const { name, email, number, role = 'USER' } = data;
       const trimmedName = name.trim();
       const trimmedEmail = email.trim();
       if (!trimmedName || !trimmedEmail) {
@@ -52,7 +50,8 @@ export class UsersService {
           name: trimmedName,
           email: trimmedEmail,
           password: hashedPassword,
-          role,
+          number: number?.trim(),
+          role: ['ADMIN', 'USER', 'VIEWER'].includes(role) ? role : 'USER',
           isTemporaryPassword: true,
           temporaryPasswordExpiry: expiryDate,
         },
@@ -74,12 +73,12 @@ export class UsersService {
       };
     } catch (error) {
       console.error('Erro no registro:', error);
-      
+
       // Se o erro já tem a estrutura esperada, propague-o
       if (error && typeof error === 'object' && 'success' in error) {
         throw error;
       }
-      
+
       throw {
         success: false,
         message: 'Erro interno do servidor. Tente novamente mais tarde.',
@@ -90,7 +89,7 @@ export class UsersService {
 
   async register(data: CreateUserDto): Promise<any> {
     try {
-      const { name, email, password, role = 'USER' } = data;
+      const { name, email, password, number, role = 'USER' } = data;
 
       const trimmedName = name.trim();
       const trimmedEmail = email.trim();
@@ -119,7 +118,8 @@ export class UsersService {
           name: trimmedName,
           email: trimmedEmail,
           password: hashedPassword,
-          role,
+          number: number?.trim(),
+          role: ['ADMIN', 'USER', 'VIEWER'].includes(role) ? role : 'USER',
         },
       });
 
@@ -140,12 +140,12 @@ export class UsersService {
       };
     } catch (error) {
       console.error('Erro no registro:', error);
-      
+
       // Se o erro já tem a estrutura esperada, propague-o
       if (error && typeof error === 'object' && 'success' in error) {
         throw error;
       }
-      
+
       throw {
         success: false,
         message: 'Erro interno do servidor. Tente novamente mais tarde.',
@@ -194,7 +194,8 @@ export class UsersService {
       if (user.status === 'INACTIVE') {
         throw {
           success: false,
-          message: 'Sua conta está inativa. Entre em contato com o administrador para reativá-la.',
+          message:
+            'Sua conta está inativa. Entre em contato com o administrador para reativá-la.',
           statusCode: 403,
         };
       }
@@ -204,7 +205,8 @@ export class UsersService {
         if (new Date() > user.temporaryPasswordExpiry) {
           throw {
             success: false,
-            message: 'Sua senha provisória expirou. Entre em contato com o administrador para obter uma nova.',
+            message:
+              'Sua senha provisória expirou. Entre em contato com o administrador para obter uma nova.',
             statusCode: 401,
           };
         }
@@ -249,12 +251,12 @@ export class UsersService {
       };
     } catch (error) {
       console.error('Erro no login:', error);
-      
+
       // Se o erro já tem a estrutura esperada, propague-o
       if (error && typeof error === 'object' && 'success' in error) {
         throw error;
       }
-      
+
       // Caso contrário, crie um erro genérico estruturado
       throw {
         success: false,
@@ -291,12 +293,12 @@ export class UsersService {
       };
     } catch (error) {
       console.error('Erro no refresh token:', error);
-      
+
       // Se o erro já tem a estrutura esperada, propague-o
       if (error && typeof error === 'object' && 'success' in error) {
         throw error;
       }
-      
+
       throw {
         success: false,
         message: 'Token inválido ou expirado',
@@ -313,6 +315,7 @@ export class UsersService {
           id: true,
           name: true,
           email: true,
+          number: true,
           role: true,
           createdAt: true,
           updatedAt: true,
@@ -337,6 +340,7 @@ export class UsersService {
           id: true,
           name: true,
           email: true,
+          number: true,
           role: true,
           createdAt: true,
           updatedAt: true,
@@ -360,6 +364,7 @@ export class UsersService {
           id: true,
           name: true,
           email: true,
+          number: true,
           role: true,
           createdAt: true,
           updatedAt: true,
@@ -382,6 +387,7 @@ export class UsersService {
           id: true,
           name: true,
           email: true,
+          number: true,
           role: true,
           status: true,
           createdAt: true,
@@ -398,11 +404,9 @@ export class UsersService {
     }
   }
 
-  async updateUser(
-    data: UpdateUserDto,
-  ): Promise<any> {
+  async updateUser(data: UpdateUserDto): Promise<any> {
     try {
-      const { name, email, role, isTemporaryPassword, status } = data;
+      const { name, email, number, role, isTemporaryPassword, status } = data;
 
       if (!data.id || !name || !email || !role || !status) {
         throw {
@@ -461,6 +465,7 @@ export class UsersService {
       const updateData: any = {
         ...(name && { name }),
         ...(email && { email }),
+        ...(number !== undefined && { number }),
         ...(role && { role }),
         ...(isTemporaryPassword !== undefined && { isTemporaryPassword }),
         ...(status && { status }),
@@ -479,6 +484,7 @@ export class UsersService {
           id: true,
           name: true,
           email: true,
+          number: true,
           role: true,
           status: true,
           createdAt: true,
@@ -488,12 +494,12 @@ export class UsersService {
       return user;
     } catch (error) {
       console.error('Erro ao atualizar usuário:', error);
-      
+
       // Se o erro já tem a estrutura esperada, propague-o
       if (error && typeof error === 'object' && 'success' in error) {
         throw error;
       }
-      
+
       throw {
         success: false,
         message: 'Erro ao atualizar usuário',
@@ -574,12 +580,12 @@ export class UsersService {
       };
     } catch (error) {
       console.error('Erro ao redefinir senha:', error);
-      
+
       // Se o erro já tem a estrutura esperada, propague-o
       if (error && typeof error === 'object' && 'success' in error) {
         throw error;
       }
-      
+
       throw {
         success: false,
         message: 'Erro interno do servidor. Tente novamente mais tarde.',
@@ -612,12 +618,12 @@ export class UsersService {
       };
     } catch (error) {
       console.error('Erro ao deletar usuário:', error);
-      
+
       // Se o erro já tem a estrutura esperada, propague-o
       if (error && typeof error === 'object' && 'success' in error) {
         throw error;
       }
-      
+
       throw {
         success: false,
         message: 'Erro interno do servidor. Tente novamente mais tarde.',
