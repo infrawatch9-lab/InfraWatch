@@ -57,7 +57,7 @@ export class UsersService {
           email: trimmedEmail,
           password: hashedPassword,
           number: number?.trim(),
-          role: roleValue,
+          role: roleValue as any, // or as Role if you have imported the Role type
           isTemporaryPassword: true,
           temporaryPasswordExpiry: expiryDate,
         },
@@ -131,7 +131,7 @@ export class UsersService {
           email: trimmedEmail,
           password: hashedPassword,
           number: number?.trim(),
-          role: roleValue,
+          role: roleValue as any, // or as Role if you have imported the Role type
         },
       });
 
