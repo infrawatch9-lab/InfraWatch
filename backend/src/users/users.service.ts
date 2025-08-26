@@ -17,7 +17,13 @@ const prisma = new PrismaClient();
 export class UsersService {
   async registerWithTemporaryPassword(data: RegisterUserDto): Promise<any> {
     try {
-      const { name, email, number, role = 'USER' } = data;
+      const { name, email, number, role } = data;
+      // Garante que o valor de role seja sempre maiúsculo e válido
+      const validRoles = ['ADMIN', 'USER', 'VIEWER'];
+      const roleValue =
+        role && validRoles.includes(role.toUpperCase())
+          ? role.toUpperCase()
+          : 'USER';
       const trimmedName = name.trim();
       const trimmedEmail = email.trim();
       if (!trimmedName || !trimmedEmail) {
@@ -51,7 +57,7 @@ export class UsersService {
           email: trimmedEmail,
           password: hashedPassword,
           number: number?.trim(),
-          role: role as any, // Prisma aceita o enum do schema
+          role: roleValue,
           isTemporaryPassword: true,
           temporaryPasswordExpiry: expiryDate,
         },
@@ -89,7 +95,13 @@ export class UsersService {
 
   async register(data: CreateUserDto): Promise<any> {
     try {
-      const { name, email, password, number, role = 'USER' } = data;
+      const { name, email, password, number, role } = data;
+      // Garante que o valor de role seja sempre maiúsculo e válido
+      const validRoles = ['ADMIN', 'USER', 'VIEWER'];
+      const roleValue =
+        role && validRoles.includes(role.toUpperCase())
+          ? role.toUpperCase()
+          : 'USER';
 
       const trimmedName = name.trim();
       const trimmedEmail = email.trim();
@@ -119,7 +131,7 @@ export class UsersService {
           email: trimmedEmail,
           password: hashedPassword,
           number: number?.trim(),
-          role: role as any, // Prisma aceita o enum do schema
+          role: roleValue,
         },
       });
 
