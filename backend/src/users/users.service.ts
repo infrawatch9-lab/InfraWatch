@@ -51,7 +51,7 @@ export class UsersService {
           email: trimmedEmail,
           password: hashedPassword,
           number: number?.trim(),
-          role: ['ADMIN', 'USER', 'VIEWER'].includes(role) ? role : 'USER',
+          role: role as any, // Prisma aceita o enum do schema
           isTemporaryPassword: true,
           temporaryPasswordExpiry: expiryDate,
         },
@@ -119,7 +119,7 @@ export class UsersService {
           email: trimmedEmail,
           password: hashedPassword,
           number: number?.trim(),
-          role: ['ADMIN', 'USER', 'VIEWER'].includes(role) ? role : 'USER',
+          role: role as any, // Prisma aceita o enum do schema
         },
       });
 
@@ -311,15 +311,7 @@ export class UsersService {
     try {
       const user = await prisma.user.findUnique({
         where: { id: userId },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          number: true,
-          role: true,
-          createdAt: true,
-          updatedAt: true,
-        },
+        // select: { ... } removido, retorna tudo
       });
       return user;
     } catch (error) {
@@ -336,15 +328,7 @@ export class UsersService {
     try {
       const user = await prisma.user.findUnique({
         where: { id },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          number: true,
-          role: true,
-          createdAt: true,
-          updatedAt: true,
-        },
+        // select: { ... } removido, retorna tudo
       });
       return user;
     } catch (error) {
@@ -359,17 +343,7 @@ export class UsersService {
 
   async findAll(): Promise<UserResponseDto[] | any> {
     try {
-      return await prisma.user.findMany({
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          number: true,
-          role: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      });
+      return await prisma.user.findMany();
     } catch (error) {
       console.error('Erro ao listar usuários:', error);
       throw {
@@ -382,18 +356,7 @@ export class UsersService {
 
   async getAllUsers(): Promise<UserResponseDto[] | any[]> {
     try {
-      return await prisma.user.findMany({
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          number: true,
-          role: true,
-          status: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      });
+      return await prisma.user.findMany();
     } catch (error) {
       console.error('Erro ao listar usuários:', error);
       throw {
@@ -480,16 +443,7 @@ export class UsersService {
       const user = await prisma.user.update({
         where: { id: data.id },
         data: updateData,
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          number: true,
-          role: true,
-          status: true,
-          createdAt: true,
-          updatedAt: true,
-        },
+        // select removido, retorna tudo
       });
       return user;
     } catch (error) {
