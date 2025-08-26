@@ -13,13 +13,13 @@ model User {
   name                     String
   email                    String                    @unique
   password                 String
-  number                   String?
   role                     Role                      @default(USER)
   createdAt                DateTime                  @default(now())
   updatedAt                DateTime                  @updatedAt
   isTemporaryPassword      Boolean                   @default(false)
   status                   Status                    @default(ACTIVE)
   temporaryPasswordExpiry  DateTime?
+  number                   String?
   alerts                   Alert[]
   createdAlertRules        AlertRule[]               @relation("CreatedByUser")
   notifications            Notification[]
