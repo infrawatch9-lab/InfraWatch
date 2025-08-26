@@ -328,7 +328,6 @@ export class UsersService {
     try {
       const user = await prisma.user.findUnique({
         where: { id },
-        // select: { ... } removido, retorna tudo
       });
       return user;
     } catch (error) {
