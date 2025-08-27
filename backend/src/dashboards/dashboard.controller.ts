@@ -13,6 +13,8 @@ import {
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { DashboardService } from './dashboard.service';
+import { Public } from '../auth/public.decorator';
+import { of } from 'rxjs';
 
 @ApiTags('Dashboard - Sistema de Dashboards')
 @Controller('dashboard')
@@ -22,10 +24,11 @@ export class DashboardController {
     private readonly dashboardService: DashboardService,
   ) {}
 
-@Sse('dashboards/stream')
-@UseGuards(RolesGuard)
-@Roles('ADMIN', 'USER')
-@ApiBearerAuth()
+@Sse('dash/stream')
+// @UseGuards(RolesGuard)
+// @Roles('ADMIN', 'USER')
+// @ApiBearerAuth()
+@Public()
 @ApiOperation({ 
   summary: 'Stream de dashboards em tempo real (SSE)',
   description: 'Conecta-se ao stream de Server-Sent Events para receber atualizações de dashboards em tempo real. Requer autenticação JWT.'
@@ -196,6 +199,20 @@ streamDashboards(): Observable<{ data: any }> {
 })
 getDashboard(@Param('id') id: number) {
   return this.dashboardService.findOne(id);
+}
+
+
+
+@Sse('dash/test-sse')
+@Public()
+testSse(): Observable<{ data: any }> {
+  const data = {
+    cpuData: { label: "Intel Vicor", usage: 67 },
+    ram: { label: "DDR4 32GB", usage: 12, total: 32 },
+    disk: { usage: 120, unit: "GB", free: 40, inUse: 60 },
+  };
+
+  return of({ data });
 }
 
 }

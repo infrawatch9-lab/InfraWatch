@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
 import { SlaService } from './sla.service';
 import { Public } from '../auth/public.decorator';
 
-@Controller('api/sla')
+@Controller('sla')
 export class SlaController {
   constructor(private readonly slaService: SlaService) {}
 

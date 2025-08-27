@@ -3,7 +3,7 @@ import { Response } from 'express';
 import { PDFReportService } from './pdf-report.service';
 import { Public } from '../auth/public.decorator';
 
-@Controller('api/sla/reports')
+@Controller('sla/reports')
 export class PDFReportController {
   constructor(private readonly pdfService: PDFReportService) {}
 
@@ -23,8 +23,8 @@ export class PDFReportController {
         success: true,
         message: 'Relatório PDF gerado com sucesso',
         filename,
-        downloadUrl: `/api/sla/reports/download/${filename}`,
-        viewUrl: `/api/sla/reports/view/${filename}`,
+        downloadUrl: `/sla/reports/download/${filename}`,
+        viewUrl: `/sla/reports/view/${filename}`,
       };
     } catch (error: any) {
       return {
@@ -47,8 +47,8 @@ export class PDFReportController {
           filename: report.filename,
           createdAt: report.createdAt,
           fileSize: `${(report.size / 1024).toFixed(2)} KB`,
-          downloadUrl: `/api/sla/reports/download/${report.filename}`,
-          viewUrl: `/api/sla/reports/view/${report.filename}`,
+          downloadUrl: `/sla/reports/download/${report.filename}`,
+          viewUrl: `/sla/reports/view/${report.filename}`,
         })),
       };
     } catch (error: any) {
@@ -156,8 +156,8 @@ export class PDFReportController {
         success: true,
         message: 'Relatório demo gerado com sucesso',
         filename,
-        downloadUrl: `/api/sla/reports/download/${filename}`,
-        viewUrl: `/api/sla/reports/view/${filename}`,
+        downloadUrl: `/sla/reports/download/${filename}`,
+        viewUrl: `/sla/reports/view/${filename}`,
       };
     } catch (error: any) {
       return {

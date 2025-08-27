@@ -3,8 +3,9 @@ export interface User {
   name: string;
   email: string;
   password: string;
-  role: "ADMIN" | "USER";
-  status: "ACTIVE" | "INACTIVE";
+  number?: string;
+  role: 'ADMIN' | 'USER' | 'VIEWER';
+  status: 'ACTIVE' | 'INACTIVE';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -13,8 +14,9 @@ export interface CreateUserDto {
   name: string;
   email: string;
   password: string;
-  role?: "ADMIN" | "USER";
-  status?: "ACTIVE" | "INACTIVE";
+  number?: string;
+  role?: 'ADMIN' | 'USER' | 'VIEWER';
+  status?: 'ACTIVE' | 'INACTIVE';
 }
 
 export interface LoginDto {
@@ -26,7 +28,8 @@ export interface UserResponseDto {
   id: number;
   name: string;
   email: string;
-  role: "ADMIN" | "USER";
+  number?: string;
+  role: 'ADMIN' | 'USER' | 'VIEWER';
   createdAt: Date;
   updatedAt: Date;
   isTemporaryPassword?: boolean;
@@ -40,7 +43,8 @@ export interface ResetPasswordDto {
 export interface RegisterUserDto {
   name: string;
   email: string;
-  role?: "ADMIN" | "USER";
+  number?: string;
+  role?: 'ADMIN' | 'USER' | 'VIEWER';
 }
 
 export interface AuthTokens {
@@ -60,7 +64,8 @@ export interface UpdateUserDto {
   id: number;
   name: string;
   email: string;
-  role?: "ADMIN" | "USER";
+  number?: string;
+  role?: 'ADMIN' | 'USER' | 'VIEWER';
   isTemporaryPassword?: boolean;
-  status?: "ACTIVE" | "INACTIVE";
+  status?: 'ACTIVE' | 'INACTIVE';
 }

@@ -15,11 +15,15 @@ import {
 const prisma = new PrismaClient();
 
 export class UsersService {
-  async registerWithTemporaryPassword(
-    data: RegisterUserDto,
-  ): Promise<any> {
+  async registerWithTemporaryPassword(data: RegisterUserDto): Promise<any> {
     try {
-      const { name, email, role = 'USER' } = data;
+      const { name, email, number, role } = data;
+      // Garante que o valor de role seja sempre maiúsculo e válido
+      const validRoles = ['ADMIN', 'USER', 'VIEWER'];
+      const roleValue =
+        role && validRoles.includes(role.toUpperCase())
+          ? role.toUpperCase()
+          : 'USER';
       const trimmedName = name.trim();
       const trimmedEmail = email.trim();
       if (!trimmedName || !trimmedEmail) {
@@ -52,7 +56,8 @@ export class UsersService {
           name: trimmedName,
           email: trimmedEmail,
           password: hashedPassword,
-          role,
+          number: number?.trim(),
+          role: roleValue as any, // or as Role if you have imported the Role type
           isTemporaryPassword: true,
           temporaryPasswordExpiry: expiryDate,
         },
@@ -74,12 +79,12 @@ export class UsersService {
       };
     } catch (error) {
       console.error('Erro no registro:', error);
-      
+
       // Se o erro já tem a estrutura esperada, propague-o
       if (error && typeof error === 'object' && 'success' in error) {
         throw error;
       }
-      
+
       throw {
         success: false,
         message: 'Erro interno do servidor. Tente novamente mais tarde.',
@@ -90,7 +95,13 @@ export class UsersService {
 
   async register(data: CreateUserDto): Promise<any> {
     try {
-      const { name, email, password, role = 'USER' } = data;
+      const { name, email, password, number, role } = data;
+      // Garante que o valor de role seja sempre maiúsculo e válido
+      const validRoles = ['ADMIN', 'USER', 'VIEWER'];
+      const roleValue =
+        role && validRoles.includes(role.toUpperCase())
+          ? role.toUpperCase()
+          : 'USER';
 
       const trimmedName = name.trim();
       const trimmedEmail = email.trim();
@@ -119,7 +130,8 @@ export class UsersService {
           name: trimmedName,
           email: trimmedEmail,
           password: hashedPassword,
-          role,
+          number: number?.trim(),
+          role: roleValue as any, // or as Role if you have imported the Role type
         },
       });
 
@@ -140,12 +152,12 @@ export class UsersService {
       };
     } catch (error) {
       console.error('Erro no registro:', error);
-      
+
       // Se o erro já tem a estrutura esperada, propague-o
       if (error && typeof error === 'object' && 'success' in error) {
         throw error;
       }
-      
+
       throw {
         success: false,
         message: 'Erro interno do servidor. Tente novamente mais tarde.',
@@ -194,7 +206,8 @@ export class UsersService {
       if (user.status === 'INACTIVE') {
         throw {
           success: false,
-          message: 'Sua conta está inativa. Entre em contato com o administrador para reativá-la.',
+          message:
+            'Sua conta está inativa. Entre em contato com o administrador para reativá-la.',
           statusCode: 403,
         };
       }
@@ -204,7 +217,8 @@ export class UsersService {
         if (new Date() > user.temporaryPasswordExpiry) {
           throw {
             success: false,
-            message: 'Sua senha provisória expirou. Entre em contato com o administrador para obter uma nova.',
+            message:
+              'Sua senha provisória expirou. Entre em contato com o administrador para obter uma nova.',
             statusCode: 401,
           };
         }
@@ -249,12 +263,12 @@ export class UsersService {
       };
     } catch (error) {
       console.error('Erro no login:', error);
-      
+
       // Se o erro já tem a estrutura esperada, propague-o
       if (error && typeof error === 'object' && 'success' in error) {
         throw error;
       }
-      
+
       // Caso contrário, crie um erro genérico estruturado
       throw {
         success: false,
@@ -291,12 +305,12 @@ export class UsersService {
       };
     } catch (error) {
       console.error('Erro no refresh token:', error);
-      
+
       // Se o erro já tem a estrutura esperada, propague-o
       if (error && typeof error === 'object' && 'success' in error) {
         throw error;
       }
-      
+
       throw {
         success: false,
         message: 'Token inválido ou expirado',
@@ -309,14 +323,6 @@ export class UsersService {
     try {
       const user = await prisma.user.findUnique({
         where: { id: userId },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          createdAt: true,
-          updatedAt: true,
-        },
       });
       return user;
     } catch (error) {
@@ -333,14 +339,6 @@ export class UsersService {
     try {
       const user = await prisma.user.findUnique({
         where: { id },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          createdAt: true,
-          updatedAt: true,
-        },
       });
       return user;
     } catch (error) {
@@ -355,16 +353,7 @@ export class UsersService {
 
   async findAll(): Promise<UserResponseDto[] | any> {
     try {
-      return await prisma.user.findMany({
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      });
+      return await prisma.user.findMany();
     } catch (error) {
       console.error('Erro ao listar usuários:', error);
       throw {
@@ -377,17 +366,7 @@ export class UsersService {
 
   async getAllUsers(): Promise<UserResponseDto[] | any[]> {
     try {
-      return await prisma.user.findMany({
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          status: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      });
+      return await prisma.user.findMany();
     } catch (error) {
       console.error('Erro ao listar usuários:', error);
       throw {
@@ -398,11 +377,9 @@ export class UsersService {
     }
   }
 
-  async updateUser(
-    data: UpdateUserDto,
-  ): Promise<any> {
+  async updateUser(data: UpdateUserDto): Promise<any> {
     try {
-      const { name, email, role, isTemporaryPassword, status } = data;
+      const { name, email, number, role, isTemporaryPassword, status } = data;
 
       if (!data.id || !name || !email || !role || !status) {
         throw {
@@ -445,9 +422,9 @@ export class UsersService {
         };
       }
 
-      if (trimmedEmail && trimmedEmail.length === 0) {
+      if (trimmedEmail && trimmedEmail.length > 0) {
         const existingUser = await prisma.user.findUnique({
-          where: { email },
+          where: { email: trimmedEmail },
         });
         if (existingUser && existingUser.id !== data.id) {
           throw {
@@ -459,8 +436,9 @@ export class UsersService {
       }
 
       const updateData: any = {
-        ...(name && { name }),
-        ...(email && { email }),
+        ...(name && { name: trimmedName }),
+        ...(email && { email: trimmedEmail }),
+        ...(number !== undefined && { number: number?.trim() || null }),
         ...(role && { role }),
         ...(isTemporaryPassword !== undefined && { isTemporaryPassword }),
         ...(status && { status }),
@@ -475,25 +453,17 @@ export class UsersService {
       const user = await prisma.user.update({
         where: { id: data.id },
         data: updateData,
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          status: true,
-          createdAt: true,
-          updatedAt: true,
-        },
+        // select removido, retorna tudo
       });
       return user;
     } catch (error) {
       console.error('Erro ao atualizar usuário:', error);
-      
+
       // Se o erro já tem a estrutura esperada, propague-o
       if (error && typeof error === 'object' && 'success' in error) {
         throw error;
       }
-      
+
       throw {
         success: false,
         message: 'Erro ao atualizar usuário',
@@ -574,12 +544,12 @@ export class UsersService {
       };
     } catch (error) {
       console.error('Erro ao redefinir senha:', error);
-      
+
       // Se o erro já tem a estrutura esperada, propague-o
       if (error && typeof error === 'object' && 'success' in error) {
         throw error;
       }
-      
+
       throw {
         success: false,
         message: 'Erro interno do servidor. Tente novamente mais tarde.',
@@ -612,12 +582,12 @@ export class UsersService {
       };
     } catch (error) {
       console.error('Erro ao deletar usuário:', error);
-      
+
       // Se o erro já tem a estrutura esperada, propague-o
       if (error && typeof error === 'object' && 'success' in error) {
         throw error;
       }
-      
+
       throw {
         success: false,
         message: 'Erro interno do servidor. Tente novamente mais tarde.',

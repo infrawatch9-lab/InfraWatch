@@ -19,6 +19,7 @@ model User {
   isTemporaryPassword      Boolean                   @default(false)
   status                   Status                    @default(ACTIVE)
   temporaryPasswordExpiry  DateTime?
+  number                   String?
   alerts                   Alert[]
   createdAlertRules        AlertRule[]               @relation("CreatedByUser")
   notifications            Notification[]
@@ -259,6 +260,7 @@ enum Role {
   ADMIN
   USER
   AGENT
+  VIEWER
 }
 
 enum Status {
