@@ -380,7 +380,6 @@ export class UsersService {
   async updateUser(data: UpdateUserDto): Promise<any> {
     try {
       const { name, email, number, role, isTemporaryPassword, status } = data;
-      console.log('UpdateUserDto received:', data);
 
       if (!data.id || !name || !email || !role || !status) {
         throw {
@@ -445,6 +444,7 @@ export class UsersService {
         ...(status && { status }),
         updatedAt: new Date(),
       };
+      console.log('Update data prepared for user update:', updateData);
 
       if (password) {
         updateData.password = password;
