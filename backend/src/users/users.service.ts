@@ -380,6 +380,7 @@ export class UsersService {
   async updateUser(data: UpdateUserDto): Promise<any> {
     try {
       const { name, email, number, role, isTemporaryPassword, status } = data;
+      console.log('UpdateUserDto received:', data);
 
       if (!data.id || !name || !email || !role || !status) {
         throw {
