@@ -3,7 +3,7 @@ import { Response } from 'express';
 import { PDFReportService } from './pdf-report.service';
 import { Public } from '../auth/public.decorator';
 
-@Controller('api/sla/reports')
+@Controller('sla/reports')
 export class PDFReportController {
   constructor(private readonly pdfService: PDFReportService) {}
 
@@ -23,8 +23,8 @@ export class PDFReportController {
         success: true,
         message: 'Relatório PDF gerado com sucesso',
         filename,
-        downloadUrl: `/api/sla/reports/download/${filename}`,
-        viewUrl: `/api/sla/reports/view/${filename}`,
+        downloadUrl: `/sla/reports/download/${filename}`,
+        viewUrl: `/sla/reports/view/${filename}`,
       };
     } catch (error: any) {
       return {
