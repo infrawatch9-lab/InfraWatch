@@ -19,7 +19,7 @@ export class AppController {
       serviceId: 8,
       ruleId: 15,
       message: 'Teste de alerta',
-      usersToNotify: ['kombagildo@gmail.com'],
+      usersToNotify: ['kombagildo@gmail.com', "vicor32leonel@gmail.com"],
     });
     return {
       success: true,

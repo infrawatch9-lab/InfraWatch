@@ -4,6 +4,8 @@ import { NotificationsService } from './notifications.service';
 import { TelegramService } from './telegram.service';
 import { EmailService } from './email.service';
 import { SlackService } from './slack.service';
+import { PrismaService } from '../database/prisma.service';
+import { NotificationsController } from './notifications.controller';
 
 @Module({
   imports: [HttpModule],
@@ -12,7 +14,10 @@ import { SlackService } from './slack.service';
     TelegramService,
     EmailService,
     SlackService,
+    PrismaService
   ],
+  controllers: [ NotificationsController],
   exports: [NotificationsService, EmailService],
 })
+
 export class NotificationsModule {}
