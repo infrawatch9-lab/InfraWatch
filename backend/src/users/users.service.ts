@@ -323,7 +323,6 @@ export class UsersService {
     try {
       const user = await prisma.user.findUnique({
         where: { id: userId },
-        // select: { ... } removido, retorna tudo
       });
       return user;
     } catch (error) {
@@ -423,9 +422,9 @@ export class UsersService {
         };
       }
 
-      if (trimmedEmail && trimmedEmail.length === 0) {
+      if (trimmedEmail && trimmedEmail.length > 0) {
         const existingUser = await prisma.user.findUnique({
-          where: { email },
+          where: { email: trimmedEmail },
         });
         if (existingUser && existingUser.id !== data.id) {
           throw {
@@ -437,9 +436,9 @@ export class UsersService {
       }
 
       const updateData: any = {
-        ...(name && { name }),
-        ...(email && { email }),
-        ...(number !== undefined && { number }),
+        ...(name && { name: trimmedName }),
+        ...(email && { email: trimmedEmail }),
+        ...(number !== undefined && { number: number?.trim() || null }),
         ...(role && { role }),
         ...(isTemporaryPassword !== undefined && { isTemporaryPassword }),
         ...(status && { status }),
