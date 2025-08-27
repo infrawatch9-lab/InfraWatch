@@ -444,7 +444,6 @@ export class UsersService {
         ...(status && { status }),
         updatedAt: new Date(),
       };
-      console.log('Update data prepared for user update:', updateData);
 
       if (password) {
         updateData.password = password;
