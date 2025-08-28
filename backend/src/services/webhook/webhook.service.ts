@@ -100,7 +100,7 @@ export class WebhookService {
             secret: createServiceDto.webhookConfig?.secret || null,
             headers: createServiceDto.webhookConfig?.headers || {},
             provedor: createServiceDto.webhookConfig?.provedor ?? '',
-            endpoint: `https://infra42luanda.duckdns.org/webhook/${service.id}/${service.name}/${createServiceDto.webhookConfig?.provedor ?? 'generic'}`,
+            endpoint: `https://infra42luanda.duckdns.org/api/webhook/${service.id}/${service.name}/${createServiceDto.webhookConfig?.provedor ?? 'generic'}`,
           },
         });
 
