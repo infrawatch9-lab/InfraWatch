@@ -11,6 +11,7 @@ import { ServiceType } from '@prisma/client';
 import { $Enums } from '@prisma/client';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { MicroservicesGateway } from '../../ws/microservices.gateway';
+import { NotificationsService } from '../../notifications/notifications.service';
 
 @Injectable()
 export class WebhookService {
@@ -20,6 +21,7 @@ export class WebhookService {
       private readonly prisma: PrismaService,
       private readonly eventEmitter: EventEmitter2,
       private readonly microservicesGateway: MicroservicesGateway,
+      private readonly notificationsService: NotificationsService,
     ) {}
 
   async create(createServiceDto: WebhookDto): Promise<any> {
@@ -79,13 +81,13 @@ export class WebhookService {
           this.logger.warn('No emails provided for notification');
         }
 
-        // 2. Criar MonitoringConfig
+        // 2. Criar Monitoring Config
         const monitoringConfig = await prisma.monitoringConfig.create({
           data: {
             serviceId: service.id,
             interval: createServiceDto.monitoringConfig?.interval || 60,
-            timeout: createServiceDto.monitoringConfig?.timeout || 5000,
-            webhookUrl: createServiceDto.monitoringConfig?.webhookUrl || null,
+            timeout: createServiceDto.monitoringConfig?.timeout || 5,
+            webhookUrl: createServiceDto.monitoringConfig?.webhookUrl || '',
           },
         });
 
@@ -94,10 +96,11 @@ export class WebhookService {
           data: {
             serviceId: service.id,
             monitoringId: monitoringConfig.id,
-            endpoint: createServiceDto.webhookConfig?.endpoint || '',
             method: createServiceDto.webhookConfig?.method || 'GET',
             secret: createServiceDto.webhookConfig?.secret || null,
             headers: createServiceDto.webhookConfig?.headers || {},
+            provedor: createServiceDto.webhookConfig?.provedor ?? '',
+            endpoint: `https://infra42luanda.duckdns.org/webhook/${service.id}/${service.name}/${createServiceDto.webhookConfig?.provedor ?? 'generic'}`,
           },
         });
 
@@ -117,7 +120,6 @@ export class WebhookService {
 
         return {
           service,
-          monitoringConfig,
           webhookConfig,
           usersToNotify: createServiceDto.usersToNotify,
         };
@@ -307,5 +309,64 @@ export class WebhookService {
     }
 
     return { message: 'Todos os serviços de Webhook foram removidos com sucesso' };
+  }
+
+  async handleWebhook(id: string, servico: string, provedor: string, data: any): Promise<any> {
+    console.log(`Webhook recebido para o serviço [${servico}] com id [${id}] do provedor [${provedor}]`);
+    console.log("Payload recebido:", data);
+
+    const service = await this.prisma.service.findUnique({
+      where: { id: Number(id) },
+    });
+    if (!service) {
+      throw new NotFoundException('Serviço de Webhook não encontrado');
+    }
+
+    const usersToNotify = await this.prisma.serviceUserNotification.findMany({
+      where: { serviceId: service.id },
+      include: { User: true },
+    });
+
+    console.log(`Notificando ${usersToNotify.length} usuários associados ao serviço ${service.name}`);
+    console.log("Usuários a serem notificados:", usersToNotify.map((user) => user.User.email));
+    for (const userNotification of usersToNotify) {
+      const user = userNotification.User;
+      if (user && user.email) {
+        try {
+            // Envia notificação por email
+            await this.notificationsService.sendAlert(
+              `
+              <div style="font-family: Arial, sans-serif; background: #f9f9f9; padding: 24px;">
+              <div style="max-width: 600px; margin: auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); padding: 32px;">
+              <h2 style="color: #2d7ff9; margin-bottom: 16px;">InfraWatch - Notificação de Webhook</h2>
+              <p style="font-size: 16px; color: #333;">Olá <strong>${user.name || 'usuário'}</strong>,</p>
+              <p style="font-size: 15px; color: #333;">
+                Um <strong>webhook</strong> foi recebido para o serviço <strong>${service.name}</strong>.
+              </p>
+              <div style="background: #f4f8fb; border-left: 4px solid #2d7ff9; padding: 16px; margin: 24px 0;">
+                <pre style="font-size: 14px; color: #222; white-space: pre-wrap;">${JSON.stringify(data, null, 2)}</pre>
+              </div>
+              <p style="font-size: 15px; color: #333;">Atenciosamente,<br><strong>Equipe InfraWatch</strong></p>
+              </div>
+              </div>
+              `,
+              `:bell: Webhook recebido para o serviço *${service.name}*.\nUsuário: ${user.name || 'usuário'}\nPayload:\n\`\`\`${JSON.stringify(data, null, 2)}\`\`\``,
+              [user.email],
+            );
+          
+        } catch (error) {
+          console.error(`Erro ao enviar email para ${user.email}:`, error);
+        }
+      } else {
+        console.warn(`Usuário associado ao serviço ${service.name} não possui email válido.`);
+      }
+
+      this.eventEmitter.emit('webhook.received', {
+        serviceId: service.id,
+        data,
+      });
+    }
+
+    return { message: `Webhook de ${id} recebido com sucesso` };
   }
 }

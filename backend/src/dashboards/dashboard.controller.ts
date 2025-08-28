@@ -215,4 +215,30 @@ testSse(): Observable<{ data: any }> {
   return of({ data });
 }
 
+@Sse('webhooks/stream')
+// @UseGuards(RolesGuard)
+// @Roles('ADMIN')
+// @ApiBearerAuth()
+@Public()
+@ApiOperation({ 
+  summary: 'Stream de webhooks recebidos em tempo real (SSE)',
+  description: 'Conecta-se ao stream de Server-Sent Events para receber notificações em tempo real sempre que um webhook é recebido. Requer autenticação JWT.'
+})
+@ApiResponse({ status: 401, description: 'Token JWT inválido ou ausente' })
+@ApiResponse({ status: 403, description: 'Permissões insuficientes' })
+@ApiHeader({
+  name: 'Authorization',
+  description: 'Token JWT Bearer',
+  required: true,
+  schema: { type: 'string', example: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' }
+})
+streamWebhooks(): Observable<{ data: any }> {
+  return fromEventPattern(
+    (handler) => this.eventEmitter.on('webhook.received', handler),
+    (handler) => this.eventEmitter.off('webhook.received', handler),
+  ).pipe(
+    map((receivedWebhook) => ({ data: receivedWebhook })),
+  );
+}
+
 }

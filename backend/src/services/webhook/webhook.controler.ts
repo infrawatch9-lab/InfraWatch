@@ -6,7 +6,8 @@ import {
   Body,
   Param,
   UseGuards,
-    Delete,
+  Delete,
+  Res,
   ParseIntPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
@@ -14,6 +15,7 @@ import { RolesGuard } from '../../auth/roles.guard';
 import { Roles } from '../../auth/roles.decorator';
 import { WebhookService } from './webhook.service';
 import { WebhookDto } from './webhook.entity';
+import { Response } from 'express';
 
 
 @ApiTags('webhook')
@@ -94,5 +96,15 @@ export class WebhookController {
   @ApiOperation({ summary: 'Remover todos os serviços Webhook' })
   removeAll() {
     return this.webhookService.removeAll();
+  }
+
+  @Post(':id/:servico/:provedor')
+  handleWebhook(
+    @Param('id') id: string,
+    @Param('servico') servico: string,
+    @Param('provedor') provedor: string,
+    @Body() data: any,
+  ) {
+    return this.webhookService.handleWebhook(id, servico, provedor, data);
   }
 }

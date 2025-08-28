@@ -6,6 +6,7 @@ export class WebhookConfigDto {
   method!: "GET" | "POST" | "PUT" | "DELETE";
   secret?: string;
   headers?: Record<string, string>;
+  provedor!: string;
 }
 
 export interface WebhookDto extends BaseServiceDto {

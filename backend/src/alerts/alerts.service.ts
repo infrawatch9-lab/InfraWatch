@@ -29,7 +29,7 @@ export class AlertService {
 
         console.log('Alert created:', alert);
         this.eventEmitter.emit('alert.new', alert);
-        this.notificationsService.sendAlert(alertData.message, alertData.usersToNotify);
+        this.notificationsService.sendAlert(alertData.message, alertData.message, alertData.usersToNotify);
         return alert;
     }
 

@@ -14,14 +14,14 @@ export class NotificationsService {
     private readonly prisma : PrismaService,
   ) {}
 
-  async sendAlert(message: string, to: string[]) {
+  async sendAlert(messageEmail: string, messageSlack: string, to: string[]) {
     const subject = '🚨 Alerta de Serviço';
-    const html = '<b>' + message + '</b>';
+    const html = '<b>' + messageEmail + '</b>';
 
-    await this.telegramService.send(message);
-    await this.emailService.send(message, subject, html, to);
-    await this.slackService.send(message);
-    console.log('Todos os alertas enviados:', message);
+    await this.telegramService.send(messageSlack);
+    await this.emailService.send(messageEmail, subject, html, to);
+    await this.slackService.send(messageSlack);
+    console.log('Todos os alertas enviados:', messageSlack);
   }
 
   async sendNotificationToTelegram(message: string) {

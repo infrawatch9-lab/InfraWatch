@@ -115,29 +115,6 @@ model ServiceUserNotification {
   @@unique([serviceId, userId])
 }
 
-model NotificationsConfig {
-  id          Int           @id @default(autoincrement())
-  slackConfig SlackConfig[]
-  emailConfig EmailConfig[]
-}
-
-model SlackConfig {
-  id                   Int                 @id @default(autoincrement())
-  configsId            Int
-  webhookUrl           String?
-  channel              String?
-  notificationsConfig  NotificationsConfig @relation(fields: [configsId], references: [id], onDelete: Cascade)
-}
-
-model EmailConfig {
-  id                   Int                 @id @default(autoincrement())
-  configsId            Int
-  gmailAppPassword     String?
-  gmailUser            String?
-  notificationsConfig  NotificationsConfig @relation(fields: [configsId], references: [id], onDelete: Cascade)
-}
-
-
 model Notification {
   id      Int                 @id @default(autoincrement())
   userId  Int
@@ -248,6 +225,7 @@ model WebhookConfig {
   method       String
   secret       String?
   headers      Json?
+  provedor     String
   Monitoring   MonitoringConfig @relation(fields: [monitoringId], references: [id], onDelete: Cascade)
 }
 
