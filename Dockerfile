@@ -24,7 +24,7 @@ WORKDIR /app/backend
 
 COPY --from=builder /app/backend ./
 
-RUN mv app/backend/ssss app/backend/.env
+RUN mv ssss .env
 
 ENV NODE_ENV=production
 
