@@ -1,34 +1,31 @@
 # ===== Build =====
 FROM node:20-alpine AS builder
 
-WORKDIR /app
-
-COPY backend/package*.json ./backend/
-
 WORKDIR /app/backend
+
+COPY backend/package*.json ./
 
 RUN npm install
 
 COPY backend/prisma ./prisma
+
 RUN npx prisma generate
 
-COPY backend ./ 
+COPY backend ./
 
 RUN npm run build
-RUN npm prune --production
 
 
-# ===== Imagem final =====
+# ===== Final =====
 FROM node:20-alpine
 
 WORKDIR /app/backend
 
-
 COPY --from=builder /app/backend ./
 
-RUN npm install -g nodemon
-
 ENV NODE_ENV=production
+
+RUN npm ci --omit=dev
 
 EXPOSE 3000
 
