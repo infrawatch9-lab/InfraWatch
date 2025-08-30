@@ -309,7 +309,6 @@ export class WebhookService {
 
   async handleWebhook(id: string, servico: string, provedor: string, data: any): Promise<any> {
     console.log(`Webhook recebido para o serviço [${servico}] com id [${id}] do provedor [${provedor}]`);
-    console.log("Payload recebido:", data);
 
     const service = await this.prisma.service.findUnique({
       where: { id: Number(id) },
@@ -363,7 +362,7 @@ export class WebhookService {
               </div>
               </div>
               `,
-              `:bell: Webhook recebido para o serviço *${service.name}*.\nUsuário: ${user.name || 'usuário'}\nPayload:\n\`\`\`${JSON.stringify(data, null, 2)}\`\`\``,
+              `:bell: Webhook recebido para o serviço *${service.name}*.\nUsuário: ${user.name || 'usuário'}\nPayload:\n\`\`\`${JSON.stringify(to_send, null, 2)}\`\`\``,
               [user.email],
             );
           
