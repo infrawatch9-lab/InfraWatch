@@ -12,6 +12,7 @@ import { $Enums } from '@prisma/client';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { MicroservicesGateway } from '../../ws/microservices.gateway';
 import { NotificationsService } from '../../notifications/notifications.service';
+import { parseGithubWebhook } from './utils';
 
 @Injectable()
 export class WebhookService {
@@ -335,6 +336,10 @@ export class WebhookService {
       this.logger.error('Erro ao criar log de sistema para o webhook recebido');
     }
 
+    let to_send;
+    if (provedor == "github") {
+      to_send = parseGithubWebhook(data);
+    }
     console.log(`Notificando ${usersToNotify.length} usuários associados ao serviço ${service.name}`);
     console.log("Usuários a serem notificados:", usersToNotify.map((user) => user.User.email));
     for (const userNotification of usersToNotify) {
@@ -352,7 +357,7 @@ export class WebhookService {
                 Um <strong>webhook</strong> foi recebido para o serviço <strong>${service.name}</strong>.
               </p>
               <div style="background: #f4f8fb; border-left: 4px solid #2d7ff9; padding: 16px; margin: 24px 0;">
-                <pre style="font-size: 14px; color: #222; white-space: pre-wrap;">${JSON.stringify(data, null, 2)}</pre>
+                <pre style="font-size: 14px; color: #222; white-space: pre-wrap;">${JSON.stringify(to_send, null, 2)}</pre>
               </div>
               <p style="font-size: 15px; color: #333;">Atenciosamente,<br><strong>Equipe InfraWatch</strong></p>
               </div>

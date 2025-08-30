@@ -48,7 +48,7 @@ model Service {
   id            Int                       @id @default(autoincrement())
   name          String
   type          ServiceType
-  status        ServiceStatus             @default(PENDING)
+  status        ServiceStatus             @default(ACTIVE)
   teamId        Int
   createdAt     DateTime                  @default(now())
   description   String                    @default("Sem descrição")
@@ -294,8 +294,9 @@ enum ServiceStatus {
   DOWN
   DEGRADED
   PENDING
-  ACTIVE
   PAUSED
+  ACTIVE
+  INACTIVE
 }
 
 enum AlertLevel {
