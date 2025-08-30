@@ -16,6 +16,7 @@ import { Roles } from '../../auth/roles.decorator';
 import { WebhookService } from './webhook.service';
 import { WebhookDto } from './webhook.entity';
 import { Response } from 'express';
+import { Public } from '../../auth/public.decorator';
 
 
 @ApiTags('webhook')
@@ -99,6 +100,13 @@ export class WebhookController {
   }
 
   @Post(':id/:servico/:provedor')
+  @Public()
+  @ApiOperation({ summary: 'Receber dados do Webhook' })
+  @ApiResponse({ status: 200, description: 'Dados do Webhook recebidos com sucesso' })
+  @ApiResponse({ status: 404, description: 'Serviço Webhook não encontrado' })
+  @ApiResponse({ status: 500, description: 'Erro interno do servidor' })
+  @ApiResponse({ status: 400, description: 'Erro ao receber dados do Webhook' })
+  @ApiResponse({ status: 403, description: 'Acesso negado' })
   handleWebhook(
     @Param('id') id: string,
     @Param('servico') servico: string,

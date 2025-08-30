@@ -296,6 +296,7 @@ export class WebhookService {
   }
 
   async removeAll(): Promise<any> {
+    await this.prisma.metric.deleteMany({ where: { Service: { type: ServiceType.WEBHOOK } } });
     const result = await this.prisma.service.deleteMany({ where: { type: ServiceType.WEBHOOK } });
 
     if (result.count === 0) {
