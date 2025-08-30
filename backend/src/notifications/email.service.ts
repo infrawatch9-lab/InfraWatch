@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import nodemailer from 'nodemailer';
 import * as dotenv from 'dotenv';
+import { sendPingAlert } from './alerts/pingUtils';
 dotenv.config();
 
 const transporter = nodemailer.createTransport({
@@ -33,6 +34,30 @@ export class EmailService {
       await sendEmail(Array.isArray(to) ? to : [to], subject, message, html);
     } catch (error) {
       console.error('Erro ao enviar email:', error);
+    }
+  }
+
+  async sendAlert(type: 'ping' | 'SNMP' | 'HTTP' | 'WEBHOOK', data: any) {
+    try {
+      switch (type) {
+        case 'ping':
+          return await sendPingAlert(data);
+        case 'SNMP':
+          console.log('🔧 Tipo de alerta "SNMP" ainda não implementado');
+          break;
+          
+        case 'HTTP':
+          console.log('🔧 Tipo de alerta "HTTP" ainda não implementado');
+          break;
+        case 'WEBHOOK':
+          console.log('🔧 Tipo de alerta "WEBHOOK" ainda não implementado');
+          break;
+        default:
+          throw new Error(`Tipo de alerta "${type}" não suportado`);
+      }
+    } catch (error) {
+      console.error(`❌ [EmailService] Erro ao enviar alerta tipo "${type}":`, error);
+      throw error;
     }
   }
 }

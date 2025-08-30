@@ -14,13 +14,6 @@ export class AppController {
   @Get()
   @Public()
   getHealth() {
-    // Dentro de algum serviço ou controller para teste
-    this.alertService.createAlert({
-      serviceId: 8,
-      ruleId: 15,
-      message: 'Teste de alerta',
-      usersToNotify: ['kombagildo@gmail.com', "vicor32leonel@gmail.com"],
-    });
     return {
       success: true,
       message: 'InfraWatch API is running',
@@ -29,7 +22,6 @@ export class AppController {
     };
   }
 }
-
 
 @Controller('ws')
 export class WebSocketController {

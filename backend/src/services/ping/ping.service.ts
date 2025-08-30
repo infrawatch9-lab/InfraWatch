@@ -12,6 +12,7 @@ import { getDifferences } from './ping.utils';
 import { $Enums } from '@prisma/client';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { MicroservicesGateway } from '../../ws/microservices.gateway';
+import { CreateAlertRuleDto } from '../service.common-entity';
 
 @Injectable()
 export class PingService {
@@ -111,7 +112,8 @@ export class PingService {
 
       this.logger.log(`Serviço de ping criado: ${result.service.name}`);
 
-      return {
+      const to_send = {
+        action: 'create',
         id: result.service.id,
         name: result.service.name,
         description: result.service.description,
@@ -119,7 +121,7 @@ export class PingService {
         teamId: result.service.teamId,
         createdAt: result.service.createdAt,
         usersToNotify: result.usersToNotify,
-        pingConfig: {
+        configs: {
           id: result.pingConfig.id,
           serviceId: result.monitoringConfig.serviceId,
           interval: result.monitoringConfig.interval,
@@ -130,6 +132,16 @@ export class PingService {
           ttl: result.pingConfig.ttl || undefined,
         },
       };
+    
+      // atualiza o monitoramento por websocket
+      if (process.env.APP_NAME && process.env.PING_SERVICE_NAME)
+      {
+        this.microservicesGateway.handleMessageRest({
+          from: process.env.APP_NAME,
+          to: process.env.PING_SERVICE_NAME,
+          payload: to_send,
+        });
+      }
     } catch (error) {
       this.logger.error('Erro ao criar serviço de ping:', error);
       throw error;
@@ -306,25 +318,33 @@ export class PingService {
     if (!updatedService) {
       throw new NotFoundException('Serviço de SNMP atualizado não encontrado');
     }
-    
+    console.log(`Serviço de ping atualizado: ${data.pingConfig.interval}`);
+    const configs = {
+      ...updatedService?.configs?.PingConfig,
+      interval: data.pingConfig.interval,
+    };
     const to_send = {
-      action : 'update',
-      id : updatedService.id,
+      action: 'update',
+      id: updatedService.id,
       name: updatedService.name,
       description: updatedService.description,
       type: updatedService.type,
       status: updatedService.status,
       teamId: updatedService.teamId,
-      configs: updatedService?.configs,
+      configs: configs,
       rules: updatedService.rules,
+      usersToNotify: data.usersToNotify,
     };
     
     // atualiza o monitoramento por websocket
-    this.microservicesGateway.handleMessageRest({
-      from: 'InfraWatch',
-      to: 'PingMonitoring',
-      payload: to_send,
-    });
+    if (process.env.APP_NAME && process.env.PING_SERVICE_NAME)
+    {
+      this.microservicesGateway.handleMessageRest({
+        from: process.env.APP_NAME,
+        to: process.env.PING_SERVICE_NAME,
+        payload: to_send,
+      });
+    }
 
     this.eventEmitter.emit('dashboard.updated', {
       serviceId,
@@ -351,10 +371,26 @@ export class PingService {
         throw new NotFoundException('Serviço de ping não encontrado');
       }
     });
-      return { message: 'Serviço de ping removido com sucesso' };
+
+    const to_send = {
+      action: 'delete',
+      id: service.id,
+    };
+
+    if (process.env.APP_NAME && process.env.PING_SERVICE_NAME)
+    {
+      this.microservicesGateway.handleMessageRest({
+        from: process.env.APP_NAME,
+        to: process.env.PING_SERVICE_NAME,
+        payload: to_send,
+      });
+    }
+
+    return { message: 'Serviço de ping removido com sucesso' };
   }
 
   async removeAll(): Promise<any> {
+    await this.prisma.metric.deleteMany({ where: { Service: { type: ServiceType.PING } } });
     const result = await this.prisma.service.deleteMany({ where: { type: ServiceType.PING } });
 
     if (result.count === 0) {
@@ -364,4 +400,77 @@ export class PingService {
     return { message: 'Todos os serviços de ping foram removidos com sucesso' };
   }
 
+  async updateStatus(id: number, status: 'ACTIVE' | 'INACTIVE', action : string): Promise<any> {
+    const service = await this.prisma.service.findUnique({
+      where: { id },
+    });
+
+    if (!service) {
+      throw new NotFoundException('Serviço de ping não encontrado');
+    }
+
+    if (action === 'resume')
+    {
+       if (service.status === 'ACTIVE') {
+        return { message: 'Serviço já está parado' };
+      }
+      
+      await this.prisma.service.update({
+        where: { id },
+        data: { status: 'ACTIVE' },
+      });
+    }
+    else if (action === 'pause')
+    {
+
+      if (service.status === 'PAUSED') {
+        return { message: 'Serviço já está parado' };
+      }
+      
+      await this.prisma.service.update({
+        where: { id },
+        data: { status: 'PAUSED' },
+      });
+      
+    }
+      const to_send = {
+        from: "backend",
+        to: "pingService",
+        payload: {
+          action: action,
+          id: service.id,
+        }
+      };
+      
+    if (process.env.APP_NAME && process.env.PING_SERVICE_NAME)
+    {
+      this.microservicesGateway.handleMessageRest({
+        from: process.env.APP_NAME,
+        to: process.env.PING_SERVICE_NAME,
+        payload: to_send,
+      });
+    }
+
+    return { message: 'Serviço de ping parado com sucesso' };
+}
+
+  async updateStatus2(id: number, status: 'UP' | 'DOWN' | 'DEGRADED' | 'PENDING'): Promise<any> {
+    const service = await this.prisma.service.findUnique({
+      where: { id },
+    });
+
+    if (!service) {
+      throw new NotFoundException('Serviço de ping não encontrado');
+    }
+
+    if (service.status === status) {
+      return { message: `Serviço já está ${status === 'UP' ? 'ativo' : 'inativo'}` };
+    }
+
+    await this.prisma.service.update({
+      where: { id },
+      data: { status },
+    });
+    return { message: `Serviço de ping ${status === 'UP' ? 'ativado' : 'desativado'} com sucesso` };
+  }
 }

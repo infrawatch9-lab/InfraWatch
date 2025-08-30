@@ -55,6 +55,16 @@ export class PingController {
     return this.pingService.update(id, updatePingDto);
   }
 
+  @Put('status/:id')
+  @ApiOperation({ summary: 'Ativar/Desativar um serviço Ping' })
+  updateStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('status') status: 'ACTIVE' | 'INACTIVE',
+    @Body('action') action: 'resume' | 'pause',
+  ) {
+    return this.pingService.updateStatus(id, status, action);
+  }
+
   @Delete(':id')
   @ApiOperation({ summary: 'Remover serviço Ping pelo ID' })
   remove(@Param('id', ParseIntPipe) id: number) {

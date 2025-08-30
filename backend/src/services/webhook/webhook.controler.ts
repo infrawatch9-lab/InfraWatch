@@ -104,7 +104,9 @@ export class WebhookController {
     @Param('servico') servico: string,
     @Param('provedor') provedor: string,
     @Body() data: any,
+    @Res() res: Response
   ) {
-    return this.webhookService.handleWebhook(id, servico, provedor, data);
+    this.webhookService.handleWebhook(id, servico, provedor, data);
+    return res.status(200).send({ message: 'Webhook recebido com sucesso' });
   }
 }

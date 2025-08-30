@@ -127,6 +127,29 @@ export class SnmpService {
             })),
           });
         }
+
+      const to_send = {
+      action: 'update',
+      id : result.service.id,
+      name: result.service.name,
+      description: result.service.description,
+      type: result.service.type,
+      status: result.service.status,
+      teamId: result.service.teamId,
+      configs: result.monitoringConfig,
+      rules: createServiceDto.rules || [],
+      usersToNotify: result.usersToNotify || [],
+    };
+    
+    // atualiza o monitoramento por websocket
+    if (process.env.APP_NAME && process.env.SNMP_SERVICE_NAME)
+    {
+      this.microservicesGateway.handleMessageRest({
+        from: process.env.APP_NAME,
+        to: process.env.SNMP_SERVICE_NAME,
+        payload: to_send,
+      });
+    }
         
         return result;
       } catch (error) {
@@ -277,14 +300,18 @@ export class SnmpService {
       teamId: updatedService.teamId,
       configs: updatedService?.configs,
       rules: updatedService.rules,
+      usersToNotify: updatedService.usersToNotify,
     };
     
     // atualiza o monitoramento por websocket
-    this.microservicesGateway.handleMessageRest({
-      from: 'InfraWatch',
-      to: 'SnmpMonitoring',
-      payload: to_send,
-    });
+    if (process.env.APP_NAME && process.env.SNMP_SERVICE_NAME)
+    {
+      this.microservicesGateway.handleMessageRest({
+        from: process.env.APP_NAME,
+        to: process.env.SNMP_SERVICE_NAME,
+        payload: to_send,
+      });
+    }
 
     this.eventEmitter.emit('dashboard.updated', {
       serviceId,
@@ -310,7 +337,22 @@ export class SnmpService {
         throw new NotFoundException('Serviço de SNMP não encontrado');
       }
     });
-      return { message: 'Serviço de SNMP removido com sucesso' };
+    
+    const to_send = {
+      action: 'delete',
+      id: service.id,
+    };
+
+    if (process.env.APP_NAME && process.env.SNMP_SERVICE_NAME)
+    {
+      this.microservicesGateway.handleMessageRest({
+        from: process.env.APP_NAME,
+        to: process.env.SNMP_SERVICE_NAME,
+        payload: to_send,
+      });
+    }
+
+    return { message: 'Serviço de SNMP removido com sucesso' };
   }
 
   async removeAll(): Promise<any> {

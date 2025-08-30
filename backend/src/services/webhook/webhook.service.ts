@@ -267,12 +267,6 @@ export class WebhookService {
       configs: updatedService?.configs,
       rules: updatedService.rules,
     };
-    
-    this.microservicesGateway.handleMessageRest({
-      from: 'InfraWatch',
-      to: 'WebhookMonitoring',
-      payload: to_send,
-    });
 
     this.eventEmitter.emit('dashboard.updated', {
       serviceId,
@@ -326,6 +320,19 @@ export class WebhookService {
       where: { serviceId: service.id },
       include: { User: true },
     });
+
+    const logEntry = await this.prisma.systemLog.create({
+      data: {
+        serviceId: service.id,
+        message: `Webhook recebido para o serviço ${service.name} do provedor ${provedor}`,
+        timestamp: new Date(),
+        type: $Enums.LogType.INFO,
+      },
+    });
+
+    if (!logEntry) {
+      this.logger.error('Erro ao criar log de sistema para o webhook recebido');
+    }
 
     console.log(`Notificando ${usersToNotify.length} usuários associados ao serviço ${service.name}`);
     console.log("Usuários a serem notificados:", usersToNotify.map((user) => user.User.email));

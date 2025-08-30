@@ -123,6 +123,29 @@ export class HttpService {
         });
       }
 
+      const to_send = {
+      action : 'update',
+      id : service.id,
+      name: service.name,
+      description: service.description,
+      type: service.type,
+      status: service.status,
+      teamId: service.teamId,
+      configs: monitoringConfig,
+      rules: createServiceDto.rules || [],
+      usersToNotify: createServiceDto.usersToNotify || [],
+    };
+    
+    // atualiza o monitoramento por websocket
+    if (process.env.APP_NAME && process.env.HTTP_SERVICE_NAME)
+    {
+      this.microservicesGateway.handleMessageRest({
+        from: process.env.APP_NAME,
+        to: process.env.HTTP_SERVICE_NAME,
+        payload: to_send,
+      });
+    }
+
         return {
           service,
           monitoringConfig,
@@ -279,14 +302,18 @@ export class HttpService {
       teamId: updatedService.teamId,
       configs: updatedService?.configs,
       rules: updatedService.rules,
+      usersToNotify: updatedService.usersToNotify,
     };
     
     // atualiza o monitoramento por websocket
-    this.microservicesGateway.handleMessageRest({
-      from: 'InfraWatch',
-      to: 'HttpMonitoring',
-      payload: to_send,
-    });
+    if (process.env.APP_NAME && process.env.HTTP_SERVICE_NAME)
+    {
+      this.microservicesGateway.handleMessageRest({
+        from: process.env.APP_NAME,
+        to: process.env.HTTP_SERVICE_NAME,
+        payload: to_send,
+      });
+    }
 
     this.eventEmitter.emit('dashboard.updated', {
       serviceId,
@@ -312,7 +339,22 @@ export class HttpService {
         throw new NotFoundException('Serviço de HTTP não encontrado');
       }
     });
-      return { message: 'Serviço de HTTP removido com sucesso' };
+    
+    const to_send = {
+      action: 'delete',
+      id: service.id,
+    };
+
+    if (process.env.APP_NAME && process.env.HTTP_SERVICE_NAME)
+    {
+      this.microservicesGateway.handleMessageRest({
+        from: process.env.APP_NAME,
+        to: process.env.HTTP_SERVICE_NAME,
+        payload: to_send,
+      });
+    }
+    
+    return { message: 'Serviço de HTTP removido com sucesso' };
   }
 
   async removeAll(): Promise<any> {
