@@ -11,6 +11,7 @@ pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
+.nfs*
 
 # OS
 .DS_Store
@@ -61,5 +62,7 @@ node_modules
 # Ignore build output
 dist
 build
+
+/src/generated/prisma
 
 /src/generated/prisma

@@ -303,9 +303,9 @@ export class WebhookService {
     await this.prisma.metric.deleteMany({ where: { Service: { type: ServiceType.WEBHOOK } } });
     const result = await this.prisma.service.deleteMany({ where: { type: ServiceType.WEBHOOK } });
 
-    if (result.count === 0) {
-      throw new NotFoundException('Nenhum serviço de Webhook encontrado para remover');
-    }
+    // if (result.count === 0) {
+    //   throw new NotFoundException('Nenhum serviço de Webhook encontrado para remover');
+    // }
 
     return { message: 'Todos os serviços de Webhook foram removidos com sucesso' };
   }

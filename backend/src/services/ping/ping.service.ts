@@ -393,9 +393,9 @@ export class PingService {
     await this.prisma.metric.deleteMany({ where: { Service: { type: ServiceType.PING } } });
     const result = await this.prisma.service.deleteMany({ where: { type: ServiceType.PING } });
 
-    if (result.count === 0) {
-      throw new NotFoundException('Nenhum serviço de ping encontrado para remover');
-    }
+    // if (result.count === 0) {
+    //   throw new NotFoundException('Nenhum serviço de ping encontrado para remover');
+    // }
 
     return { message: 'Todos os serviços de ping foram removidos com sucesso' };
   }

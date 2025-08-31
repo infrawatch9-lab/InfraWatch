@@ -11,6 +11,7 @@ import { ServiceType } from '@prisma/client';
 import { $Enums } from '@prisma/client';
 import { MicroservicesGateway } from '../../ws/microservices.gateway';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { url } from 'inspector';
 
 @Injectable()
 export class HttpService {
@@ -124,9 +125,10 @@ export class HttpService {
       }
 
       const to_send = {
-      action : 'update',
+      action : 'create',
       id : service.id,
       name: service.name,
+      url: httpConfig.endpoint,
       description: service.description,
       type: service.type,
       status: service.status,
@@ -296,6 +298,7 @@ export class HttpService {
       action : 'update',
       id : updatedService.id,
       name: updatedService.name,
+      url: updatedService.configs?.HttpConfig?.endpoint,
       description: updatedService.description,
       type: updatedService.type,
       status: updatedService.status,
@@ -360,9 +363,9 @@ export class HttpService {
   async removeAll(): Promise<any> {
     const result = await this.prisma.service.deleteMany({ where: { type: ServiceType.HTTP } });
 
-    if (result.count === 0) {
-      throw new NotFoundException('Nenhum serviço de HTTP encontrado para remover');
-    }
+    // if (result.count === 0) {
+    //   throw new NotFoundException('Nenhum serviço de HTTP encontrado para remover');
+    // }
 
     return { message: 'Todos os serviços de HTTP foram removidos com sucesso' };
   }

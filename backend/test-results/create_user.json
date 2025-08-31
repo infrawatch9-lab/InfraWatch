@@ -1,1 +1,0 @@
-{"success":true,"message":"Conta criada com sucesso! Verifique seu email para a senha provisória.","user":{"id":34,"name":"Usuário de Teste InfraWatch","email":"usuario.teste@infrawatch.com","role":"USER","status":"ACTIVE","isTemporaryPassword":true,"temporaryPasswordExpiry":"2025-08-13T15:39:42.589Z","createdAt":"2025-08-12T15:39:42.591Z","updatedAt":"2025-08-12T15:39:42.591Z"}}

@@ -358,9 +358,9 @@ export class SnmpService {
   async removeAll(): Promise<any> {
     const result = await this.prisma.service.deleteMany({ where: { type: ServiceType.SNMP } });
 
-    if (result.count === 0) {
-      throw new NotFoundException('Nenhum serviço de SNMP encontrado para remover');
-    }
+    // if (result.count === 0) {
+    //   throw new NotFoundException('Nenhum serviço de SNMP encontrado para remover');
+    // }
 
     return { message: 'Todos os serviços de SNMP foram removidos com sucesso' };
   }
