@@ -8,29 +8,24 @@ import {
   ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { EmailService } from '../notifications/email.service';
-import { PrismaService } from '../database/prisma.service';
+import { ConnectionManager } from './connection-manager.service';
+import { MessageCacheService } from './message-cache.service';
+import { MessageRouterService } from './message-router.service';
+import { AlertProcessorService } from './alert-processor.service';
+import { GatewayAdminService } from './gateway-admin.service';
 
 @WebSocketGateway({ namespace: '/', cors: true })
 export class MicroservicesGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server;
 
-  private connections: Record<string, Socket> = {};
-  private processedMessages: Map<string, number> = new Map(); // Cache para evitar duplicatas
-  private readonly MESSAGE_CACHE_TTL = 10000; // 10 segundos
-
-  constructor(private emailService: EmailService, private prisma: PrismaService) {
-    // Limpar cache de mensagens processadas a cada 30 segundos
-    setInterval(() => {
-      const now = Date.now();
-      for (const [key, timestamp] of this.processedMessages.entries()) {
-        if (now - timestamp > this.MESSAGE_CACHE_TTL) {
-          this.processedMessages.delete(key);
-        }
-      }
-    }, 30000);
-  }
+  constructor(
+    private connectionManager: ConnectionManager,
+    private messageCacheService: MessageCacheService,
+    private messageRouter: MessageRouterService,
+    private alertProcessor: AlertProcessorService,
+    private gatewayAdmin: GatewayAdminService
+  ) {}
 
   handleConnection(client: Socket) {
     console.log(`🔌 Cliente conectado: ${client.id}`);
@@ -38,17 +33,12 @@ export class MicroservicesGateway implements OnGatewayConnection, OnGatewayDisco
 
   handleDisconnect(client: Socket) {
     try {
-      
-      for (const key in this.connections) {
-        if (this.connections[key].id === client.id) {
-          delete this.connections[key];
-          console.log(`Micro-serviço desconectado: "${key}"`);
-          break;
-        }
+      const disconnectedService = this.connectionManager.unregisterBySocket(client.id);
+      if (disconnectedService) {
+        console.log(`❌ Micro-serviço desconectado: "${disconnectedService}"`);
       }
-
     } catch (error) {
-      console.error('Erro ao processar desconexão:', error);
+      console.error('❌ Erro ao processar desconexão:', error);
     }
   }
 
@@ -57,7 +47,7 @@ export class MicroservicesGateway implements OnGatewayConnection, OnGatewayDisco
     try {
       // Validação dos dados de entrada
       if (!data || typeof data !== 'object' || !data.id) {
-        console.error('Dados de registro inválidos:', data);
+        console.error('❌ Dados de registro inválidos:', data);
         client.emit('register_error', {
           success: false,
           message: 'Campo "id" é obrigatório para registro',
@@ -69,7 +59,7 @@ export class MicroservicesGateway implements OnGatewayConnection, OnGatewayDisco
       const serviceId = data.id.trim();
 
       if (!serviceId || serviceId === '') {
-        console.error('ID de serviço vazio:', data.id);
+        console.error('❌ ID de serviço vazio:', data.id);
         client.emit('register_error', {
           success: false,
           message: 'ID do microserviço não pode ser vazio',
@@ -78,27 +68,28 @@ export class MicroservicesGateway implements OnGatewayConnection, OnGatewayDisco
         return;
       }
 
-      // Verificar se já existe um serviço com esse ID
-      if (this.connections[serviceId]) {
-        console.warn(`Microserviço "${serviceId}" já estava registrado, sobrescrevendo conexão...`);
+      // Registrar o microserviço usando o ConnectionManager
+      const success = this.connectionManager.registerService(serviceId, client);
+      
+      if (success) {
+        const connectedServices = this.connectionManager.getConnectedServiceIds();
+        
+        client.emit('register_success', {
+          success: true,
+          message: `Microserviço "${serviceId}" registrado com sucesso`,
+          serviceId: serviceId,
+          connectedServices
+        });
+      } else {
+        client.emit('register_error', {
+          success: false,
+          message: 'Falha ao registrar microserviço',
+          code: 'REGISTRATION_FAILED'
+        });
       }
 
-      // Registrar o microserviço
-      this.connections[serviceId] = client;
-      const totalConnected = Object.keys(this.connections).length;
-      console.log(`Micro-serviço registrado: "${serviceId}" (Total: ${totalConnected})`);
-      console.log(`Microserviços conectados: [${Object.keys(this.connections).join(', ')}]`);
-
-      // Confirmar registro bem-sucedido
-      client.emit('register_success', {
-        success: true,
-        message: `Microserviço "${serviceId}" registrado com sucesso`,
-        serviceId: serviceId,
-        connectedServices: Object.keys(this.connections)
-      });
-
     } catch (error) {
-      console.error('Erro ao registrar microserviço:', error);
+      console.error('❌ Erro ao registrar microserviço:', error);
       client.emit('register_error', {
         success: false,
         message: 'Erro interno ao registrar microserviço',
@@ -109,39 +100,29 @@ export class MicroservicesGateway implements OnGatewayConnection, OnGatewayDisco
 
   @SubscribeMessage('message')
   handleMessageRest(data: { from: string; to: string; payload: any }) {
-    if (data.to === 'all') {
-      for (const key in this.connections) {
-        this.connections[key].emit('message', { from: data.from, payload: data.payload });
+    try {
+      const result = this.messageRouter.routeMessage(data);
+      
+      if (!result.success) {
+        console.error(`❌ Falha ao rotear mensagem de ${data.from} para ${data.to}`);
+        if ('error' in result && result.error) {
+          throw new Error(result.error);
+        }
       }
-    } else {
-      const target = this.connections[data.to];
-      if (target) {
-        console.log(`Enviando mensagem de ${data.from} para ${data.to}`);
-        target.emit('message', { from: data.from, payload: data.payload });
-      }
-      else
-      {
-        console.error(`Micro-serviço ${data.to} não encontrado`);
-        throw new Error(`Micro-serviço ${data.to} não encontrado`);
-      }
+    } catch (error) {
+      console.error(`❌ Erro no roteamento de mensagem:`, error);
+      throw error;
     }
   }
 
   @SubscribeMessage('list_services')
   listConnectedServices(@ConnectedSocket() client: Socket) {
     try {
-      const connectedServices = Object.keys(this.connections);
-      
-      client.emit('services_list', {
-        success: true,
-        services: connectedServices,
-        count: connectedServices.length,
-        timestamp: new Date().toISOString()
-      });
-
-      console.log(`Enviada lista de ${connectedServices.length} microserviços conectados`);
+      const servicesList = this.gatewayAdmin.getConnectedServices();
+      client.emit('services_list', servicesList);
+      console.log(`📋 Lista de ${servicesList.count} microserviços enviada`);
     } catch (error) {
-      console.error('Erro ao listar serviços:', error);
+      console.error('❌ Erro ao listar serviços:', error);
       client.emit('error', {
         success: false,
         message: 'Erro ao obter lista de microserviços',
@@ -158,11 +139,16 @@ export class MicroservicesGateway implements OnGatewayConnection, OnGatewayDisco
       if (data && typeof data === 'object') {
         const { from, payload, timestamp } = data;
         
-        // Criar uma chave única para identificar mensagens duplicadas
-        const messageKey = `${from}-${payload.serviceId}-${payload.status}-${payload.timestamp}`;
+        // Criar chave única para verificar duplicatas
+        const messageKey = this.messageCacheService.generateMessageKey(
+          from, 
+          payload.serviceId, 
+          payload.status, 
+          payload.timestamp
+        );
         
-        // Verificar se já processamos esta mensagem recentemente
-        if (this.processedMessages.has(messageKey)) {
+        // Verificar se já processamos esta mensagem
+        if (this.messageCacheService.isMessageProcessed(messageKey)) {
           console.log(`⚠️  Mensagem duplicada detectada e ignorada: ${messageKey}`);
           client.emit('message_received', {
             success: true,
@@ -174,13 +160,27 @@ export class MicroservicesGateway implements OnGatewayConnection, OnGatewayDisco
         }
         
         // Marcar mensagem como processada
-        this.processedMessages.set(messageKey, Date.now());
+        this.messageCacheService.markMessageAsProcessed(messageKey, data);
         
         console.log(`📨 Mensagem recebida de "${from}" em ${timestamp}:`, payload);
         console.log(`🔑 Message Key: ${messageKey}`);
         
-        // Atualizar status no banco
-        this.setStatus({ id: payload.serviceId, status: payload.status });
+        // Processar alerta usando o AlertProcessor
+        const alertData = {
+          serviceId: parseInt(payload.serviceId.toString()),
+          status: payload.status,
+          message: payload.message,
+          timestamp: timestamp || new Date().toISOString(),
+          recipients: payload.recipients
+        };
+        
+        this.alertProcessor.processServiceAlert(alertData)
+          .then(() => {
+            console.log(`✅ Alerta processado com sucesso para serviceId: ${payload.serviceId}`);
+          })
+          .catch((error: any) => {
+            console.error(`❌ Erro ao processar alerta para serviceId: ${payload.serviceId}:`, error);
+          });
 
         // Confirmar recebimento
         client.emit('message_received', {
@@ -190,16 +190,6 @@ export class MicroservicesGateway implements OnGatewayConnection, OnGatewayDisco
           originalMessage: data,
           messageKey: messageKey
         });
-
-        // Enviar email (apenas uma vez)
-        console.log(`📧 Enviando alerta de email para: ${payload.recipients?.join(', ') || 'N/A'}`);
-        this.emailService.sendAlert('ping', { payload, timestamp })
-          .then(() => {
-            console.log(`✅ Email enviado com sucesso para serviceId: ${payload.serviceId}`);
-          })
-          .catch((error) => {
-            console.error(`❌ Erro ao enviar email para serviceId: ${payload.serviceId}:`, error);
-          });
 
       } else {
         console.log(`⚠️  Formato de mensagem inválido recebido`);
@@ -222,84 +212,14 @@ export class MicroservicesGateway implements OnGatewayConnection, OnGatewayDisco
 
   // Método para enviar mensagem do gateway para microserviços específicos
   sendFromGateway(to: string, payload: any) {
-    try {
-      if (to === 'all') {
-        // Broadcast para todos
-        const connectedServices = Object.keys(this.connections);
-        console.log(`🔄 Gateway enviando broadcast para ${connectedServices.length} microserviços`);
-        
-        for (const [serviceId, socket] of Object.entries(this.connections)) {
-          socket.emit('gateway_message', {
-            from: 'gateway',
-            to: serviceId,
-            payload: payload,
-            timestamp: new Date().toISOString()
-          });
-        }
-        
-        console.log(`✅ Broadcast do gateway enviado para ${connectedServices.length} microserviços`);
-        
-      } else {
-        // Envio direto
-        const target = this.connections[to];
-        if (target) {
-          console.log(`📨 Gateway enviando mensagem para "${to}"`);
-          target.emit('gateway_message', {
-            from: 'gateway',
-            to: to,
-            payload: payload,
-            timestamp: new Date().toISOString()
-          });
-          
-          console.log(`✅ Mensagem do gateway entregue para "${to}"`);
-          return true;
-        } else {
-          console.error(`❌ Gateway: Microserviço "${to}" não encontrado`);
-          return false;
-        }
-      }
-      
-    } catch (error) {
-      console.error('❌ Erro ao enviar mensagem do gateway:', error);
-      return false;
-    }
-  }
-
-  async setStatus(params: { id: number; status: 'UP' | 'DOWN' | 'DEGRADED' | 'PENDING' }) {
-    try {
-      const { id, status } = params;
-      console.log(`🔄 Atualizando status do serviço ${id} para ${status}`);
-      
-      const updatedService = await this.prisma.service.update({
-        where: { id },
-        data: { status },
-      });
-      
-      console.log(`✅ Status atualizado: Serviço ${id} agora está ${status}`);
-      return updatedService;
-    } catch (error) {
-      console.error(`❌ Erro ao atualizar status do serviço ${params.id}:`, error);
-      throw error;
-    }
+    return this.messageRouter.sendFromGateway(to, payload);
   }
 
   // Método para obter estatísticas do gateway
   @SubscribeMessage('gateway_stats')
-  getGatewayStats(@ConnectedSocket() client: Socket) {
+  async getGatewayStats(@ConnectedSocket() client: Socket) {
     try {
-      const stats = {
-        success: true,
-        connectedServices: Object.keys(this.connections).length,
-        services: Object.keys(this.connections),
-        processedMessages: this.processedMessages.size,
-        cacheEntries: Array.from(this.processedMessages.entries()).map(([key, timestamp]) => ({
-          key,
-          timestamp: new Date(timestamp).toISOString(),
-          ageInSeconds: Math.floor((Date.now() - timestamp) / 1000)
-        })),
-        timestamp: new Date().toISOString()
-      };
-      
+      const stats = await this.gatewayAdmin.getGatewayStats();
       client.emit('gateway_stats_response', stats);
       console.log(`📊 Estatísticas do gateway enviadas para ${client.id}`);
     } catch (error) {
@@ -316,17 +236,9 @@ export class MicroservicesGateway implements OnGatewayConnection, OnGatewayDisco
   @SubscribeMessage('clear_message_cache')
   clearMessageCache(@ConnectedSocket() client: Socket) {
     try {
-      const clearedCount = this.processedMessages.size;
-      this.processedMessages.clear();
-      
-      client.emit('cache_cleared', {
-        success: true,
-        message: `Cache limpo com sucesso`,
-        clearedEntries: clearedCount,
-        timestamp: new Date().toISOString()
-      });
-      
-      console.log(`🧹 Cache de mensagens limpo: ${clearedCount} entradas removidas por ${client.id}`);
+      const result = this.gatewayAdmin.clearMessageCache();
+      client.emit('cache_cleared', result);
+      console.log(`🧹 Cache de mensagens limpo: ${result.clearedEntries} entradas removidas por ${client.id}`);
     } catch (error) {
       console.error('❌ Erro ao limpar cache:', error);
       client.emit('error', {

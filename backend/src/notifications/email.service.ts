@@ -37,11 +37,11 @@ export class EmailService {
     }
   }
 
-  async sendAlert(type: 'ping' | 'SNMP' | 'HTTP' | 'WEBHOOK', data: any) {
+  async sendAlert(type: 'ping' | 'SNMP' | 'HTTP' | 'WEBHOOK', data: any, alertID?: number) {
     try {
       switch (type) {
         case 'ping':
-          return await sendPingAlert(data);
+          return await sendPingAlert(data, alertID);
         case 'SNMP':
           console.log('🔧 Tipo de alerta "SNMP" ainda não implementado');
           break;

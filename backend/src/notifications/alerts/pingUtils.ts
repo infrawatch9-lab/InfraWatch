@@ -17,12 +17,11 @@ const formatDate = (dateString: string | Date | number) => {
     });
 };
 
-export async function sendPingAlert(alertData: any) {
+export async function sendPingAlert(alertData: any, alertID?: number) {
     try {
       console.log(`📧 [EmailService] Preparando alerta de ping para ${alertData.payload.serviceName}`);
-    
-        const alertID = randomUUID();
-        
+
+
         const templateData = {
             ...alertData.payload,
             alertId: alertID,

@@ -9,22 +9,20 @@ datasource db {
 }
 
 model User {
-  id                       Int                       @id @default(autoincrement())
-  name                     String
-  email                    String                    @unique
-  password                 String
-  role                     Role                      @default(USER)
-  createdAt                DateTime                  @default(now())
-  updatedAt                DateTime                  @updatedAt
-  isTemporaryPassword      Boolean                   @default(false)
-  status                   Status                    @default(ACTIVE)
-  temporaryPasswordExpiry  DateTime?
-  number                   String?
-  alerts                   Alert[]
-  createdAlertRules        AlertRule[]               @relation("CreatedByUser")
-  notifications            Notification[]
-  serviceUserNotifications ServiceUserNotification[]
-  teams                    TeamMember[]
+  id                     Int            @id @default(autoincrement())
+  name                   String
+  email                  String         @unique
+  password               String
+  role                   Role           @default(USER)
+  status                 Status         @default(ACTIVE)
+  isTemporaryPassword    Boolean        @default(false)
+  temporaryPasswordExpiry DateTime?
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+  alerts                 Alert[]
+  createdAlertRules      AlertRule[]    @relation("CreatedByUser")
+  notifications          Notification[]
+  teams                  TeamMember[]
 }
 
 model Team {
@@ -45,21 +43,21 @@ model TeamMember {
 }
 
 model Service {
-  id            Int                       @id @default(autoincrement())
-  name          String
-  type          ServiceType
-  status        ServiceStatus             @default(ACTIVE)
-  teamId        Int
-  createdAt     DateTime                  @default(now())
-  description   String                    @default("Sem descrição")
-  alerts        Alert[]
-  rules         AlertRule[]               @relation("ServiceToAlertRules")
-  configs       MonitoringConfig?
-  slas          SLA[]
-  Team          Team                      @relation(fields: [teamId], references: [id])
-  usersToNotify ServiceUserNotification[]
-  metrics       Metric[]
-  logs          SystemLog[]
+  id        Int                @id @default(autoincrement())
+  name      String
+  type      ServiceType
+  endpoint  String
+  protocol  String
+  status    ServiceStatus      @default(PENDING)
+  teamId    Int
+  createdAt DateTime           @default(now())
+  alerts    Alert[]
+  rules     AlertRule[]        @relation("ServiceToAlertRules")
+  configs   MonitoringConfig[]
+  slas      SLA[]
+  Team      Team               @relation(fields: [teamId], references: [id])
+  metrics   Metric[]
+  logs      SystemLog[]
 }
 
 model Metric {
@@ -74,6 +72,7 @@ model Metric {
   Service   Service       @relation(fields: [serviceId], references: [id])
 
   @@index([timestamp])
+  @@index([serviceId, timestamp])
   @@map("metrics")
 }
 
@@ -87,8 +86,8 @@ model AlertRule {
   createdBy     Int
   createdAt     DateTime   @default(now())
   alerts        Alert[]
-  createdByUser User       @relation("CreatedByUser", fields: [createdBy], references: [id], onDelete: Cascade)
-  Service       Service    @relation("ServiceToAlertRules", fields: [serviceId], references: [id], onDelete: Cascade)
+  createdByUser User       @relation("CreatedByUser", fields: [createdBy], references: [id])
+  Service       Service    @relation("ServiceToAlertRules", fields: [serviceId], references: [id])
 }
 
 model Alert {
@@ -99,20 +98,10 @@ model Alert {
   message       String
   resolved      Boolean        @default(false)
   userId        Int?
-  AlertRule     AlertRule      @relation(fields: [ruleId], references: [id], onDelete: Cascade)
-  Service       Service        @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  User          User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  AlertRule     AlertRule      @relation(fields: [ruleId], references: [id])
+  Service       Service        @relation(fields: [serviceId], references: [id])
+  User          User?          @relation(fields: [userId], references: [id])
   notifications Notification[]
-}
-
-model ServiceUserNotification {
-  id        Int     @id @default(autoincrement())
-  serviceId Int
-  userId    Int
-  Service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  User      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([serviceId, userId])
 }
 
 model Notification {
@@ -138,131 +127,65 @@ model SLA {
   Service     Service   @relation(fields: [serviceId], references: [id])
 }
 
-model SystemLog {
-  id        Int      @id @default(autoincrement())
-  timestamp DateTime @default(now())
-  type      LogType
-  message   String
-  serviceId Int?
-  Service   Service? @relation(fields: [serviceId], references: [id])
+model MonitoringConfig {
+  id         Int     @id @default(autoincrement())
+  serviceId  Int
+  frequency  Int
+  timeout    Int
+  webhookUrl String?
+  Service    Service @relation(fields: [serviceId], references: [id])
+}
 
-  @@index([timestamp])
-  @@index([serviceId, timestamp])
+model SystemLog {
+  id         Int        @id @default(autoincrement())
+  timestamp  DateTime   @default(now())
+  type       LogType
+  message    String
+  serviceId  Int?
+
+  Service    Service?   @relation(fields: [serviceId], references: [id]) // Serviço relacionado (opcional)
+  
+  @@index([timestamp]) // Índice temporal para TimescaleDB
+  @@index([serviceId, timestamp]) // Índice composto para consultas por serviço
+  
   @@map("system_logs")
 }
 
-model MonitoringConfig {
-  id            Int            @id @default(autoincrement())
-  serviceId     Int            @unique
-  timeout       Int
-  webhookUrl    String?
-  interval      Int
-  HttpConfig    HttpConfig?
-  Service       Service        @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  PingConfig    PingConfig?
-  SnmpConfig    SnmpConfig?
-  WebhookConfig WebhookConfig?
+// Agente 
+model Agent {
+  id           String         @id @default(cuid())
+  host         String         @unique
+  createdAt    DateTime       @default(now())
+  metrics      AgentMetric[]
 }
 
-model PingConfig {
-  id           Int              @id @default(autoincrement())
-  monitoringId Int              @unique
-  ipAddress    String
-  packetSize   Int?
-  ttl          Int?
-  Monitoring   MonitoringConfig @relation(fields: [monitoringId], references: [id], onDelete: Cascade)
-}
+// Tipos de métricas que pegamos do agent
+model AgentMetric {
+  id         Int        @id @default(autoincrement())
+  timestamp  DateTime   @default(now())
+  cpu        Float
+  memory     Float
+  disk       Float
+  uptime     Int
+  bytesSent  BigInt
+  bytesRecv  BigInt
+  latency    Json
+  logs       Json?
+  alerts     Json?
 
-model SnmpConfig {
-  id                     Int              @id @default(autoincrement())
-  monitoringId           Int              @unique
-  host                   String
-  version                SnmpVersion
-  community              String?
-  username               String?
-  authProtocol           String?
-  authPassword           String?
-  privProtocol           String?
-  privPassword           String?
-  oid                    String
-  retries                Int?
-  delay                  Int?
-  alertAfterFailures     Int?
-  minAlertInterval       Int?
-  expectedResponseTimeMs Int?
-  createdAt              DateTime         @default(now())
-  updatedAt              DateTime         @updatedAt
-  Monitoring             MonitoringConfig @relation(fields: [monitoringId], references: [id], onDelete: Cascade)
-}
+  agentId    String
+  agent      Agent      @relation(fields: [agentId], references: [id])
 
-model HttpConfig {
-  id                      Int              @id @default(autoincrement())
-  serviceId               Int              @unique
-  monitoringId            Int              @unique
-  endpoint                String
-  method                  String           @default("GET")
-  headers                 Json?
-  body                    Json?
-  authType                String?
-  authValue               String?
-  validateSSL             Boolean?         @default(true)
-  followRedirects         Boolean?         @default(true)
-  expectedStatus          Int?
-  expectedBodyIncludes    String?
-  expectedResponseTimeMs  Int?
-  expectedHeadersIncludes Json?
-  retries                 Int?
-  createdAt               DateTime         @default(now())
-  updatedAt               DateTime         @updatedAt
-  Monitoring              MonitoringConfig @relation(fields: [monitoringId], references: [id], onDelete: Cascade)
-}
-
-model WebhookConfig {
-  id           Int              @id @default(autoincrement())
-  monitoringId Int              @unique
-  serviceId    Int              @unique
-  endpoint     String
-  method       String
-  secret       String?
-  headers      Json?
-  provedor     String
-  Monitoring   MonitoringConfig @relation(fields: [monitoringId], references: [id], onDelete: Cascade)
-}
-
-model NotificationsConfig {
-  id          Int           @id @default(autoincrement())
-  slackConfig SlackConfig[]
-  emailConfig EmailConfig[]
-}
-
-model SlackConfig {
-  id                   Int                 @id @default(autoincrement())
-  configsId            Int
-  webhookUrl           String?
-  channel              String?
-  notificationsConfig  NotificationsConfig @relation(fields: [configsId], references: [id], onDelete: Cascade)
-}
-
-model EmailConfig {
-  id                   Int                 @id @default(autoincrement())
-  configsId            Int
-  gmailAppPassword     String?
-  gmailUser            String?
-  notificationsConfig  NotificationsConfig @relation(fields: [configsId], references: [id], onDelete: Cascade)
+  @@index([timestamp])
+  @@index([agentId, timestamp])
+  @@map("agent_metrics")
 }
 
 
-enum SnmpVersion {
-  v1
-  v2c
-  v3
-}
-
+// Tipo de utilizador no sistema
 enum Role {
   ADMIN
   USER
-  AGENT
-  VIEWER
 }
 
 enum Status {
@@ -283,10 +206,6 @@ enum ServiceType {
   DATABASE
   API
   CUSTOM
-  SNMP
-  PING
-  WEBHOOK
-  HTTP
 }
 
 enum ServiceStatus {
@@ -294,34 +213,26 @@ enum ServiceStatus {
   DOWN
   DEGRADED
   PENDING
-  PAUSED
   ACTIVE
   INACTIVE
 }
 
 enum AlertLevel {
-  LOW
-  MEDIUM
-  HIGH
-  CRITICAL
+  INFO
   WARNING
+  CRITICAL
 }
 
 enum NotificationType {
-  EMAIL
-  PUSH
-  SMS
-  SLACK
-  TELEGRAM
+  ALERT
+  INFO
+  SYSTEM
 }
 
 enum NotificationChannel {
   EMAIL
   PUSH
   SMS
-  SLACK
-  TELEGRAM
-  WEBHOOK
 }
 
 enum SLAStatus {
@@ -342,10 +253,4 @@ enum MetricType {
   MEMORY
   LATENCY
   STATUS
-}
-
-enum MonitoringMode {
-  cron
-  agent
-  both
 }

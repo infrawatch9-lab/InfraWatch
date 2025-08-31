@@ -9,8 +9,6 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { PrismaService } from '../database/prisma.service';
-import { $Enums } from '@prisma/client';
 import { CreateAlertChannelDto } from './notifications.entity'
 import { NotificationsService } from './notifications.service';
 
