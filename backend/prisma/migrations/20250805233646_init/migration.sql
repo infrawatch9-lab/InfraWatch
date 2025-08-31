@@ -1,5 +1,4 @@
 -- CreateExtension
-CREATE EXTENSION IF NOT EXISTS "timescaledb";
 
 -- CreateEnum
 CREATE TYPE "Role" AS ENUM ('ADMIN', 'USER');
