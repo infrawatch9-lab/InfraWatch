@@ -34,7 +34,6 @@ export class PingService {
         where: {
           name: data.name,
           type: ServiceType.PING,
-          teamId: teamId,
         },
       });
 
