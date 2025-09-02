@@ -20,23 +20,20 @@ jobs:
 
       - name: Build and Push Image
         run: |
-          if [ "${GITHUB_REF##*/}" == "staging" ]; then
-            IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/infrawatch-backend:staging
-          else
-            IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/infrawatch-backend:latest
-          fi
+          IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/infrawatch-backend:latest
           docker build -t $IMAGE .
           docker push $IMAGE
           docker logout
 
-      - name: Trigger deploy workflow
-        uses: peter-evans/repository-dispatch@v2
+      - name: Initialize Conteiner on VPS
+        uses: appleboy/ssh-action@v0.1.10
         with:
-          token: ${{ secrets.DEPLOY }}
-          repository: infrawatch9-lab/Deploy_Repo
-          event-type: microservice-updated
-          client-payload: |
-            {
-              "service": "${{ github.repository }}",
-              "tag": "${{ github.ref_name }}"
-            }
+          host: ${{secrets.VPS_HOST}}
+          username: ${{secrets.VPS_USER}}
+          key: ${{secrets.VPS_KEY}}
+          script: |
+            IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/infrawatch-backend:latest
+            docker stop backend || true
+            docker rm backend || true
+            docker pull $IMAGE
+            docker run -d --name backend --restart=always $IMAGE
