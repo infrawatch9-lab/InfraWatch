@@ -324,7 +324,10 @@ export class WebhookService {
       where: { serviceId: service.id },
       include: { User: true },
     });
-
+        let to_send;
+    if (provedor == "github") {
+      to_send = parseGithubWebhook(data);
+    }
     const logEntry = await this.prisma.systemLog.create({
       data: {
         serviceId: service.id,
@@ -338,10 +341,7 @@ export class WebhookService {
       this.logger.error('Erro ao criar log de sistema para o webhook recebido');
     }
 
-    let to_send;
-    if (provedor == "github") {
-      to_send = parseGithubWebhook(data);
-    }
+
     console.log(`Notificando ${usersToNotify.length} usuários associados ao serviço ${service.name}`);
     console.log("Usuários a serem notificados:", usersToNotify.map((user) => user.User.email));
     for (const userNotification of usersToNotify) {

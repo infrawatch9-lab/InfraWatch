@@ -143,6 +143,7 @@ model SystemLog {
   timestamp DateTime @default(now())
   type      LogType
   message   String
+  message_received  Json?
   serviceId Int?
   Service   Service? @relation(fields: [serviceId], references: [id])
 
