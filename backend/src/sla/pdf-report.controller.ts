@@ -15,12 +15,23 @@ export class PDFReportController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
-    const buffer = await this.pdfService.generateGeneralPDF(startDate, endDate);
+    let buffer: Buffer;
+    let fileName = PDFReportService.getPDFFileName('general', {
+      start: startDate ? new Date(startDate) : undefined,
+      end: endDate ? new Date(endDate) : undefined,
+    });
+    try {
+      buffer = await this.pdfService.generateGeneralPDF_HTML(
+        startDate,
+        endDate,
+      );
+    } catch (e) {
+      // fallback para PDFKit se Puppeteer falhar
+      buffer = await this.pdfService.generateGeneralPDF(startDate, endDate);
+      fileName = 'sla-report.pdf';
+    }
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader(
-      'Content-Disposition',
-      'attachment; filename="sla-report.pdf"',
-    );
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     res.send(buffer);
   }
 
@@ -33,16 +44,21 @@ export class PDFReportController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
-    const buffer = await this.pdfService.generateTypePDF(
-      type,
-      startDate,
-      endDate,
-    );
+    let buffer: Buffer;
+    let fileName = PDFReportService.getPDFFileName('type', {
+      typeName: type,
+      start: startDate ? new Date(startDate) : undefined,
+      end: endDate ? new Date(endDate) : undefined,
+    });
+    try {
+      // Se quiser HTML para tipo, crie generateTypePDF_HTML
+      buffer = await this.pdfService.generateTypePDF(type, startDate, endDate);
+    } catch (e) {
+      buffer = await this.pdfService.generateTypePDF(type, startDate, endDate);
+      fileName = `sla-report-type-${type}.pdf`;
+    }
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="sla-report-type-${type}.pdf"`,
-    );
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     res.send(buffer);
   }
 
@@ -55,16 +71,29 @@ export class PDFReportController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
-    const buffer = await this.pdfService.generateServicePDF(
-      parseInt(serviceId),
-      startDate,
-      endDate,
-    );
+    let buffer: Buffer;
+    let fileName = PDFReportService.getPDFFileName('service', {
+      serviceName: serviceId,
+      start: startDate ? new Date(startDate) : undefined,
+      end: endDate ? new Date(endDate) : undefined,
+    });
+    try {
+      // Se quiser HTML para serviço, crie generateServicePDF_HTML
+      buffer = await this.pdfService.generateServicePDF(
+        parseInt(serviceId),
+        startDate,
+        endDate,
+      );
+    } catch (e) {
+      buffer = await this.pdfService.generateServicePDF(
+        parseInt(serviceId),
+        startDate,
+        endDate,
+      );
+      fileName = `sla-report-service-${serviceId}.pdf`;
+    }
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="sla-report-service-${serviceId}.pdf"`,
-    );
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     res.send(buffer);
   }
 }
