@@ -204,17 +204,27 @@ export class PDFReportService {
     // Fundo do cabeçalho
     doc.rect(0, 0, 612, 120).fill(colors.primary);
 
+    // Empresa e sistema
+    doc
+      .fontSize(18)
+      .fillColor('white')
+      .text('RSC Angola', 50, 20, { align: 'left' });
+    doc
+      .fontSize(14)
+      .fillColor('#93c5fd')
+      .text('InfraWatch', 50, 45, { align: 'left' });
+
     // Título principal
     doc
       .fontSize(28)
       .fillColor('white')
-      .text('RELATÓRIO SLA', 50, 30, { align: 'left' });
+      .text('RELATÓRIO SLA', 220, 30, { align: 'left' });
 
     // Subtítulo
     doc
       .fontSize(14)
       .fillColor('#93c5fd')
-      .text('Service Level Agreement Report', 50, 65);
+      .text('Service Level Agreement Report', 220, 65);
 
     // Data/Hora atual
     const currentDate = new Date().toLocaleString('pt-BR');
@@ -257,12 +267,18 @@ export class PDFReportService {
 
     // Informações em duas colunas
     doc.fontSize(12).fillColor(colors.dark);
-    doc.text(`Serviço: ${slaData.serviceName}`, 70, yPos + 40);
-    doc.text(`Tipo: ${slaData.serviceType}`, 70, yPos + 60);
+    doc.text(
+      `Serviço: ${slaData.serviceName || slaData.serviceType || 'Geral'}`,
+      70,
+      yPos + 40,
+    );
+    if (slaData.serviceType) {
+      doc.text(`Tipo: ${slaData.serviceType}`, 70, yPos + 60);
+    }
     doc.text(`Período: ${slaData.period}`, 320, yPos + 40);
     doc.text(
       `Última atualização: ${new Date().toLocaleString('pt-BR', {
-        timeZone: 'America/Sao_Paulo',
+        timeZone: 'Africa/Luanda',
       })}`,
       320,
       yPos + 60,

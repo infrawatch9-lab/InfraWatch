@@ -84,13 +84,25 @@ export class SlaService {
     const uptime = (availability / 100) * totalHours;
     const downtime = totalHours - uptime;
 
-    // Simular incidentes (você pode implementar uma tabela de incidentes real)
-    const incidents = this.generateMockIncidents(
-      serviceId,
-      startDate,
-      endDate,
-      failedChecks,
-    );
+    // Buscar incidentes reais (Alertas) do banco de dados
+    const incidents = await this.prisma.alert.findMany({
+      where: {
+        serviceId: serviceId,
+        triggeredAt: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      orderBy: { triggeredAt: 'asc' },
+      select: {
+        id: true,
+        triggeredAt: true,
+        message: true,
+        resolved: true,
+        ruleId: true,
+        AlertRule: { select: { severity: true } },
+      },
+    });
 
     return {
       serviceId,
@@ -105,7 +117,16 @@ export class SlaService {
       period: this.getPeriodString(startDate, endDate),
       startDate,
       endDate,
-      incidents,
+      incidents: incidents.map((a) => ({
+        id: a.id,
+        title: a.message,
+        description: a.message,
+        severity: a.AlertRule?.severity || 'unknown',
+        startTime: a.triggeredAt,
+        endTime: a.resolved ? a.triggeredAt : null,
+        status: a.resolved ? 'resolved' : 'open',
+        impact: '',
+      })),
       metrics: metrics.map((m: any) => ({
         timestamp: m.timestamp,
         status: m.status,
@@ -208,44 +229,5 @@ export class SlaService {
     if (daysDiff <= 1) return 'daily';
     if (daysDiff <= 7) return 'weekly';
     return 'monthly';
-  }
-
-  private generateMockIncidents(
-    serviceId: number,
-    startDate: Date,
-    endDate: Date,
-    failedChecks: number,
-  ) {
-    const incidents = [];
-
-    if (failedChecks > 0) {
-      const incidentCount = Math.min(failedChecks, 5); // Máximo 5 incidentes por relatório
-
-      for (let i = 0; i < incidentCount; i++) {
-        const incidentDate = new Date(
-          startDate.getTime() +
-            Math.random() * (endDate.getTime() - startDate.getTime()),
-        );
-
-        incidents.push({
-          id: `INC-${Date.now()}-${i}`,
-          title: `Indisponibilidade detectada em ${new Date(
-            incidentDate,
-          ).toLocaleString('pt-BR')}`,
-          description:
-            'Serviço apresentou falha de conectividade ou tempo de resposta elevado',
-          severity: Math.random() > 0.7 ? 'high' : 'medium',
-          startTime: incidentDate,
-          endTime: new Date(
-            incidentDate.getTime() + Math.random() * 30 * 60 * 1000,
-          ), // 0-30 min
-          status: 'resolved',
-          impact:
-            'Usuários podem ter experimentado lentidão ou indisponibilidade do serviço',
-        });
-      }
-    }
-
-    return incidents;
   }
 }
