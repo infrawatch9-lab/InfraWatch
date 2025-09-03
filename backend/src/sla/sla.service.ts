@@ -16,6 +16,7 @@ export interface SLACalculationResult {
   endDate: Date;
   incidents: any[];
   metrics: any[];
+  message?: string; // mensagem opcional para ausência de dados
 }
 
 export interface SLASummary {
@@ -42,9 +43,15 @@ export class SlaService {
     const service = await this.prisma.service.findUnique({
       where: { id: serviceId },
     });
-
     if (!service) {
       throw new Error('Serviço não encontrado');
+    }
+
+    // Corrigir datas invertidas
+    let start = startDate;
+    let end = endDate;
+    if (start > end) {
+      [start, end] = [end, start];
     }
 
     // Buscar métricas do período
@@ -52,12 +59,33 @@ export class SlaService {
       where: {
         serviceId: serviceId,
         timestamp: {
-          gte: startDate,
-          lte: endDate,
+          gte: start,
+          lte: end,
         },
       },
       orderBy: { timestamp: 'asc' },
     });
+
+    // Se não houver métricas, retornar mensagem amigável
+    if (!metrics.length) {
+      return {
+        serviceId,
+        serviceName: service.name,
+        availability: 0,
+        responseTime: 0,
+        uptime: 0,
+        downtime: 0,
+        totalChecks: 0,
+        successfulChecks: 0,
+        failedChecks: 0,
+        period: this.getPeriodString(start, end),
+        startDate: start,
+        endDate: end,
+        incidents: [],
+        metrics: [],
+        message: 'Sem dados para o período selecionado.',
+      };
+    }
 
     // Calcular estatísticas
     const totalChecks = metrics.length;
@@ -78,19 +106,21 @@ export class SlaService {
           responseTimes.length
         : 0;
 
-    // Calcular uptime e downtime em horas
-    const totalHours =
-      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
-    const uptime = (availability / 100) * totalHours;
-    const downtime = totalHours - uptime;
+    // Calcular uptime e downtime em horas (nunca negativos)
+    const totalHours = Math.max(
+      0,
+      (end.getTime() - start.getTime()) / (1000 * 60 * 60),
+    );
+    const uptime = Math.max(0, (availability / 100) * totalHours);
+    const downtime = Math.max(0, totalHours - uptime);
 
     // Buscar incidentes reais (Alertas) do banco de dados
     const incidents = await this.prisma.alert.findMany({
       where: {
         serviceId: serviceId,
         triggeredAt: {
-          gte: startDate,
-          lte: endDate,
+          gte: start,
+          lte: end,
         },
       },
       orderBy: { triggeredAt: 'asc' },
@@ -114,9 +144,9 @@ export class SlaService {
       totalChecks,
       successfulChecks,
       failedChecks,
-      period: this.getPeriodString(startDate, endDate),
-      startDate,
-      endDate,
+      period: this.getPeriodString(start, end),
+      startDate: start,
+      endDate: end,
       incidents: incidents.map((a) => ({
         id: a.id,
         title: a.message,

@@ -32,7 +32,21 @@ export class PDFReportService {
     const buffers: Buffer[] = [];
     doc.on('data', buffers.push.bind(buffers));
     doc.on('end', () => {});
-    doc.fontSize(20).text('Relatório Geral de SLA', { align: 'center' });
+
+    // Header institucional
+    doc.rect(0, 0, 595, 70).fill('#1a237e');
+    doc
+      .fillColor('white')
+      .fontSize(18)
+      .text('RCS Angola', 60, 25, { continued: true })
+      .fontSize(14)
+      .text(' | Plataforma: InfraWatch', { continued: false, align: 'right' });
+    doc.moveDown(2);
+    doc
+      .fillColor('#1a237e')
+      .fontSize(22)
+      .text('Relatório Geral de SLA', { align: 'center' });
+    doc.fillColor('black');
     doc.moveDown();
     doc
       .fontSize(12)
@@ -40,16 +54,54 @@ export class PDFReportService {
         `Período: ${start.toLocaleDateString()} até ${end.toLocaleDateString()}`,
       );
     doc.moveDown();
-    summaries.forEach((summary, idx) => {
-      doc.fontSize(14).text(`${idx + 1}. ${summary.serviceName}`);
-      doc.fontSize(11).text(`Disponibilidade: ${summary.currentAvailability}%`);
-      doc.fontSize(11).text(`Status: ${summary.status}`);
-      doc.fontSize(11).text(`SLA Alvo: ${summary.targetSLA}%`);
+    doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke('#1a237e');
+    doc.moveDown();
+
+    if (!summaries.length) {
       doc
-        .fontSize(11)
-        .text(`Último cálculo: ${summary.lastCalculated.toLocaleString()}`);
-      doc.moveDown();
-    });
+        .fontSize(16)
+        .fillColor('red')
+        .text('Nenhum serviço encontrado.', { align: 'center' })
+        .fillColor('black');
+    } else {
+      // Cabeçalho da tabela
+      doc.moveDown(0.5);
+      doc
+        .fontSize(13)
+        .fillColor('#1a237e')
+        .text('Serviço', 60, doc.y, { continued: true });
+      doc.text('Disponibilidade', 200, doc.y, { continued: true });
+      doc.text('Status', 320, doc.y, { continued: true });
+      doc.text('SLA Alvo', 410, doc.y, { continued: true });
+      doc.text('Último cálculo', 490, doc.y);
+      doc.fillColor('black');
+      doc.moveDown(0.2);
+      doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke('#1a237e');
+      doc.moveDown(0.2);
+      // Linhas da tabela
+      summaries.forEach((summary, idx) => {
+        doc
+          .fontSize(11)
+          .fillColor(idx % 2 === 0 ? '#0d47a1' : '#1976d2')
+          .rect(50, doc.y, 495, 18)
+          .fill();
+        doc
+          .fillColor('white')
+          .text(summary.serviceName, 60, doc.y + 3, { continued: true })
+          .text(`${summary.currentAvailability}%`, 200, doc.y + 3, {
+            continued: true,
+          })
+          .text(summary.status, 320, doc.y + 3, { continued: true })
+          .text(`${summary.targetSLA}%`, 410, doc.y + 3, { continued: true })
+          .text(
+            new Date(summary.lastCalculated).toLocaleString(),
+            490,
+            doc.y + 3,
+          );
+        doc.moveDown(0.1);
+      });
+      doc.fillColor('black');
+    }
     doc.end();
     await new Promise<void>((resolve) => doc.on('end', resolve));
     return Buffer.concat(buffers);
@@ -73,7 +125,13 @@ export class PDFReportService {
     const buffers: Buffer[] = [];
     doc.on('data', buffers.push.bind(buffers));
     doc.on('end', () => {});
-    doc.fontSize(20).text(`Relatório SLA - Tipo: ${type}`, { align: 'center' });
+
+    // Cabeçalho
+    doc
+      .fontSize(22)
+      .fillColor('#1a237e')
+      .text(`Relatório SLA - Tipo: ${type}`, { align: 'center' })
+      .fillColor('black');
     doc.moveDown();
     doc
       .fontSize(12)
@@ -81,16 +139,39 @@ export class PDFReportService {
         `Período: ${start.toLocaleDateString()} até ${end.toLocaleDateString()}`,
       );
     doc.moveDown();
-    filtered.forEach((summary, idx) => {
-      doc.fontSize(14).text(`${idx + 1}. ${summary.serviceName}`);
-      doc.fontSize(11).text(`Disponibilidade: ${summary.currentAvailability}%`);
-      doc.fontSize(11).text(`Status: ${summary.status}`);
-      doc.fontSize(11).text(`SLA Alvo: ${summary.targetSLA}%`);
+    doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+    doc.moveDown();
+
+    if (!filtered.length) {
       doc
-        .fontSize(11)
-        .text(`Último cálculo: ${summary.lastCalculated.toLocaleString()}`);
-      doc.moveDown();
-    });
+        .fontSize(16)
+        .fillColor('red')
+        .text('Nenhum serviço deste tipo encontrado.', { align: 'center' })
+        .fillColor('black');
+    } else {
+      doc.fontSize(14).text('Serviços:', { underline: true });
+      doc.moveDown(0.5);
+      filtered.forEach((summary, idx) => {
+        doc.fontSize(12).text(`${idx + 1}. ${summary.serviceName}`);
+        doc
+          .fontSize(10)
+          .text(
+            `Disponibilidade: ${summary.currentAvailability}% | Status: ${
+              summary.status
+            } | SLA Alvo: ${summary.targetSLA}% | Último cálculo: ${new Date(
+              summary.lastCalculated,
+            ).toLocaleString()}`,
+          );
+        doc.moveDown(0.5);
+        doc
+          .moveTo(50, doc.y)
+          .lineTo(545, doc.y)
+          .dash(1, { space: 2 })
+          .stroke()
+          .undash();
+        doc.moveDown(0.5);
+      });
+    }
     doc.end();
     await new Promise<void>((resolve) => doc.on('end', resolve));
     return Buffer.concat(buffers);
@@ -111,9 +192,15 @@ export class PDFReportService {
     const buffers: Buffer[] = [];
     doc.on('data', buffers.push.bind(buffers));
     doc.on('end', () => {});
-    doc.fontSize(20).text(`Relatório SLA - Serviço: ${slaData.serviceName}`, {
-      align: 'center',
-    });
+
+    // Cabeçalho
+    doc
+      .fontSize(22)
+      .fillColor('#1a237e')
+      .text(`Relatório SLA - Serviço: ${slaData.serviceName}`, {
+        align: 'center',
+      })
+      .fillColor('black');
     doc.moveDown();
     doc
       .fontSize(12)
@@ -121,13 +208,81 @@ export class PDFReportService {
         `Período: ${start.toLocaleDateString()} até ${end.toLocaleDateString()}`,
       );
     doc.moveDown();
-    doc.fontSize(14).text(`Disponibilidade: ${slaData.availability}%`);
-    doc.fontSize(14).text(`Tempo de resposta: ${slaData.responseTime}ms`);
-    doc.fontSize(14).text(`Uptime: ${slaData.uptime}h`);
-    doc.fontSize(14).text(`Downtime: ${slaData.downtime}h`);
-    doc.fontSize(14).text(`Total de verificações: ${slaData.totalChecks}`);
-    doc.fontSize(14).text(`Falhas: ${slaData.failedChecks}`);
-    doc.fontSize(14).text(`Incidentes: ${slaData.incidents.length}`);
+    doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+    doc.moveDown();
+
+    // Se não houver dados, exibe mensagem amigável
+    if (slaData.message) {
+      doc
+        .fontSize(16)
+        .fillColor('red')
+        .text(slaData.message, { align: 'center' })
+        .fillColor('black');
+      doc.end();
+      await new Promise<void>((resolve) => doc.on('end', resolve));
+      return Buffer.concat(buffers);
+    }
+
+    // Seção de métricas principais
+    doc.fontSize(16).text('Resumo do SLA', { underline: true });
+    doc.moveDown(0.5);
+    doc.fontSize(12).text(`Disponibilidade: ${slaData.availability}%`);
+    doc
+      .fontSize(12)
+      .text(`Tempo médio de resposta: ${slaData.responseTime} ms`);
+    doc.fontSize(12).text(`Uptime: ${slaData.uptime} h`);
+    doc.fontSize(12).text(`Downtime: ${slaData.downtime} h`);
+    doc.fontSize(12).text(`Total de verificações: ${slaData.totalChecks}`);
+    doc.fontSize(12).text(`Falhas: ${slaData.failedChecks}`);
+    doc.moveDown();
+    doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+    doc.moveDown();
+
+    // Seção de incidentes
+    doc.fontSize(16).text('Incidentes', { underline: true });
+    doc.moveDown(0.5);
+    if (slaData.incidents.length === 0) {
+      doc.fontSize(12).text('Nenhum incidente registrado no período.');
+    } else {
+      slaData.incidents.forEach((inc, idx) => {
+        doc
+          .fontSize(12)
+          .text(
+            `${idx + 1}. [${inc.severity}] ${inc.title} - ${new Date(
+              inc.startTime,
+            ).toLocaleString()} (${inc.status})`,
+          );
+      });
+    }
+    doc.moveDown();
+    doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+    doc.moveDown();
+
+    // Seção de métricas detalhadas
+    doc.fontSize(16).text('Métricas detalhadas', { underline: true });
+    doc.moveDown(0.5);
+    if (slaData.metrics.length === 0) {
+      doc.fontSize(12).text('Nenhuma métrica registrada no período.');
+    } else {
+      // Exibe até 10 métricas para não poluir o PDF
+      slaData.metrics.slice(0, 10).forEach((m, idx) => {
+        doc
+          .fontSize(10)
+          .text(
+            `${idx + 1}. ${new Date(m.timestamp).toLocaleString()} | Status: ${
+              m.status
+            } | Resp: ${m.responseTime}ms | CPU: ${m.cpuUsage ?? '-'} | Mem: ${
+              m.memoryUsage ?? '-'
+            }`,
+          );
+      });
+      if (slaData.metrics.length > 10) {
+        doc
+          .fontSize(10)
+          .text(`...e mais ${slaData.metrics.length - 10} registros.`);
+      }
+    }
+
     doc.end();
     await new Promise<void>((resolve) => doc.on('end', resolve));
     return Buffer.concat(buffers);
