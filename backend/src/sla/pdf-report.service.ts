@@ -6,6 +6,34 @@ import * as path from 'path';
 
 @Injectable()
 export class PDFReportService {
+  // Utilitário para gerar nomes de arquivos PDF simples e padronizados
+  static getPDFFileName(
+    type: 'general' | 'type' | 'service',
+    opts?: {
+      typeName?: string;
+      serviceName?: string;
+      start?: Date;
+      end?: Date;
+    },
+  ): string {
+    const date = (d: Date) => d.toISOString().slice(0, 10);
+    if (type === 'general') {
+      return `relatorio-sla-geral_${opts?.start ? date(opts.start) : ''}_${
+        opts?.end ? date(opts.end) : ''
+      }.pdf`;
+    }
+    if (type === 'type') {
+      return `relatorio-sla-tipo-${opts?.typeName || 'tipo'}_${
+        opts?.start ? date(opts.start) : ''
+      }_${opts?.end ? date(opts.end) : ''}.pdf`;
+    }
+    if (type === 'service') {
+      return `relatorio-sla-servico-${opts?.serviceName || 'servico'}_${
+        opts?.start ? date(opts.start) : ''
+      }_${opts?.end ? date(opts.end) : ''}.pdf`;
+    }
+    return 'relatorio-sla.pdf';
+  }
   private readonly storageDir = path.join(
     process.cwd(),
     'storage',
