@@ -1,71 +1,10 @@
-import PDFDocument from 'pdfkit';
-import { Controller, Get, Post, Body, Param, Query, Res } from '@nestjs/common';
-import { Response } from 'express';
-import { Parser as Json2csvParser } from 'json2csv';
+import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
 import { SlaService } from './sla.service';
 import { Public } from '../auth/public.decorator';
 
 @Controller('sla')
 export class SlaController {
   constructor(private readonly slaService: SlaService) {}
-
-  @Get('export/pdf')
-  @Public()
-  async exportAllSLASummaryPDF(@Res() res: Response): Promise<void> {
-    const summaries = await this.slaService.getAllSLASummary();
-    const doc = new PDFDocument({ margin: 30, size: 'A4' });
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader(
-      'Content-Disposition',
-      'attachment; filename="sla-summary.pdf"',
-    );
-    doc.pipe(res);
-    doc.fontSize(18).text('Relatório Geral de SLA', { align: 'center' });
-    doc.moveDown();
-    summaries.forEach((summary: any, idx: number) => {
-      doc
-        .fontSize(12)
-        .text(`Serviço: ${summary.serviceName} (ID: ${summary.serviceId})`);
-      doc.text(`Disponibilidade Atual: ${summary.currentAvailability}%`);
-      doc.text(`SLA Alvo: ${summary.targetSLA}%`);
-      doc.text(`Status: ${summary.status}`);
-      doc.text(`Disponibilidade Mensal: ${summary.monthlyAvailability}%`);
-      doc.text(`Disponibilidade Semanal: ${summary.weeklyAvailability}%`);
-      doc.text(`Disponibilidade Diária: ${summary.dailyAvailability}%`);
-      doc.text(
-        `Último Cálculo: ${new Date(summary.lastCalculated).toLocaleString(
-          'pt-BR',
-        )}`,
-      );
-      if (idx < summaries.length - 1) doc.moveDown();
-    });
-    doc.end();
-  }
-
-  @Get('export/csv')
-  @Public()
-  async exportAllSLASummaryCSV(@Res() res: Response) {
-    const summaries = await this.slaService.getAllSLASummary();
-    const fields = [
-      'serviceId',
-      'serviceName',
-      'currentAvailability',
-      'targetSLA',
-      'status',
-      'monthlyAvailability',
-      'weeklyAvailability',
-      'dailyAvailability',
-      'lastCalculated',
-    ];
-    const json2csv = new Json2csvParser({ fields });
-    const csv = json2csv.parse(summaries);
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader(
-      'Content-Disposition',
-      'attachment; filename="sla-summary.csv"',
-    );
-    res.send(csv);
-  }
 
   @Post('calculate')
   @Public()
