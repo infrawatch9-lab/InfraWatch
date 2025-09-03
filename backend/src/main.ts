@@ -8,7 +8,12 @@ import { JwtService } from '@nestjs/jwt';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.enableCors();
+  app.enableCors({
+    origin: '*', // ou ['https://seufrontend.com']
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: '*',
+    credentials: true,
+  });
   app.setGlobalPrefix('api');
 
   const reflector = app.get(Reflector);
