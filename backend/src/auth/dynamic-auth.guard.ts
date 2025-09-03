@@ -29,7 +29,7 @@ export class DynamicAuthGuard implements CanActivate {
     const token = authHeader.split(' ')[1];
     const decoded = this.jwtService.decode(token) as any;
 
-    if (decoded?.role === 'ADMIN' || decoded?.role === 'USER') {
+    if (decoded?.role === 'ADMIN' || decoded?.role === 'USER' || decoded?.role === 'VIEWER' || decoded?.role === 'AGENT') {
       return new JwtAuthGuard(this.reflector).canActivate(context);
     } else if (decoded?.host) {
       return new AgentAuthGuard().canActivate(context);

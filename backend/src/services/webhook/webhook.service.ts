@@ -324,7 +324,8 @@ export class WebhookService {
       where: { serviceId: service.id },
       include: { User: true },
     });
-        let to_send;
+    
+    let to_send;
     if (provedor == "github") {
       to_send = parseGithubWebhook(data);
     }
@@ -334,6 +335,7 @@ export class WebhookService {
         message: `Webhook recebido para o serviço ${service.name} do provedor ${provedor}`,
         timestamp: new Date(),
         type: $Enums.LogType.INFO,
+        // details: JSON.stringify(to_send || data),
       },
     });
 
