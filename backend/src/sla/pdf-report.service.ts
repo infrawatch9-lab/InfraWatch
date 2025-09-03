@@ -97,13 +97,10 @@ export class PDFReportService {
         .fontSize(24)
         .fillColor('#1a237e')
         .text('RCS Angola', 50, 30, { continued: true });
-      doc
-        .fontSize(16)
-        .fillColor('#1976d2')
-        .text(' | Plataforma: InfraWatch', {
-          continued: false,
-          align: 'right',
-        });
+      doc.fontSize(16).fillColor('#1976d2').text(' | Plataforma: InfraWatch', {
+        continued: false,
+        align: 'right',
+      });
     }
     doc.moveDown(1.5);
     doc
@@ -128,19 +125,34 @@ export class PDFReportService {
         .text('Nenhum serviço encontrado.', { align: 'center' })
         .fillColor('black');
     } else {
-      // Cabeçalho da tabela
+      // Cabeçalho da tabela com larguras dinâmicas proporcionais
       doc.moveDown(0.5);
       try {
         doc.font('Montserrat').fontSize(13).fillColor('#1a237e');
       } catch (e) {
         doc.fontSize(13).fillColor('#1a237e');
       }
-      doc.text('Serviço', 60, doc.y, { continued: true });
-      doc.text('Tipo', 170, doc.y, { continued: true });
-      doc.text('Disponibilidade', 260, doc.y, { continued: true });
-      doc.text('Status', 370, doc.y, { continued: true });
-      doc.text('SLA Alvo', 450, doc.y, { continued: true });
-      doc.text('Último cálculo', 520, doc.y);
+      // Definir larguras proporcionais
+      const colWidths = [120, 70, 90, 70, 70, 90];
+      const colX = [
+        60,
+        60 + colWidths[0],
+        60 + colWidths[0] + colWidths[1],
+        60 + colWidths[0] + colWidths[1] + colWidths[2],
+        60 + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3],
+        60 +
+          colWidths[0] +
+          colWidths[1] +
+          colWidths[2] +
+          colWidths[3] +
+          colWidths[4],
+      ];
+      doc.text('Serviço', colX[0], doc.y, { continued: true });
+      doc.text('Tipo', colX[1], doc.y, { continued: true });
+      doc.text('Disponibilidade', colX[2], doc.y, { continued: true });
+      doc.text('Status', colX[3], doc.y, { continued: true });
+      doc.text('SLA Alvo', colX[4], doc.y, { continued: true });
+      doc.text('Último cálculo', colX[5], doc.y);
       try {
         doc.font('Montserrat-Regular').fillColor('black');
       } catch (e) {
@@ -151,7 +163,6 @@ export class PDFReportService {
       doc.moveDown(0.2);
       // Linhas da tabela
       summaries.forEach((summary, idx) => {
-        // Alternância de cor de fundo
         const rowY = doc.y;
         doc.save();
         doc.rect(50, rowY, 495, 18).fill(idx % 2 === 0 ? '#e3eafc' : '#fff');
@@ -161,18 +172,20 @@ export class PDFReportService {
         } catch (e) {
           doc.fillColor('#1a237e').fontSize(11);
         }
-        doc.text(summary.serviceName, 60, rowY + 3, { continued: true });
-        doc.text(serviceTypes[summary.serviceId] || '-', 170, rowY + 3, {
+        doc.text(summary.serviceName, colX[0], rowY + 3, { continued: true });
+        doc.text(serviceTypes[summary.serviceId] || '-', colX[1], rowY + 3, {
           continued: true,
         });
-        doc.text(`${summary.currentAvailability}%`, 260, rowY + 3, {
+        doc.text(`${summary.currentAvailability}%`, colX[2], rowY + 3, {
           continued: true,
         });
-        doc.text(summary.status, 370, rowY + 3, { continued: true });
-        doc.text(`${summary.targetSLA}%`, 450, rowY + 3, { continued: true });
+        doc.text(summary.status, colX[3], rowY + 3, { continued: true });
+        doc.text(`${summary.targetSLA}%`, colX[4], rowY + 3, {
+          continued: true,
+        });
         doc.text(
           new Date(summary.lastCalculated).toLocaleString('pt-PT'),
-          520,
+          colX[5],
           rowY + 3,
         );
         doc.moveDown(0.1);
@@ -268,6 +281,22 @@ export class PDFReportService {
       ? new Date(startDate)
       : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const end = endDate ? new Date(endDate) : new Date();
+    // Buscar detalhes completos do serviço (incluindo configs, team, etc)
+    const service = await (this.slaService as any).prisma.service.findUnique({
+      where: { id: serviceId },
+      include: {
+        Team: true,
+        configs: {
+          include: {
+            PingConfig: true,
+            HttpConfig: true,
+            SnmpConfig: true,
+            WebhookConfig: true,
+          },
+        },
+        usersToNotify: { include: { User: true } },
+      },
+    });
     const slaData = await this.slaService.calculateSLA(serviceId, start, end);
     const doc = new PDFDocument({ size: 'A4', margin: 50 });
     const buffers: Buffer[] = [];
@@ -288,6 +317,113 @@ export class PDFReportService {
       .text(
         `Período: ${start.toLocaleDateString()} até ${end.toLocaleDateString()}`,
       );
+    doc.moveDown();
+    doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+    doc.moveDown();
+
+    // Bloco de detalhes do serviço (dinâmico por tipo)
+    doc
+      .fontSize(14)
+      .fillColor('#1976d2')
+      .text('Detalhes do Serviço', { underline: true });
+    doc.moveDown(0.5);
+    doc.fontSize(11).fillColor('black');
+    doc.text(`Nome: ${service.name}`);
+    doc.text(`Tipo: ${service.type}`);
+    doc.text(`Descrição: ${service.description}`);
+    doc.text(`Status: ${service.status}`);
+    doc.text(
+      `Criado em: ${new Date(service.createdAt).toLocaleString('pt-PT')}`,
+    );
+    if (service.Team) doc.text(`Team: ${service.Team.name}`);
+
+    // Detalhes específicos por tipo
+    if (service.type === 'PING' && service.configs?.PingConfig) {
+      doc.moveDown(0.2);
+      doc
+        .fontSize(12)
+        .fillColor('#0d47a1')
+        .text('Configuração PING:', { underline: true });
+      doc.fontSize(11).fillColor('black');
+      doc.text(`IP: ${service.configs.PingConfig.ipAddress}`);
+      if (service.configs.PingConfig.packetSize)
+        doc.text(`Tamanho do pacote: ${service.configs.PingConfig.packetSize}`);
+      if (service.configs.PingConfig.ttl)
+        doc.text(`TTL: ${service.configs.PingConfig.ttl}`);
+      if (service.configs.PingConfig.monitoringId)
+        doc.text(`MonitoringId: ${service.configs.PingConfig.monitoringId}`);
+    }
+    if (service.type === 'HTTP' && service.configs?.HttpConfig) {
+      doc.moveDown(0.2);
+      doc
+        .fontSize(12)
+        .fillColor('#0d47a1')
+        .text('Configuração HTTP:', { underline: true });
+      doc.fontSize(11).fillColor('black');
+      doc.text(`Endpoint: ${service.configs.HttpConfig.endpoint}`);
+      doc.text(`Método: ${service.configs.HttpConfig.method}`);
+      if (service.configs.HttpConfig.expectedStatus)
+        doc.text(
+          `Status esperado: ${service.configs.HttpConfig.expectedStatus}`,
+        );
+      if (service.configs.HttpConfig.expectedBodyIncludes)
+        doc.text(
+          `Body esperado: ${service.configs.HttpConfig.expectedBodyIncludes}`,
+        );
+      if (service.configs.HttpConfig.authType)
+        doc.text(`Auth: ${service.configs.HttpConfig.authType}`);
+      if (service.configs.HttpConfig.validateSSL !== undefined)
+        doc.text(
+          `Valida SSL: ${
+            service.configs.HttpConfig.validateSSL ? 'Sim' : 'Não'
+          }`,
+        );
+    }
+    if (service.type === 'SNMP' && service.configs?.SnmpConfig) {
+      doc.moveDown(0.2);
+      doc
+        .fontSize(12)
+        .fillColor('#0d47a1')
+        .text('Configuração SNMP:', { underline: true });
+      doc.fontSize(11).fillColor('black');
+      doc.text(`Host: ${service.configs.SnmpConfig.host}`);
+      doc.text(`Versão: ${service.configs.SnmpConfig.version}`);
+      if (service.configs.SnmpConfig.community)
+        doc.text(`Community: ${service.configs.SnmpConfig.community}`);
+      if (service.configs.SnmpConfig.oid)
+        doc.text(`OID: ${service.configs.SnmpConfig.oid}`);
+      if (service.configs.SnmpConfig.username)
+        doc.text(`Usuário: ${service.configs.SnmpConfig.username}`);
+      if (service.configs.SnmpConfig.authProtocol)
+        doc.text(`Auth Protocol: ${service.configs.SnmpConfig.authProtocol}`);
+      if (service.configs.SnmpConfig.privProtocol)
+        doc.text(`Priv Protocol: ${service.configs.SnmpConfig.privProtocol}`);
+    }
+    if (service.type === 'WEBHOOK' && service.configs?.WebhookConfig) {
+      doc.moveDown(0.2);
+      doc
+        .fontSize(12)
+        .fillColor('#0d47a1')
+        .text('Configuração Webhook:', { underline: true });
+      doc.fontSize(11).fillColor('black');
+      doc.text(`Endpoint: ${service.configs.WebhookConfig.endpoint}`);
+      doc.text(`Método: ${service.configs.WebhookConfig.method}`);
+      if (service.configs.WebhookConfig.provedor)
+        doc.text(`Provedor: ${service.configs.WebhookConfig.provedor}`);
+      if (service.configs.WebhookConfig.secret)
+        doc.text(`Secret: ${service.configs.WebhookConfig.secret}`);
+    }
+
+    doc.moveDown();
+    if (service.usersToNotify?.length) {
+      doc.text(
+        'Notificar usuários: ' +
+          service.usersToNotify
+            .map((u: any) => u.User?.email)
+            .filter(Boolean)
+            .join(', '),
+      );
+    }
     doc.moveDown();
     doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
     doc.moveDown();
@@ -345,7 +481,6 @@ export class PDFReportService {
     if (slaData.metrics.length === 0) {
       doc.fontSize(12).text('Nenhuma métrica registrada no período.');
     } else {
-      // Exibe até 10 métricas para não poluir o PDF
       slaData.metrics.slice(0, 10).forEach((m, idx) => {
         doc
           .fontSize(10)
