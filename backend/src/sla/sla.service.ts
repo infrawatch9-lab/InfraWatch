@@ -170,6 +170,7 @@ export class SlaService {
   async getSLASummary(serviceId: number): Promise<SLASummary> {
     const service = await this.prisma.service.findUnique({
       where: { id: serviceId },
+      select: { name: true, targetSLA: true },
     });
     if (!service) {
       throw new Error('Serviço não encontrado');
@@ -186,7 +187,8 @@ export class SlaService {
     const monthlySLA = await this.calculateSLA(serviceId, thisMonth, now);
 
     const currentAvailability = monthlySLA.availability;
-    const targetSLA = 99.9; // SLA alvo de 99.9%
+    const targetSLA =
+      typeof service.targetSLA === 'number' ? service.targetSLA : 99.9;
 
     let status: 'meeting' | 'at-risk' | 'breached';
     if (currentAvailability >= targetSLA) {

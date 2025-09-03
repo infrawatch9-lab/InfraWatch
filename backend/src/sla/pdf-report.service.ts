@@ -428,17 +428,7 @@ export class PDFReportService {
     doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
     doc.moveDown();
 
-    // Se não houver dados, exibe mensagem amigável
-    if (slaData.message) {
-      doc
-        .fontSize(16)
-        .fillColor('red')
-        .text(slaData.message, { align: 'center' })
-        .fillColor('black');
-      doc.end();
-      await new Promise<void>((resolve) => doc.on('end', resolve));
-      return Buffer.concat(buffers);
-    }
+    // Nunca exibe mensagem de período vazio para o individual
 
     // Seção de métricas principais
     doc.fontSize(16).text('Resumo do SLA', { underline: true });
