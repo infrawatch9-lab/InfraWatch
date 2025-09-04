@@ -12,13 +12,35 @@ export class PDFReportController {
   @Public()
   async exportGeneralPDF(
     @Res() res: Response,
+    @Query('period') period?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
-    const buffer = await this.pdfService.generateGeneralPDF(startDate, endDate);
+    const buffer = await this.pdfService.generateGeneralPDFWithPeriod(
+      period,
+      startDate,
+      endDate,
+    );
+    // Para o nome do arquivo, usa as datas calculadas
+    let start: Date | undefined;
+    let end: Date | undefined;
+    if (period) {
+      const now = new Date();
+      if (period === 'year')
+        start = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+      else if (period === 'month')
+        start = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+      else if (period === 'week')
+        start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      else start = startDate ? new Date(startDate) : undefined;
+      end = endDate ? new Date(endDate) : now;
+    } else {
+      start = startDate ? new Date(startDate) : undefined;
+      end = endDate ? new Date(endDate) : undefined;
+    }
     const fileName = PDFReportService.getPDFFileName('general', {
-      start: startDate ? new Date(startDate) : undefined,
-      end: endDate ? new Date(endDate) : undefined,
+      start,
+      end,
     });
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
@@ -55,18 +77,12 @@ export class PDFReportController {
   async exportServicePDF(
     @Param('serviceId') serviceId: string,
     @Res() res: Response,
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
   ) {
     const buffer = await this.pdfService.generateServicePDF(
       parseInt(serviceId),
-      startDate,
-      endDate,
     );
     const fileName = PDFReportService.getPDFFileName('service', {
       serviceName: serviceId,
-      start: startDate ? new Date(startDate) : undefined,
-      end: endDate ? new Date(endDate) : undefined,
     });
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);

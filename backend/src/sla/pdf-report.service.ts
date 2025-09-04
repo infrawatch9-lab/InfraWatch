@@ -46,15 +46,30 @@ export class PDFReportService {
     }
   }
 
-  // Relatório geral de todos os serviços (PDFKit puro, estilização máxima)
-  async generateGeneralPDF(
+  // Relatório geral de todos os serviços com filtro de período
+  async generateGeneralPDFWithPeriod(
+    period?: string,
     startDate?: string,
     endDate?: string,
   ): Promise<Buffer> {
-    const start = startDate
-      ? new Date(startDate)
-      : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const end = endDate ? new Date(endDate) : new Date();
+    let start: Date;
+    let end: Date;
+    const now = new Date();
+    if (period === 'year') {
+      start = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+      end = now;
+    } else if (period === 'month') {
+      start = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+      end = now;
+    } else if (period === 'week') {
+      start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      end = now;
+    } else {
+      start = startDate
+        ? new Date(startDate)
+        : new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      end = endDate ? new Date(endDate) : now;
+    }
     const summaries = await this.slaService.getAllSLASummary();
     // Buscar tipos de serviço para cada summary
     const serviceTypes: Record<number, string> = {};
