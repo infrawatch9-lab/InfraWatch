@@ -131,8 +131,8 @@ export class PDFReportService {
       } catch (e) {
         doc.fontSize(13).fillColor('#1a237e');
       }
-      // Largura fixa: 10 caracteres por coluna, espaçamento reduzido
-      const colWidth = 55; // Menor para aproximar as colunas
+      // Largura fixa: 10 caracteres por coluna, espaçamento mínimo (5 caracteres)
+      const colWidth = 30; // Bem compacto
       const colX = [
         60,
         60 + colWidth,

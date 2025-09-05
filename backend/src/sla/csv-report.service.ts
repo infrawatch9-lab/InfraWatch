@@ -48,13 +48,21 @@ export class CSVReportService {
   }
 
   async generateServiceCSV(serviceId: number): Promise<string> {
+    // Verifica explicitamente se o serviço existe antes de gerar o CSV
+    const service = await (this.slaService as any).prisma.service.findUnique({
+      where: { id: serviceId },
+      select: { id: true },
+    });
+    if (!service) {
+      const { NotFoundException } = await import('@nestjs/common');
+      throw new NotFoundException('Serviço não encontrado');
+    }
     let summary: SLASummary;
     try {
       summary = await this.slaService.getSLASummary(serviceId);
     } catch (error) {
       const err = error as any;
       if (err.message?.includes('Serviço não encontrado')) {
-        // Lançar NotFoundException para o controller capturar
         const { NotFoundException } = await import('@nestjs/common');
         throw new NotFoundException('Serviço não encontrado');
       }
