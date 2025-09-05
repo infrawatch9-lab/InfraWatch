@@ -35,15 +35,30 @@ export class CSVReportService {
 
   async generateTypeCSV(
     type: string,
+    period?: string,
     startDate?: string,
     endDate?: string,
   ): Promise<string> {
+    let start: Date | undefined;
+    let end: Date | undefined;
+    const now = new Date();
+    if (period === 'year') {
+      start = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+      end = now;
+    } else if (period === 'month') {
+      start = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+      end = now;
+    } else if (period === 'week') {
+      start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      end = now;
+    } else {
+      start = startDate ? new Date(startDate) : undefined;
+      end = endDate ? new Date(endDate) : undefined;
+    }
     const summaries = await this.slaService.getAllSLASummary();
     const filtered = summaries.filter(
       (s: any) => (s.serviceType || '').toLowerCase() === type.toLowerCase(),
     );
-    const start = startDate ? new Date(startDate) : undefined;
-    const end = endDate ? new Date(endDate) : undefined;
     return this.summariesToCSV(filtered, start, end);
   }
 

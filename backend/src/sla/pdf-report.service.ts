@@ -263,28 +263,74 @@ export class PDFReportService {
         .text('Nenhum serviço deste tipo encontrado.', { align: 'center' })
         .fillColor('black');
     } else {
-      doc.fontSize(14).text('Serviços:', { underline: true });
+      // Cabeçalho da tabela igual ao PDF geral
       doc.moveDown(0.5);
+      try {
+        doc.font('Montserrat').fontSize(13).fillColor('#1a237e');
+      } catch (e) {
+        doc.fontSize(13).fillColor('#1a237e');
+      }
+      const colWidth = 30;
+      const colX = [
+        60,
+        60 + colWidth,
+        60 + colWidth * 2,
+        60 + colWidth * 3,
+        60 + colWidth * 4,
+        60 + colWidth * 5,
+      ];
+      function fit10(str: string) {
+        if (!str) return '-';
+        str = String(str);
+        return str.length > 10 ? str.slice(0, 9) + '.' : str.padEnd(10, ' ');
+      }
+      doc.text(fit10('Serviço'), colX[0], doc.y, { continued: true });
+      doc.text(fit10('Tipo'), colX[1], doc.y, { continued: true });
+      doc.text(fit10('Disp.'), colX[2], doc.y, { continued: true });
+      doc.text(fit10('Status'), colX[3], doc.y, { continued: true });
+      doc.text(fit10('SLA Alvo'), colX[4], doc.y, { continued: true });
+      doc.text(fit10('Últ. Calc.'), colX[5], doc.y);
+      try {
+        doc.font('Montserrat-Regular').fillColor('black');
+      } catch (e) {
+        doc.fillColor('black');
+      }
+      doc.moveDown(0.2);
+      doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke('#1976d2');
+      doc.moveDown(0.2);
       filtered.forEach((summary, idx) => {
-        doc.fontSize(12).text(`${idx + 1}. ${summary.serviceName}`);
-        doc
-          .fontSize(10)
-          .text(
-            `Disponibilidade: ${summary.currentAvailability}% | Status: ${
-              summary.status
-            } | SLA Alvo: ${summary.targetSLA}% | Último cálculo: ${new Date(
-              summary.lastCalculated,
-            ).toLocaleString()}`,
-          );
-        doc.moveDown(0.5);
-        doc
-          .moveTo(50, doc.y)
-          .lineTo(545, doc.y)
-          .dash(1, { space: 2 })
-          .stroke()
-          .undash();
-        doc.moveDown(0.5);
+        const rowY = doc.y;
+        doc.save();
+        doc.rect(50, rowY, 495, 18).fill(idx % 2 === 0 ? '#e3eafc' : '#fff');
+        doc.restore();
+        try {
+          doc.font('Montserrat-Regular').fillColor('#1a237e').fontSize(11);
+        } catch (e) {
+          doc.fillColor('#1a237e').fontSize(11);
+        }
+        doc.text(fit10(summary.serviceName), colX[0], rowY + 3, {
+          continued: true,
+        });
+        doc.text(fit10(type), colX[1], rowY + 3, { continued: true });
+        doc.text(fit10(`${summary.currentAvailability}%`), colX[2], rowY + 3, {
+          continued: true,
+        });
+        doc.text(fit10(summary.status), colX[3], rowY + 3, { continued: true });
+        doc.text(fit10(`${summary.targetSLA}%`), colX[4], rowY + 3, {
+          continued: true,
+        });
+        doc.text(
+          fit10(new Date(summary.lastCalculated).toLocaleDateString('pt-PT')),
+          colX[5],
+          rowY + 3,
+        );
+        doc.moveDown(0.1);
       });
+      try {
+        doc.font('Montserrat-Regular').fillColor('black');
+      } catch (e) {
+        doc.fillColor('black');
+      }
     }
     doc.end();
     await new Promise<void>((resolve) => doc.on('end', resolve));
