@@ -114,14 +114,38 @@ export class SlaService {
     const uptime = Math.max(0, (availability / 100) * totalHours);
     const downtime = Math.max(0, totalHours - uptime);
 
-    // Buscar incidentes reais (Alertas) do banco de dados
-    const incidents = await this.prisma.alert.findMany({
+    // Buscar incidentes reais do SystemLog (não apenas alertas)
+    const systemIncidents = await this.prisma.systemLog.findMany({
+      where: {
+        serviceId: serviceId,
+        type: 'ERROR', // Incidentes são erros do sistema
+        timestamp: {
+          gte: start,
+          lte: end,
+        },
+      },
+      orderBy: { timestamp: 'asc' },
+      select: {
+        id: true,
+        timestamp: true,
+        message: true,
+        type: true,
+      },
+    });
+
+    // Buscar também alertas críticos como incidentes
+    const criticalAlerts = await this.prisma.alert.findMany({
       where: {
         serviceId: serviceId,
         triggeredAt: {
           gte: start,
           lte: end,
         },
+        AlertRule: {
+          severity: {
+            in: ['HIGH', 'CRITICAL']
+          }
+        }
       },
       orderBy: { triggeredAt: 'asc' },
       select: {
@@ -133,6 +157,35 @@ export class SlaService {
         AlertRule: { select: { severity: true } },
       },
     });
+
+    // Combinar incidentes do sistema e alertas críticos
+    const allIncidents = [
+      ...systemIncidents.map((incident) => ({
+        id: `sys_${incident.id}`,
+        title: incident.message,
+        description: incident.message,
+        severity: 'SYSTEM_ERROR',
+        startTime: incident.timestamp,
+        endTime: null,
+        status: 'logged',
+        impact: 'System incident',
+        source: 'system_log'
+      })),
+      ...criticalAlerts.map((alert) => ({
+        id: `alert_${alert.id}`,
+        title: alert.message,
+        description: alert.message,
+        severity: alert.AlertRule?.severity || 'unknown',
+        startTime: alert.triggeredAt,
+        endTime: alert.resolved ? alert.triggeredAt : null,
+        status: alert.resolved ? 'resolved' : 'open',
+        impact: 'Service alert',
+        source: 'alert'
+      }))
+    ];
+
+    // Ordenar todos os incidentes por data
+    allIncidents.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
 
     return {
       serviceId,
@@ -147,16 +200,7 @@ export class SlaService {
       period: this.getPeriodString(start, end),
       startDate: start,
       endDate: end,
-      incidents: incidents.map((a) => ({
-        id: a.id,
-        title: a.message,
-        description: a.message,
-        severity: a.AlertRule?.severity || 'unknown',
-        startTime: a.triggeredAt,
-        endTime: a.resolved ? a.triggeredAt : null,
-        status: a.resolved ? 'resolved' : 'open',
-        impact: '',
-      })),
+      incidents: allIncidents,
       metrics: metrics.map((m: any) => ({
         timestamp: m.timestamp,
         status: m.status,
@@ -170,7 +214,6 @@ export class SlaService {
   async getSLASummary(serviceId: number): Promise<SLASummary> {
     const service = await this.prisma.service.findUnique({
       where: { id: serviceId },
-      select: { name: true, targetSLA: true },
     });
     if (!service) {
       throw new Error('Serviço não encontrado');
@@ -187,8 +230,7 @@ export class SlaService {
     const monthlySLA = await this.calculateSLA(serviceId, thisMonth, now);
 
     const currentAvailability = monthlySLA.availability;
-    const targetSLA =
-      typeof service.targetSLA === 'number' ? service.targetSLA : 99.9;
+    const targetSLA = (service as any).targetSLA ?? 99.9;
 
     let status: 'meeting' | 'at-risk' | 'breached';
     if (currentAvailability >= targetSLA) {

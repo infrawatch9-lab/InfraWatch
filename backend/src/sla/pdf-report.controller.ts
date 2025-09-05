@@ -15,33 +15,62 @@ export class PDFReportController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
-    const buffer = await this.pdfService.generateGeneralPDFWithPeriod(
-      period,
-      startDate,
-      endDate,
-    );
-    // Para o nome do arquivo, usa as datas calculadas
-    let start: Date | undefined;
-    let end: Date | undefined;
-    if (period) {
-      const now = new Date();
-      if (period === 'year')
-        start = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-      else if (period === 'month')
-        start = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-      else if (period === 'week')
-        start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      else start = startDate ? new Date(startDate) : undefined;
-      end = endDate ? new Date(endDate) : now;
-    } else {
-      start = startDate ? new Date(startDate) : undefined;
-      end = endDate ? new Date(endDate) : undefined;
+    try {
+      console.log(`Gerando PDF geral, period: ${period}, startDate: ${startDate}, endDate: ${endDate}`);
+      
+      const buffer = await this.pdfService.generateGeneralPDFWithPeriod(
+        period,
+        startDate,
+        endDate,
+      );
+      
+      console.log(`PDF geral gerado com sucesso, tamanho: ${buffer.length} bytes`);
+      
+      // Para o nome do arquivo, usa as datas calculadas
+      let start: Date | undefined;
+      let end: Date | undefined;
+      if (period) {
+        const now = new Date();
+        if (period === 'year')
+          start = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+        else if (period === 'month')
+          start = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+        else if (period === 'week')
+          start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        else start = startDate ? new Date(startDate) : undefined;
+        end = endDate ? new Date(endDate) : now;
+      } else {
+        start = startDate ? new Date(startDate) : undefined;
+        end = endDate ? new Date(endDate) : undefined;
+      }
+      // Nomenclatura: sla_geral.pdf
+      const fileName = 'sla_geral.pdf';
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      res.send(buffer);
+    } catch (error) {
+      console.error(`Erro ao gerar PDF geral:`, error);
+      const err = error as any;
+      
+      if (err.message?.includes('Nenhum serviço cadastrado')) {
+        res.status(400).json({ 
+          message: 'Não é possível gerar relatório sem serviços cadastrados',
+          error: err.message,
+          details: 'Cadastre pelo menos um serviço antes de tentar gerar relatórios.'
+        });
+      } else if (err.message?.includes('Não foi possível calcular dados de SLA')) {
+        res.status(400).json({ 
+          message: 'Não foi possível calcular dados de SLA',
+          error: err.message,
+          details: 'Verifique se os serviços possuem métricas registradas.'
+        });
+      } else {
+        res.status(500).json({ 
+          message: 'Erro interno ao gerar relatório', 
+          error: err.message 
+        });
+      }
     }
-    // Nomenclatura: sla_geral.pdf
-    const fileName = 'sla_geral.pdf';
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-    res.send(buffer);
   }
 
   // Relatório por tipo
@@ -52,57 +81,118 @@ export class PDFReportController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
-    const buffer = await this.pdfService.generateTypePDF(
-      type,
-      startDate,
-      endDate,
-    );
-    // Nomenclatura: sla_geral_{tipo}.pdf
-    const fileName = `sla_geral_${type}.pdf`;
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-    res.send(buffer);
+    try {
+      console.log(`Gerando PDF para tipo: ${type}, startDate: ${startDate}, endDate: ${endDate}`);
+      
+      const buffer = await this.pdfService.generateTypePDF(
+        type,
+        startDate,
+        endDate,
+      );
+      
+      console.log(`PDF gerado com sucesso para tipo: ${type}, tamanho: ${buffer.length} bytes`);
+      
+      // Nomenclatura: sla_{tipo}_geral.pdf
+      const fileName = `sla_${type.toLowerCase()}_geral.pdf`;
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      res.send(buffer);
+    } catch (error) {
+      console.error(`Erro ao gerar PDF para tipo ${type}:`, error);
+      const err = error as any;
+      
+      if (err.message?.includes('Nenhum serviço cadastrado')) {
+        res.status(400).json({ 
+          message: 'Não é possível gerar relatório sem serviços cadastrados',
+          error: err.message,
+          type: type,
+          details: 'Cadastre pelo menos um serviço antes de tentar gerar relatórios.'
+        });
+      } else if (err.message?.includes(`Nenhum serviço do tipo "${type}"`)) {
+        res.status(404).json({ 
+          message: `Nenhum serviço do tipo "${type}" encontrado`,
+          error: err.message,
+          type: type,
+          details: 'Verifique se existem serviços cadastrados deste tipo específico.'
+        });
+      } else if (err.message?.includes('Não foi possível calcular dados de SLA')) {
+        res.status(400).json({ 
+          message: 'Não foi possível calcular dados de SLA',
+          error: err.message,
+          type: type,
+          details: 'Verifique se os serviços possuem métricas registradas.'
+        });
+      } else {
+        res.status(500).json({ 
+          message: 'Erro interno ao gerar relatório', 
+          error: err.message,
+          type: type
+        });
+      }
+    }
   }
 
-  // Relatório por serviço específico
+    // Relatório individual
   @Get('pdf/service/:serviceId')
   async exportServicePDF(
     @Param('serviceId') serviceId: string,
     @Res() res: Response,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
   ) {
     try {
-      const buffer = await this.pdfService.generateServicePDF(
-        parseInt(serviceId),
-      );
-      // Nomenclatura: sla_{nomeOuIdDoServico}.pdf
-      let serviceName = serviceId;
-      try {
-        const service = await (
-          this.pdfService as any
-        ).slaService.prisma.service.findUnique({
-          where: { id: parseInt(serviceId) },
-          select: { name: true },
+      console.log(`Gerando PDF para serviço ID: ${serviceId}, startDate: ${startDate}, endDate: ${endDate}`);
+      
+      // Buscar o tipo do serviço para a nomenclatura
+      const service = await (this.pdfService as any).slaService.prisma.service.findUnique({
+        where: { id: parseInt(serviceId, 10) },
+        select: { type: true, name: true }
+      });
+      
+      if (!service) {
+        return res.status(404).json({ 
+          message: 'Serviço não encontrado',
+          serviceId: serviceId
         });
-        if (service?.name) serviceName = service.name.replace(/\s+/g, '_');
-      } catch {}
-      const fileName = `sla_${serviceName}.pdf`;
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename="${fileName}"`,
+      }
+      
+      const buffer = await this.pdfService.generateServicePDF(
+        parseInt(serviceId, 10),
+        startDate,
+        endDate,
       );
+      
+      console.log(`PDF gerado com sucesso para serviço ID: ${serviceId}, tamanho: ${buffer.length} bytes`);
+      
+      // Nomenclatura: sla_{tipo}.pdf
+      const fileName = `sla_${service.type.toLowerCase()}.pdf`;
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
       res.send(buffer);
     } catch (error) {
+      console.error(`Erro ao gerar PDF para serviço ${serviceId}:`, error);
       const err = error as any;
-      if (
-        err.name === 'NotFoundException' ||
-        err.message?.includes('Serviço não encontrado')
-      ) {
-        res.status(404).json({ message: 'Serviço não encontrado' });
+      
+      if (err.message?.includes('Serviço não encontrado')) {
+        res.status(404).json({ 
+          message: `Serviço não encontrado`,
+          error: err.message,
+          serviceId: serviceId,
+          details: 'Verifique se o ID do serviço está correto.'
+        });
+      } else if (err.message?.includes('Não foi possível calcular dados de SLA')) {
+        res.status(400).json({ 
+          message: 'Não foi possível calcular dados de SLA para este serviço',
+          error: err.message,
+          serviceId: serviceId,
+          details: 'Verifique se o serviço possui métricas registradas.'
+        });
       } else {
-        res
-          .status(500)
-          .json({ message: 'Erro ao gerar relatório', error: err.message });
+        res.status(500).json({ 
+          message: 'Erro interno ao gerar relatório', 
+          error: err.message,
+          serviceId: serviceId
+        });
       }
     }
   }

@@ -29,7 +29,22 @@ export class CSVReportService {
         : new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       end = endDate ? new Date(endDate) : now;
     }
+
+    // Verificar se há serviços cadastrados no sistema ANTES de tentar calcular SLA
+    const totalServices = await (this.slaService as any).prisma.service.count();
+    console.log(`Total de serviços cadastrados no sistema (CSV): ${totalServices}`);
+    
+    if (totalServices === 0) {
+      throw new Error('Nenhum serviço cadastrado no sistema. Cadastre pelo menos um serviço antes de gerar relatórios.');
+    }
+
     const summaries = await this.slaService.getAllSLASummary();
+    
+    // Se não conseguiu calcular SLA para nenhum serviço, ainda assim deve mostrar erro
+    if (!summaries.length) {
+      throw new Error('Não foi possível calcular dados de SLA para nenhum serviço. Verifique se os serviços possuem métricas registradas.');
+    }
+
     return this.summariesToCSV(summaries, start, end);
   }
 
@@ -55,10 +70,47 @@ export class CSVReportService {
       start = startDate ? new Date(startDate) : undefined;
       end = endDate ? new Date(endDate) : undefined;
     }
-    const summaries = await this.slaService.getAllSLASummary();
-    const filtered = summaries.filter(
-      (s: any) => (s.serviceType || '').toLowerCase() === type.toLowerCase(),
-    );
+    
+    // Primeiro verificar se há serviços cadastrados no sistema
+    const totalServices = await (this.slaService as any).prisma.service.count();
+    console.log(`Total de serviços cadastrados no sistema (CSV): ${totalServices}`);
+    
+    if (totalServices === 0) {
+      throw new Error('Nenhum serviço cadastrado no sistema. Cadastre pelo menos um serviço antes de gerar relatórios.');
+    }
+    
+    // Buscar serviços do tipo específico primeiro
+    const servicesOfType = await (this.slaService as any).prisma.service.findMany({
+      where: { 
+        type: type.toUpperCase() 
+      },
+      select: { id: true, name: true, type: true }
+    });
+
+    console.log(`Serviços encontrados para tipo ${type} (CSV):`, servicesOfType);
+
+    if (!servicesOfType.length) {
+      throw new Error(`Nenhum serviço do tipo "${type}" encontrado no sistema. Tipos disponíveis podem ser consultados na listagem geral de serviços.`);
+    }
+
+    // Buscar dados de SLA para cada serviço do tipo
+    const filtered: any[] = [];
+    for (const service of servicesOfType) {
+      try {
+        const summary = await this.slaService.getSLASummary(service.id);
+        filtered.push({
+          ...summary,
+          serviceType: service.type
+        });
+      } catch (error: any) {
+        console.warn(`Erro ao calcular SLA para serviço ${service.id} (CSV):`, error.message);
+      }
+    }
+
+    if (!filtered.length) {
+      throw new Error(`Não foi possível calcular dados de SLA para nenhum serviço do tipo "${type}". Verifique se os serviços possuem métricas registradas.`);
+    }
+
     return this.summariesToCSV(filtered, start, end);
   }
 

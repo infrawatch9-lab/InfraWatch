@@ -18,21 +18,15 @@ export class PDFReportService {
   ): string {
     const date = (d: Date) => d.toISOString().slice(0, 10);
     if (type === 'general') {
-      return `relatorio-sla-geral_${opts?.start ? date(opts.start) : ''}_${
-        opts?.end ? date(opts.end) : ''
-      }.pdf`;
+      return `sla_geral.pdf`;
     }
     if (type === 'type') {
-      return `relatorio-sla-tipo-${opts?.typeName || 'tipo'}_${
-        opts?.start ? date(opts.start) : ''
-      }_${opts?.end ? date(opts.end) : ''}.pdf`;
+      return `sla_${opts?.typeName || 'tipo'}_geral.pdf`;
     }
     if (type === 'service') {
-      return `relatorio-sla-servico-${opts?.serviceName || 'servico'}_${
-        opts?.start ? date(opts.start) : ''
-      }_${opts?.end ? date(opts.end) : ''}.pdf`;
+      return `sla_${opts?.typeName || 'servico'}.pdf`;
     }
-    return 'relatorio-sla.pdf';
+    return 'sla_geral.pdf';
   }
   private readonly storageDir = path.join(
     process.cwd(),
@@ -70,7 +64,22 @@ export class PDFReportService {
         : new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       end = endDate ? new Date(endDate) : now;
     }
+
+    // Verificar se há serviços cadastrados no sistema ANTES de tentar calcular SLA
+    const totalServices = await (this.slaService as any).prisma.service.count();
+    console.log(`Total de serviços cadastrados no sistema: ${totalServices}`);
+    
+    if (totalServices === 0) {
+      throw new Error('Nenhum serviço cadastrado no sistema. Cadastre pelo menos um serviço antes de gerar relatórios.');
+    }
+
     const summaries = await this.slaService.getAllSLASummary();
+    
+    // Se não conseguiu calcular SLA para nenhum serviço, ainda assim deve mostrar erro
+    if (!summaries.length) {
+      throw new Error('Não foi possível calcular dados de SLA para nenhum serviço. Verifique se os serviços possuem métricas registradas.');
+    }
+
     // Buscar tipos de serviço para cada summary
     const serviceTypes: Record<number, string> = {};
     try {
@@ -79,6 +88,7 @@ export class PDFReportService {
       });
       for (const s of services) serviceTypes[s.id] = s.type;
     } catch {}
+    
     const doc = new PDFDocument({ size: 'A4', margin: 50 });
     const buffers: Buffer[] = [];
     doc.on('data', buffers.push.bind(buffers));
@@ -117,90 +127,84 @@ export class PDFReportService {
     doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke('#1976d2');
     doc.moveDown();
 
-    if (!summaries.length) {
-      doc
-        .fontSize(16)
-        .fillColor('red')
-        .text('Nenhum serviço encontrado.', { align: 'center' })
-        .fillColor('black');
-    } else {
-      // Cabeçalho da tabela com largura fixa de 10 caracteres por coluna
-      doc.moveDown(0.5);
-      try {
-        doc.font('Montserrat').fontSize(13).fillColor('#1a237e');
-      } catch (e) {
-        doc.fontSize(13).fillColor('#1a237e');
-      }
-      // Largura fixa: 10 caracteres por coluna, espaçamento mínimo (5 caracteres)
-      const colWidth = 30; // Bem compacto
-      const colX = [
-        60,
-        60 + colWidth,
-        60 + colWidth * 2,
-        60 + colWidth * 3,
-        60 + colWidth * 4,
-        60 + colWidth * 5,
-      ];
-      // Função para abreviar texto
-      function fit10(str: string) {
-        if (!str) return '-';
-        str = String(str);
-        return str.length > 10 ? str.slice(0, 9) + '.' : str.padEnd(10, ' ');
-      }
-      doc.text(fit10('Serviço'), colX[0], doc.y, { continued: true });
-      doc.text(fit10('Tipo'), colX[1], doc.y, { continued: true });
-      doc.text(fit10('Disp.'), colX[2], doc.y, { continued: true });
-      doc.text(fit10('Status'), colX[3], doc.y, { continued: true });
-      doc.text(fit10('SLA Alvo'), colX[4], doc.y, { continued: true });
-      doc.text(fit10('Últ. Calc.'), colX[5], doc.y);
-      try {
-        doc.font('Montserrat-Regular').fillColor('black');
-      } catch (e) {
-        doc.fillColor('black');
-      }
-      doc.moveDown(0.2);
-      doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke('#1976d2');
-      doc.moveDown(0.2);
-      // Linhas da tabela
-      summaries.forEach((summary, idx) => {
-        const rowY = doc.y;
-        doc.save();
-        doc.rect(50, rowY, 495, 18).fill(idx % 2 === 0 ? '#e3eafc' : '#fff');
-        doc.restore();
-        try {
-          doc.font('Montserrat-Regular').fillColor('#1a237e').fontSize(11);
-        } catch (e) {
-          doc.fillColor('#1a237e').fontSize(11);
-        }
-        doc.text(fit10(summary.serviceName), colX[0], rowY + 3, {
-          continued: true,
-        });
-        doc.text(
-          fit10(serviceTypes[summary.serviceId] || '-'),
-          colX[1],
-          rowY + 3,
-          { continued: true },
-        );
-        doc.text(fit10(`${summary.currentAvailability}%`), colX[2], rowY + 3, {
-          continued: true,
-        });
-        doc.text(fit10(summary.status), colX[3], rowY + 3, { continued: true });
-        doc.text(fit10(`${summary.targetSLA}%`), colX[4], rowY + 3, {
-          continued: true,
-        });
-        doc.text(
-          fit10(new Date(summary.lastCalculated).toLocaleDateString('pt-PT')),
-          colX[5],
-          rowY + 3,
-        );
-        doc.moveDown(0.1);
-      });
-      try {
-        doc.font('Montserrat-Regular').fillColor('black');
-      } catch (e) {
-        doc.fillColor('black');
-      }
+    // Como chegamos aqui, sabemos que há serviços e dados de SLA
+    // Cabeçalho da tabela com largura fixa de 10 caracteres por coluna
+    doc.moveDown(0.5);
+    try {
+      doc.font('Montserrat').fontSize(13).fillColor('#1a237e');
+    } catch (e) {
+      doc.fontSize(13).fillColor('#1a237e');
     }
+    // Largura fixa: 10 caracteres por coluna, espaçamento mínimo (5 caracteres)
+    const colWidth = 30; // Bem compacto
+    const colX = [
+      60,
+      60 + colWidth,
+      60 + colWidth * 2,
+      60 + colWidth * 3,
+      60 + colWidth * 4,
+      60 + colWidth * 5,
+    ];
+    // Função para abreviar texto
+    function fit10(str: string) {
+      if (!str) return '-';
+      str = String(str);
+      return str.length > 10 ? str.slice(0, 9) + '.' : str.padEnd(10, ' ');
+    }
+    doc.text(fit10('Serviço'), colX[0], doc.y, { continued: true });
+    doc.text(fit10('Tipo'), colX[1], doc.y, { continued: true });
+    doc.text(fit10('Disp.'), colX[2], doc.y, { continued: true });
+    doc.text(fit10('Status'), colX[3], doc.y, { continued: true });
+    doc.text(fit10('SLA Alvo'), colX[4], doc.y, { continued: true });
+    doc.text(fit10('Últ. Calc.'), colX[5], doc.y);
+    try {
+      doc.font('Montserrat-Regular').fillColor('black');
+    } catch (e) {
+      doc.fillColor('black');
+    }
+    doc.moveDown(0.2);
+    doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke('#1976d2');
+    doc.moveDown(0.2);
+    // Linhas da tabela
+    summaries.forEach((summary, idx) => {
+      const rowY = doc.y;
+      doc.save();
+      doc.rect(50, rowY, 495, 18).fill(idx % 2 === 0 ? '#e3eafc' : '#fff');
+      doc.restore();
+      try {
+        doc.font('Montserrat-Regular').fillColor('#1a237e').fontSize(11);
+      } catch (e) {
+        doc.fillColor('#1a237e').fontSize(11);
+      }
+      doc.text(fit10(summary.serviceName), colX[0], rowY + 3, {
+        continued: true,
+      });
+      doc.text(
+        fit10(serviceTypes[summary.serviceId] || '-'),
+        colX[1],
+        rowY + 3,
+        { continued: true },
+      );
+      doc.text(fit10(`${summary.currentAvailability}%`), colX[2], rowY + 3, {
+        continued: true,
+      });
+      doc.text(fit10(summary.status), colX[3], rowY + 3, { continued: true });
+      doc.text(fit10(`${summary.targetSLA}%`), colX[4], rowY + 3, {
+        continued: true,
+      });
+      doc.text(
+        fit10(new Date(summary.lastCalculated).toLocaleDateString('pt-PT')),
+        colX[5],
+        rowY + 3,
+      );
+      doc.moveDown(0.1);
+    });
+    try {
+      doc.font('Montserrat-Regular').fillColor('black');
+    } catch (e) {
+      doc.fillColor('black');
+    }
+    
     doc.end();
     await new Promise<void>((resolve) => doc.on('end', resolve));
     return Buffer.concat(buffers);
@@ -216,10 +220,47 @@ export class PDFReportService {
       ? new Date(startDate)
       : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const end = endDate ? new Date(endDate) : new Date();
-    const summaries = await this.slaService.getAllSLASummary();
-    const filtered = summaries.filter(
-      (s: any) => (s.serviceType || '').toLowerCase() === type.toLowerCase(),
-    );
+    
+    // Primeiro verificar se há serviços cadastrados no sistema
+    const totalServices = await (this.slaService as any).prisma.service.count();
+    console.log(`Total de serviços cadastrados no sistema: ${totalServices}`);
+    
+    if (totalServices === 0) {
+      throw new Error('Nenhum serviço cadastrado no sistema. Cadastre pelo menos um serviço antes de gerar relatórios.');
+    }
+    
+    // Buscar serviços do tipo específico
+    const servicesOfType = await (this.slaService as any).prisma.service.findMany({
+      where: { 
+        type: type.toUpperCase() 
+      },
+      select: { id: true, name: true, type: true }
+    });
+
+    console.log(`Serviços encontrados para tipo ${type}:`, servicesOfType);
+
+    if (!servicesOfType.length) {
+      throw new Error(`Nenhum serviço do tipo "${type}" encontrado no sistema. Tipos disponíveis podem ser consultados na listagem geral de serviços.`);
+    }
+
+    // Buscar dados de SLA para cada serviço do tipo
+    const filtered: any[] = [];
+    for (const service of servicesOfType) {
+      try {
+        const summary = await this.slaService.getSLASummary(service.id);
+        filtered.push({
+          ...summary,
+          serviceType: service.type
+        });
+      } catch (error: any) {
+        console.warn(`Erro ao calcular SLA para serviço ${service.id}:`, error.message);
+      }
+    }
+
+    if (!filtered.length) {
+      throw new Error(`Não foi possível calcular dados de SLA para nenhum serviço do tipo "${type}". Verifique se os serviços possuem métricas registradas.`);
+    }
+
     const doc = new PDFDocument({ size: 'A4', margin: 50 });
     const buffers: Buffer[] = [];
     doc.on('data', buffers.push.bind(buffers));
@@ -256,82 +297,76 @@ export class PDFReportService {
     doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
     doc.moveDown();
 
-    if (!filtered.length) {
-      doc
-        .fontSize(16)
-        .fillColor('red')
-        .text('Nenhum serviço deste tipo encontrado.', { align: 'center' })
-        .fillColor('black');
-    } else {
-      // Cabeçalho da tabela igual ao PDF geral
-      doc.moveDown(0.5);
-      try {
-        doc.font('Montserrat').fontSize(13).fillColor('#1a237e');
-      } catch (e) {
-        doc.fontSize(13).fillColor('#1a237e');
-      }
-      const colWidth = 30;
-      const colX = [
-        60,
-        60 + colWidth,
-        60 + colWidth * 2,
-        60 + colWidth * 3,
-        60 + colWidth * 4,
-        60 + colWidth * 5,
-      ];
-      function fit10(str: string) {
-        if (!str) return '-';
-        str = String(str);
-        return str.length > 10 ? str.slice(0, 9) + '.' : str.padEnd(10, ' ');
-      }
-      doc.text(fit10('Serviço'), colX[0], doc.y, { continued: true });
-      doc.text(fit10('Tipo'), colX[1], doc.y, { continued: true });
-      doc.text(fit10('Disp.'), colX[2], doc.y, { continued: true });
-      doc.text(fit10('Status'), colX[3], doc.y, { continued: true });
-      doc.text(fit10('SLA Alvo'), colX[4], doc.y, { continued: true });
-      doc.text(fit10('Últ. Calc.'), colX[5], doc.y);
-      try {
-        doc.font('Montserrat-Regular').fillColor('black');
-      } catch (e) {
-        doc.fillColor('black');
-      }
-      doc.moveDown(0.2);
-      doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke('#1976d2');
-      doc.moveDown(0.2);
-      filtered.forEach((summary, idx) => {
-        const rowY = doc.y;
-        doc.save();
-        doc.rect(50, rowY, 495, 18).fill(idx % 2 === 0 ? '#e3eafc' : '#fff');
-        doc.restore();
-        try {
-          doc.font('Montserrat-Regular').fillColor('#1a237e').fontSize(11);
-        } catch (e) {
-          doc.fillColor('#1a237e').fontSize(11);
-        }
-        doc.text(fit10(summary.serviceName), colX[0], rowY + 3, {
-          continued: true,
-        });
-        doc.text(fit10(type), colX[1], rowY + 3, { continued: true });
-        doc.text(fit10(`${summary.currentAvailability}%`), colX[2], rowY + 3, {
-          continued: true,
-        });
-        doc.text(fit10(summary.status), colX[3], rowY + 3, { continued: true });
-        doc.text(fit10(`${summary.targetSLA}%`), colX[4], rowY + 3, {
-          continued: true,
-        });
-        doc.text(
-          fit10(new Date(summary.lastCalculated).toLocaleDateString('pt-PT')),
-          colX[5],
-          rowY + 3,
-        );
-        doc.moveDown(0.1);
-      });
-      try {
-        doc.font('Montserrat-Regular').fillColor('black');
-      } catch (e) {
-        doc.fillColor('black');
-      }
+    // Como chegamos aqui, temos serviços do tipo e dados de SLA calculados
+    // Cabeçalho da tabela igual ao PDF geral
+    doc.moveDown(0.5);
+    try {
+      doc.font('Montserrat').fontSize(13).fillColor('#1a237e');
+    } catch (e) {
+      doc.fontSize(13).fillColor('#1a237e');
     }
+    const colWidth = 30;
+    const colX = [
+      60,
+      60 + colWidth,
+      60 + colWidth * 2,
+      60 + colWidth * 3,
+      60 + colWidth * 4,
+      60 + colWidth * 5,
+    ];
+    function fit10(str: string) {
+      if (!str) return '-';
+      str = String(str);
+      return str.length > 10 ? str.slice(0, 9) + '.' : str.padEnd(10, ' ');
+    }
+    doc.text(fit10('Serviço'), colX[0], doc.y, { continued: true });
+    doc.text(fit10('Tipo'), colX[1], doc.y, { continued: true });
+    doc.text(fit10('Disp.'), colX[2], doc.y, { continued: true });
+    doc.text(fit10('Status'), colX[3], doc.y, { continued: true });
+    doc.text(fit10('SLA Alvo'), colX[4], doc.y, { continued: true });
+    doc.text(fit10('Últ. Calc.'), colX[5], doc.y);
+    try {
+      doc.font('Montserrat-Regular').fillColor('black');
+    } catch (e) {
+      doc.fillColor('black');
+    }
+    doc.moveDown(0.2);
+    doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke('#1976d2');
+    doc.moveDown(0.2);
+    filtered.forEach((summary, idx) => {
+      const rowY = doc.y;
+      doc.save();
+      doc.rect(50, rowY, 495, 18).fill(idx % 2 === 0 ? '#e3eafc' : '#fff');
+      doc.restore();
+      try {
+        doc.font('Montserrat-Regular').fillColor('#1a237e').fontSize(11);
+      } catch (e) {
+        doc.fillColor('#1a237e').fontSize(11);
+      }
+      doc.text(fit10(summary.serviceName), colX[0], rowY + 3, {
+        continued: true,
+      });
+      doc.text(fit10(type), colX[1], rowY + 3, { continued: true });
+      doc.text(fit10(`${summary.currentAvailability}%`), colX[2], rowY + 3, {
+        continued: true,
+      });
+      doc.text(fit10(summary.status), colX[3], rowY + 3, { continued: true });
+      doc.text(fit10(`${summary.targetSLA}%`), colX[4], rowY + 3, {
+        continued: true,
+      });
+      doc.text(
+        fit10(new Date(summary.lastCalculated).toLocaleDateString('pt-PT')),
+        colX[5],
+        rowY + 3,
+      );
+      doc.moveDown(0.1);
+    });
+    try {
+      doc.font('Montserrat-Regular').fillColor('black');
+    } catch (e) {
+      doc.fillColor('black');
+    }
+    
     doc.end();
     await new Promise<void>((resolve) => doc.on('end', resolve));
     return Buffer.concat(buffers);
