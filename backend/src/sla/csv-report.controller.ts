@@ -21,11 +21,10 @@ export class CSVReportController {
       startDate,
       endDate,
     );
+    // Nomenclatura: sla_giga_relatorio_geral.csv
+    const fileName = 'sla_relatorio_geral.csv';
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader(
-      'Content-Disposition',
-      'attachment; filename="relatorio-sla-geral.csv"',
-    );
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     res.send(csv);
   }
 
@@ -39,11 +38,10 @@ export class CSVReportController {
     @Query('endDate') endDate?: string,
   ) {
     const csv = await this.csvService.generateTypeCSV(type, startDate, endDate);
+    // Nomenclatura: sla_giga_relatorio_geral_{tipo}.csv
+    const fileName = `sla_relatorio_geral_${type}.csv`;
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="relatorio-sla-tipo-${type}.csv"`,
-    );
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     res.send(csv);
   }
 
@@ -56,10 +54,22 @@ export class CSVReportController {
   ) {
     try {
       const csv = await this.csvService.generateServiceCSV(parseInt(serviceId));
+      // Nomenclatura: sla_{nomeOuIdDoServico}_relatorio_individual.csv
+      let serviceName = serviceId;
+      try {
+        const service = await (
+          this.csvService as any
+        ).slaService.prisma.service.findUnique({
+          where: { id: parseInt(serviceId) },
+          select: { name: true },
+        });
+        if (service?.name) serviceName = service.name.replace(/\s+/g, '_');
+      } catch {}
+      const fileName = `sla_${serviceName}_relatorio_individual.csv`;
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader(
         'Content-Disposition',
-        `attachment; filename="relatorio-sla-servico-${serviceId}.csv"`,
+        `attachment; filename="${fileName}"`,
       );
       res.send(csv);
     } catch (error) {

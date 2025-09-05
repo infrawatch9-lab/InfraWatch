@@ -37,10 +37,8 @@ export class PDFReportController {
       start = startDate ? new Date(startDate) : undefined;
       end = endDate ? new Date(endDate) : undefined;
     }
-    const fileName = PDFReportService.getPDFFileName('general', {
-      start,
-      end,
-    });
+    // Nomenclatura: sla_giga_relatorio_geral.pdf
+    const fileName = 'sla_relatorio_geral.pdf';
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     res.send(buffer);
@@ -59,11 +57,8 @@ export class PDFReportController {
       startDate,
       endDate,
     );
-    const fileName = PDFReportService.getPDFFileName('type', {
-      typeName: type,
-      start: startDate ? new Date(startDate) : undefined,
-      end: endDate ? new Date(endDate) : undefined,
-    });
+    // Nomenclatura: sla_giga_relatorio_geral_{tipo}.pdf
+    const fileName = `sla_relatorio_geral_${type}.pdf`;
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     res.send(buffer);
@@ -79,9 +74,19 @@ export class PDFReportController {
       const buffer = await this.pdfService.generateServicePDF(
         parseInt(serviceId),
       );
-      const fileName = PDFReportService.getPDFFileName('service', {
-        serviceName: serviceId,
-      });
+      // Nomenclatura: sla_{nomeOuIdDoServico}_relatorio_individual.pdf
+      // Tenta buscar o nome do serviço para usar no nome do arquivo
+      let serviceName = serviceId;
+      try {
+        const service = await (
+          this.pdfService as any
+        ).slaService.prisma.service.findUnique({
+          where: { id: parseInt(serviceId) },
+          select: { name: true },
+        });
+        if (service?.name) serviceName = service.name.replace(/\s+/g, '_');
+      } catch {}
+      const fileName = `sla_${serviceName}_relatorio_individual.pdf`;
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader(
         'Content-Disposition',

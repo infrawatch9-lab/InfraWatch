@@ -225,7 +225,22 @@ export class PDFReportService {
     doc.on('data', buffers.push.bind(buffers));
     doc.on('end', () => {});
 
-    // Cabeçalho
+    // Cabeçalho com logo
+    const logoPath = path.join(process.cwd(), 'src', 'assets', 'logo.png');
+    if (fs.existsSync(logoPath)) {
+      try {
+        doc.image(logoPath, 50, 20, { width: 60 });
+      } catch (e) {
+        doc.fontSize(24).fillColor('#1a237e').text('InfraWatch', 50, 30);
+      }
+    } else {
+      doc.fontSize(24).fillColor('#1a237e').text('InfraWatch', 50, 30);
+    }
+    doc
+      .fontSize(16)
+      .fillColor('#1976d2')
+      .text('Plataforma: InfraWatch', 120, 35, { align: 'left' });
+    doc.moveDown(1.5);
     doc
       .fontSize(22)
       .fillColor('#1a237e')
@@ -312,7 +327,22 @@ export class PDFReportService {
     doc.on('data', buffers.push.bind(buffers));
     doc.on('end', () => {});
 
-    // Cabeçalho
+    // Cabeçalho com logo
+    const logoPath = path.join(process.cwd(), 'src', 'assets', 'logo.png');
+    if (fs.existsSync(logoPath)) {
+      try {
+        doc.image(logoPath, 50, 20, { width: 60 });
+      } catch (e) {
+        doc.fontSize(24).fillColor('#1a237e').text('InfraWatch', 50, 30);
+      }
+    } else {
+      doc.fontSize(24).fillColor('#1a237e').text('InfraWatch', 50, 30);
+    }
+    doc
+      .fontSize(16)
+      .fillColor('#1976d2')
+      .text('Plataforma: InfraWatch', 120, 35, { align: 'left' });
+    doc.moveDown(1.5);
     doc
       .fontSize(22)
       .fillColor('#1a237e')
