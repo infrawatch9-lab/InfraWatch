@@ -16,15 +16,11 @@ export class PDFReportController {
     @Query('endDate') endDate?: string,
   ) {
     try {
-      console.log(`Gerando PDF geral, period: ${period}, startDate: ${startDate}, endDate: ${endDate}`);
-      
       const buffer = await this.pdfService.generateGeneralPDFWithPeriod(
         period,
         startDate,
         endDate,
       );
-      
-      console.log(`PDF geral gerado com sucesso, tamanho: ${buffer.length} bytes`);
       
       // Para o nome do arquivo, usa as datas calculadas
       let start: Date | undefined;
@@ -49,7 +45,6 @@ export class PDFReportController {
       res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
       res.send(buffer);
     } catch (error) {
-      console.error(`Erro ao gerar PDF geral:`, error);
       const err = error as any;
       
       if (err.message?.includes('Nenhum serviço cadastrado')) {
@@ -82,15 +77,11 @@ export class PDFReportController {
     @Query('endDate') endDate?: string,
   ) {
     try {
-      console.log(`Gerando PDF para tipo: ${type}, startDate: ${startDate}, endDate: ${endDate}`);
-      
       const buffer = await this.pdfService.generateTypePDF(
         type,
         startDate,
         endDate,
       );
-      
-      console.log(`PDF gerado com sucesso para tipo: ${type}, tamanho: ${buffer.length} bytes`);
       
       // Nomenclatura: sla_{tipo}_geral.pdf
       const fileName = `sla_${type.toLowerCase()}_geral.pdf`;
@@ -98,7 +89,6 @@ export class PDFReportController {
       res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
       res.send(buffer);
     } catch (error) {
-      console.error(`Erro ao gerar PDF para tipo ${type}:`, error);
       const err = error as any;
       
       if (err.message?.includes('Nenhum serviço cadastrado')) {
@@ -141,8 +131,6 @@ export class PDFReportController {
     @Query('endDate') endDate?: string,
   ) {
     try {
-      console.log(`Gerando PDF para serviço ID: ${serviceId}, startDate: ${startDate}, endDate: ${endDate}`);
-      
       // Buscar o tipo do serviço para a nomenclatura
       const service = await (this.pdfService as any).slaService.prisma.service.findUnique({
         where: { id: parseInt(serviceId, 10) },
@@ -162,15 +150,12 @@ export class PDFReportController {
         endDate,
       );
       
-      console.log(`PDF gerado com sucesso para serviço ID: ${serviceId}, tamanho: ${buffer.length} bytes`);
-      
       // Nomenclatura: sla_{tipo}.pdf
       const fileName = `sla_${service.type.toLowerCase()}.pdf`;
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
       res.send(buffer);
     } catch (error) {
-      console.error(`Erro ao gerar PDF para serviço ${serviceId}:`, error);
       const err = error as any;
       
       if (err.message?.includes('Serviço não encontrado')) {

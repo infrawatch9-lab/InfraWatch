@@ -264,10 +264,7 @@ export class SlaService {
         summaries.push(summary);
       } catch (error: any) {
         // Se não conseguir calcular SLA para um serviço, continua com os outros
-        console.warn(
-          `Erro ao calcular SLA para serviço ${service.id}:`,
-          error.message,
-        );
+        // Silently skip services that can't calculate SLA
       }
     }
 

@@ -17,15 +17,11 @@ export class CSVReportController {
     @Query('endDate') endDate?: string,
   ) {
     try {
-      console.log(`Gerando CSV geral, period: ${period}, startDate: ${startDate}, endDate: ${endDate}`);
-      
       const csv = await this.csvService.generateGeneralCSVWithPeriod(
         period,
         startDate,
         endDate,
       );
-      
-      console.log(`CSV geral gerado com sucesso, tamanho: ${csv.length} caracteres`);
       
       // Nomenclatura: sla_geral.csv
       const fileName = 'sla_geral.csv';
@@ -33,7 +29,6 @@ export class CSVReportController {
       res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
       res.send(csv);
     } catch (error) {
-      console.error('Erro ao gerar CSV geral:', error);
       const err = error as any;
       
       if (err.message?.includes('Nenhum serviço cadastrado')) {
@@ -67,11 +62,7 @@ export class CSVReportController {
     @Query('endDate') endDate?: string,
   ) {
     try {
-      console.log(`Gerando CSV para tipo: ${type}, startDate: ${startDate}, endDate: ${endDate}`);
-      
       const csv = await this.csvService.generateTypeCSV(type, startDate, endDate);
-      
-      console.log(`CSV gerado com sucesso para tipo: ${type}, tamanho: ${csv.length} caracteres`);
       
       // Nomenclatura: sla_{tipo}_geral.csv
       const fileName = `sla_${type.toLowerCase()}_geral.csv`;
@@ -79,7 +70,6 @@ export class CSVReportController {
       res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
       res.send(csv);
     } catch (error) {
-      console.error(`Erro ao gerar CSV para tipo ${type}:`, error);
       const err = error as any;
       
       if (err.message?.includes('Nenhum serviço cadastrado')) {
@@ -145,7 +135,6 @@ export class CSVReportController {
       );
       res.send(csv);
     } catch (error) {
-      console.error(`Erro ao gerar CSV para serviço ${serviceId}:`, error);
       const err = error as any;
       
       if (err.message?.includes('Serviço não encontrado')) {

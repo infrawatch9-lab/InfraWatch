@@ -32,7 +32,6 @@ export class CSVReportService {
 
     // Verificar se há serviços cadastrados no sistema ANTES de tentar calcular SLA
     const totalServices = await (this.slaService as any).prisma.service.count();
-    console.log(`Total de serviços cadastrados no sistema (CSV): ${totalServices}`);
     
     if (totalServices === 0) {
       throw new Error('Nenhum serviço cadastrado no sistema. Cadastre pelo menos um serviço antes de gerar relatórios.');
@@ -73,7 +72,6 @@ export class CSVReportService {
     
     // Primeiro verificar se há serviços cadastrados no sistema
     const totalServices = await (this.slaService as any).prisma.service.count();
-    console.log(`Total de serviços cadastrados no sistema (CSV): ${totalServices}`);
     
     if (totalServices === 0) {
       throw new Error('Nenhum serviço cadastrado no sistema. Cadastre pelo menos um serviço antes de gerar relatórios.');
@@ -86,8 +84,6 @@ export class CSVReportService {
       },
       select: { id: true, name: true, type: true }
     });
-
-    console.log(`Serviços encontrados para tipo ${type} (CSV):`, servicesOfType);
 
     if (!servicesOfType.length) {
       throw new Error(`Nenhum serviço do tipo "${type}" encontrado no sistema. Tipos disponíveis podem ser consultados na listagem geral de serviços.`);
@@ -103,7 +99,7 @@ export class CSVReportService {
           serviceType: service.type
         });
       } catch (error: any) {
-        console.warn(`Erro ao calcular SLA para serviço ${service.id} (CSV):`, error.message);
+        // Silently skip services that can't calculate SLA
       }
     }
 
