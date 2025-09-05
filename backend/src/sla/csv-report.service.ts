@@ -48,7 +48,18 @@ export class CSVReportService {
   }
 
   async generateServiceCSV(serviceId: number): Promise<string> {
-    const summary = await this.slaService.getSLASummary(serviceId);
+    let summary: SLASummary;
+    try {
+      summary = await this.slaService.getSLASummary(serviceId);
+    } catch (error) {
+      const err = error as any;
+      if (err.message?.includes('Serviço não encontrado')) {
+        // Lançar NotFoundException para o controller capturar
+        const { NotFoundException } = await import('@nestjs/common');
+        throw new NotFoundException('Serviço não encontrado');
+      }
+      throw error;
+    }
     return this.summariesToCSV([summary]);
   }
 

@@ -140,34 +140,35 @@ export class PDFReportService {
         .text('Nenhum serviço encontrado.', { align: 'center' })
         .fillColor('black');
     } else {
-      // Cabeçalho da tabela com larguras dinâmicas proporcionais
+      // Cabeçalho da tabela com largura fixa de 10 caracteres por coluna
       doc.moveDown(0.5);
       try {
         doc.font('Montserrat').fontSize(13).fillColor('#1a237e');
       } catch (e) {
         doc.fontSize(13).fillColor('#1a237e');
       }
-      // Definir larguras proporcionais
-      const colWidths = [120, 70, 90, 70, 70, 90];
+      // Largura fixa: 10 caracteres por coluna
+      const colWidth = 70; // Aproximadamente 10 caracteres em fonte monoespaçada
       const colX = [
         60,
-        60 + colWidths[0],
-        60 + colWidths[0] + colWidths[1],
-        60 + colWidths[0] + colWidths[1] + colWidths[2],
-        60 + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3],
-        60 +
-          colWidths[0] +
-          colWidths[1] +
-          colWidths[2] +
-          colWidths[3] +
-          colWidths[4],
+        60 + colWidth,
+        60 + colWidth * 2,
+        60 + colWidth * 3,
+        60 + colWidth * 4,
+        60 + colWidth * 5,
       ];
-      doc.text('Serviço', colX[0], doc.y, { continued: true });
-      doc.text('Tipo', colX[1], doc.y, { continued: true });
-      doc.text('Disponibilidade', colX[2], doc.y, { continued: true });
-      doc.text('Status', colX[3], doc.y, { continued: true });
-      doc.text('SLA Alvo', colX[4], doc.y, { continued: true });
-      doc.text('Último cálculo', colX[5], doc.y);
+      // Função para abreviar texto
+      function fit10(str: string) {
+        if (!str) return '-';
+        str = String(str);
+        return str.length > 10 ? str.slice(0, 9) + '.' : str.padEnd(10, ' ');
+      }
+      doc.text(fit10('Serviço'), colX[0], doc.y, { continued: true });
+      doc.text(fit10('Tipo'), colX[1], doc.y, { continued: true });
+      doc.text(fit10('Disp.'), colX[2], doc.y, { continued: true });
+      doc.text(fit10('Status'), colX[3], doc.y, { continued: true });
+      doc.text(fit10('SLA Alvo'), colX[4], doc.y, { continued: true });
+      doc.text(fit10('Últ. Calc.'), colX[5], doc.y);
       try {
         doc.font('Montserrat-Regular').fillColor('black');
       } catch (e) {
@@ -187,19 +188,24 @@ export class PDFReportService {
         } catch (e) {
           doc.fillColor('#1a237e').fontSize(11);
         }
-        doc.text(summary.serviceName, colX[0], rowY + 3, { continued: true });
-        doc.text(serviceTypes[summary.serviceId] || '-', colX[1], rowY + 3, {
-          continued: true,
-        });
-        doc.text(`${summary.currentAvailability}%`, colX[2], rowY + 3, {
-          continued: true,
-        });
-        doc.text(summary.status, colX[3], rowY + 3, { continued: true });
-        doc.text(`${summary.targetSLA}%`, colX[4], rowY + 3, {
+        doc.text(fit10(summary.serviceName), colX[0], rowY + 3, {
           continued: true,
         });
         doc.text(
-          new Date(summary.lastCalculated).toLocaleString('pt-PT'),
+          fit10(serviceTypes[summary.serviceId] || '-'),
+          colX[1],
+          rowY + 3,
+          { continued: true },
+        );
+        doc.text(fit10(`${summary.currentAvailability}%`), colX[2], rowY + 3, {
+          continued: true,
+        });
+        doc.text(fit10(summary.status), colX[3], rowY + 3, { continued: true });
+        doc.text(fit10(`${summary.targetSLA}%`), colX[4], rowY + 3, {
+          continued: true,
+        });
+        doc.text(
+          fit10(new Date(summary.lastCalculated).toLocaleDateString('pt-PT')),
           colX[5],
           rowY + 3,
         );
@@ -312,6 +318,10 @@ export class PDFReportService {
         usersToNotify: { include: { User: true } },
       },
     });
+    if (!service) {
+      const { NotFoundException } = await import('@nestjs/common');
+      throw new NotFoundException('Serviço não encontrado');
+    }
     const slaData = await this.slaService.calculateSLA(serviceId, start, end);
     const doc = new PDFDocument({ size: 'A4', margin: 50 });
     const buffers: Buffer[] = [];

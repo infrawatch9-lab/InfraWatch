@@ -9,7 +9,6 @@ export class PDFReportController {
 
   // Relatório geral
   @Get('pdf')
-  @Public()
   async exportGeneralPDF(
     @Res() res: Response,
     @Query('period') period?: string,
@@ -49,7 +48,6 @@ export class PDFReportController {
 
   // Relatório por tipo
   @Get('pdf/type/:type')
-  @Public()
   async exportTypePDF(
     @Param('type') type: string,
     @Res() res: Response,
@@ -73,19 +71,35 @@ export class PDFReportController {
 
   // Relatório por serviço específico
   @Get('pdf/service/:serviceId')
-  @Public()
   async exportServicePDF(
     @Param('serviceId') serviceId: string,
     @Res() res: Response,
   ) {
-    const buffer = await this.pdfService.generateServicePDF(
-      parseInt(serviceId),
-    );
-    const fileName = PDFReportService.getPDFFileName('service', {
-      serviceName: serviceId,
-    });
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-    res.send(buffer);
+    try {
+      const buffer = await this.pdfService.generateServicePDF(
+        parseInt(serviceId),
+      );
+      const fileName = PDFReportService.getPDFFileName('service', {
+        serviceName: serviceId,
+      });
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${fileName}"`,
+      );
+      res.send(buffer);
+    } catch (error) {
+      const err = error as any;
+      if (
+        err.name === 'NotFoundException' ||
+        err.message?.includes('Serviço não encontrado')
+      ) {
+        res.status(404).json({ message: 'Serviço não encontrado' });
+      } else {
+        res
+          .status(500)
+          .json({ message: 'Erro ao gerar relatório', error: err.message });
+      }
+    }
   }
 }

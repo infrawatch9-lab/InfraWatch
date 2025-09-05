@@ -54,12 +54,26 @@ export class CSVReportController {
     @Param('serviceId') serviceId: string,
     @Res() res: Response,
   ) {
-    const csv = await this.csvService.generateServiceCSV(parseInt(serviceId));
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="relatorio-sla-servico-${serviceId}.csv"`,
-    );
-    res.send(csv);
+    try {
+      const csv = await this.csvService.generateServiceCSV(parseInt(serviceId));
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="relatorio-sla-servico-${serviceId}.csv"`,
+      );
+      res.send(csv);
+    } catch (error) {
+      const err = error as any;
+      if (
+        err.name === 'NotFoundException' ||
+        err.message?.includes('Serviço não encontrado')
+      ) {
+        res.status(404).json({ message: 'Serviço não encontrado' });
+      } else {
+        res
+          .status(500)
+          .json({ message: 'Erro ao gerar relatório', error: err.message });
+      }
+    }
   }
 }
