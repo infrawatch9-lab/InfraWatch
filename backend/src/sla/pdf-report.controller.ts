@@ -37,8 +37,8 @@ export class PDFReportController {
       start = startDate ? new Date(startDate) : undefined;
       end = endDate ? new Date(endDate) : undefined;
     }
-    // Nomenclatura: sla_giga_relatorio_geral.pdf
-    const fileName = 'sla_relatorio_geral.pdf';
+    // Nomenclatura: sla_geral.pdf
+    const fileName = 'sla_geral.pdf';
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     res.send(buffer);
@@ -57,8 +57,8 @@ export class PDFReportController {
       startDate,
       endDate,
     );
-    // Nomenclatura: sla_giga_relatorio_geral_{tipo}.pdf
-    const fileName = `sla_relatorio_geral_${type}.pdf`;
+    // Nomenclatura: sla_geral_{tipo}.pdf
+    const fileName = `sla_geral_${type}.pdf`;
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     res.send(buffer);
@@ -74,8 +74,7 @@ export class PDFReportController {
       const buffer = await this.pdfService.generateServicePDF(
         parseInt(serviceId),
       );
-      // Nomenclatura: sla_{nomeOuIdDoServico}_relatorio_individual.pdf
-      // Tenta buscar o nome do serviço para usar no nome do arquivo
+      // Nomenclatura: sla_{nomeOuIdDoServico}.pdf
       let serviceName = serviceId;
       try {
         const service = await (
@@ -86,7 +85,7 @@ export class PDFReportController {
         });
         if (service?.name) serviceName = service.name.replace(/\s+/g, '_');
       } catch {}
-      const fileName = `sla_${serviceName}_relatorio_individual.pdf`;
+      const fileName = `sla_${serviceName}.pdf`;
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader(
         'Content-Disposition',
