@@ -5,3 +5,9 @@ APP_NAME="InfraWatch"
 PING_SERVICE_NAME="pingService"
 SNMP_SERVICE_NAME="snmpService"
 HTTP_SERVICE_NAME="httpService"
+
+# InfluxDB Configuration
+INFLUXDB_URL="http://localhost:8086"
+INFLUXDB_TOKEN="your-influxdb-token-here"
+INFLUXDB_ORG="infrawatch"
+INFLUXDB_BUCKET="metrics"
