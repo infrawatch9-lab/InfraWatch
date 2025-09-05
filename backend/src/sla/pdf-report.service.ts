@@ -84,39 +84,23 @@ export class PDFReportService {
     doc.on('data', buffers.push.bind(buffers));
     doc.on('end', () => {});
 
-    // Header institucional com fonte elegante
-    try {
-      doc.registerFont(
-        'Montserrat',
-        path.join(__dirname, '../../fonts/Montserrat-Bold.ttf'),
-      );
-      doc.registerFont(
-        'Montserrat-Regular',
-        path.join(__dirname, '../../fonts/Montserrat-Regular.ttf'),
-      );
-      doc
-        .font('Montserrat')
-        .fontSize(24)
-        .fillColor('#1a237e')
-        .text('RCS Angola', 50, 30, { continued: true });
-      doc
-        .font('Montserrat-Regular')
-        .fontSize(16)
-        .fillColor('#1976d2')
-        .text(' | Plataforma: InfraWatch', {
-          continued: false,
-          align: 'right',
-        });
-    } catch (e) {
-      doc
-        .fontSize(24)
-        .fillColor('#1a237e')
-        .text('RCS Angola', 50, 30, { continued: true });
-      doc.fontSize(16).fillColor('#1976d2').text(' | Plataforma: InfraWatch', {
-        continued: false,
-        align: 'right',
-      });
+    // Header institucional com logo
+    // Caminho do logo: src/assets/logo.png (ajuste se necessário)
+    const logoPath = path.join(process.cwd(), 'src', 'assets', 'logo.png');
+    if (fs.existsSync(logoPath)) {
+      try {
+        doc.image(logoPath, 50, 20, { width: 60 });
+      } catch (e) {
+        // fallback para texto se imagem falhar
+        doc.fontSize(24).fillColor('#1a237e').text('InfraWatch', 50, 30);
+      }
+    } else {
+      doc.fontSize(24).fillColor('#1a237e').text('InfraWatch', 50, 30);
     }
+    doc
+      .fontSize(16)
+      .fillColor('#1976d2')
+      .text('Plataforma: InfraWatch', 120, 35, { align: 'left' });
     doc.moveDown(1.5);
     doc
       .fontSize(22)
@@ -147,8 +131,8 @@ export class PDFReportService {
       } catch (e) {
         doc.fontSize(13).fillColor('#1a237e');
       }
-      // Largura fixa: 10 caracteres por coluna
-      const colWidth = 70; // Aproximadamente 10 caracteres em fonte monoespaçada
+      // Largura fixa: 10 caracteres por coluna, espaçamento reduzido
+      const colWidth = 55; // Menor para aproximar as colunas
       const colX = [
         60,
         60 + colWidth,
