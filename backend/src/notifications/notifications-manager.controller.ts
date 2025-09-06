@@ -14,6 +14,7 @@ import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@ne
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { NotificationsManagerService } from './notifications-manager.service';
 import { CreateNotificationDto, NotificationResponseDto } from './dto/notifications.dto';
+import { Public } from '../auth/public.decorator';
 
 interface AuthenticatedRequest {
   user: {
@@ -31,6 +32,7 @@ export class NotificationsManagerController {
   constructor(private readonly notificationsService: NotificationsManagerService) {}
 
   @Get()
+  @Public()
   @ApiOperation({ 
     summary: 'Buscar todas as notificações do usuário',
     description: 'Retorna todas as notificações do usuário logado com status de leitura (true = lida, false = não lida)'
