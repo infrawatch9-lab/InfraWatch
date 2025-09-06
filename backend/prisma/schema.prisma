@@ -118,15 +118,19 @@ model ServiceUserNotification {
 }
 
 model Notification {
-  id      Int                 @id @default(autoincrement())
-  userId  Int
-  alertId Int?
-  message String
-  type    NotificationType
-  channel NotificationChannel
-  sentAt  DateTime            @default(now())
-  Alert   Alert?              @relation(fields: [alertId], references: [id])
-  User    User                @relation(fields: [userId], references: [id])
+  id        Int                 @id @default(autoincrement())
+  userId    Int
+  alertId   Int?
+  title     String              @default("Notificação")
+  content   String              
+  message   String              @default("") // Manter message para compatibilidade
+  type      NotificationType
+  channel   NotificationChannel
+  timestamp DateTime            @default(now())
+  isRead    Boolean             @default(false)
+  readAt    DateTime?
+  Alert     Alert?              @relation(fields: [alertId], references: [id])
+  User      User                @relation(fields: [userId], references: [id])
 }
 
 model SLA {

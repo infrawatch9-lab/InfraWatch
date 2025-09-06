@@ -1,15 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { NotificationsService } from '../notifications/notifications.service';
-
+import { NotificationsManagerService } from '../notifications/notifications-manager.service';
 
 @Injectable()
 export class AlertService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
-    private readonly notificationsService: NotificationsService
+    private readonly notificationsService: NotificationsManagerService,
   ) {}
 
     async createAlert(alertData: {

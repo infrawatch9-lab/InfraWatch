@@ -20,7 +20,7 @@ export class HttpCheckcleService {
       service_type: "http",
       heartbeat_interval: monitoringConfig.interval,
       max_retries: 3,
-      status: service.status.toLowerCase() === 'active' ? 'up' : 'down',
+      status: this.mapLocalStatusToCheckcle(service.status), // Mapear o status real do serviço
       port: this.extractPortFromUrl(httpConfig.endpoint),
       region_name: "Luanda",
       notification_status: true,
@@ -50,6 +50,41 @@ export class HttpCheckcleService {
     } catch (error) {
       this.logger.warn(`Erro ao extrair porta da URL ${url}:`, error);
       return 80; // Porta padrão HTTP
+    }
+  }
+
+  /**
+   * Mapeia o status do CheckCle para o formato local
+   */
+  private mapCheckcleStatusToLocal(checkcleStatus: string): string {
+    switch (checkcleStatus?.toLowerCase()) {
+      case 'up':
+        return 'ACTIVE';
+      case 'down':
+      case 'failed':
+        return 'INACTIVE';
+      case 'paused':
+        return 'PAUSED';
+      case 'maintenance':
+        return 'PAUSED'; // Mapear maintenance para PAUSED
+      default:
+        return 'INACTIVE';
+    }
+  }
+
+  /**
+   * Mapeia o status local para o formato CheckCle
+   */
+  private mapLocalStatusToCheckcle(localStatus: string): string {
+    switch (localStatus?.toUpperCase()) {
+      case 'ACTIVE':
+        return 'up';
+      case 'INACTIVE':
+        return 'down';
+      case 'PAUSED':
+        return 'paused';
+      default:
+        return 'down';
     }
   }
 
@@ -126,7 +161,7 @@ export class HttpCheckcleService {
         id: service.id,
         name: service.name,
         type: service.type,
-        status: service.status,
+        status: service.status, // Status do banco como base
         description: service.description,
         targetSLA: service.targetSLA,
         team: service.Team ? {
@@ -143,6 +178,7 @@ export class HttpCheckcleService {
 
       // Try to get real-time monitoring data from CheckCle
       let monitoringData = {
+        status: service.status, // Fallback para status do banco se CheckCle falhar
         lastChecked: null,
         responseTime: null,
         uptime: 0
@@ -151,7 +187,17 @@ export class HttpCheckcleService {
       if (service.checkcleId) {
         try {
           const checkcleData = await this.getServiceStatus(service.checkcleId);
+          
+          // Lógica inteligente para o status:
+          // - Se o serviço está PAUSED localmente, manter esse status
+          // - Caso contrário, usar o status do CheckCle
+          let finalStatus = service.status;
+          if (!['PAUSED'].includes(service.status.toUpperCase())) {
+            finalStatus = this.mapCheckcleStatusToLocal(checkcleData.checkcleStatus);
+          }
+          
           monitoringData = {
+            status: finalStatus,
             lastChecked: checkcleData.lastChecked || null,
             responseTime: checkcleData.responseTime || null,
             uptime: checkcleData.uptime || 0
@@ -175,7 +221,7 @@ export class HttpCheckcleService {
         id: service.id,
         name: service.name,
         type: service.type,
-        status: service.status,
+        status: service.status, // Usar status do banco como fallback
         description: service.description,
         targetSLA: service.targetSLA,
         team: service.Team ? {

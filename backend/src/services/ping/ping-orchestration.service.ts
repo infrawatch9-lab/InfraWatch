@@ -101,7 +101,12 @@ export class PingOrchestrationService {
     // Atualizar no banco de dados
     const updatedService = await this.pingDatabaseService.updatePingService(serviceId, data);
     
-    console.log(`Serviço de ping atualizado: ${data.pingConfig.interval}`);
+    // Log apenas se pingConfig existir
+    if (data.pingConfig?.interval) {
+      console.log(`Serviço de ping atualizado: ${data.pingConfig.interval}`);
+    } else {
+      console.log(`Serviço de ping atualizado (sem alteração de configuração)`);
+    }
     
     // Emitir evento de atualização
     this.eventEmitter.emit('dashboard.updated', {
@@ -109,12 +114,26 @@ export class PingOrchestrationService {
       data,
     });
 
-    // Sincronizar com CheckCle
-    await this.syncServiceWithCheckcle('update', {
-      service: { ...existingService, name: data.name, description: data.description },
-      pingConfig: data.pingConfig,
-      monitoringConfig: { interval: data.pingConfig.interval, timeout: data.pingConfig.timeout }
-    }, existingService.checkcleId);
+    // Sincronizar com CheckCle apenas se houver checkcleId
+    if (existingService.checkcleId) {
+      // Usar configurações existentes se não foram fornecidas novas
+      const configToUse = data.pingConfig || existingService.configs?.PingConfig || {};
+      const monitoringConfigToUse = data.monitoringConfig || existingService.configs || {};
+      
+      await this.syncServiceWithCheckcle('update', {
+        service: { 
+          ...existingService, 
+          name: data.name || existingService.name, 
+          description: data.description || existingService.description,
+          status: data.status || existingService.status
+        },
+        pingConfig: configToUse,
+        monitoringConfig: {
+          interval: configToUse.interval || monitoringConfigToUse.interval || 60,
+          timeout: configToUse.timeout || monitoringConfigToUse.timeout || 5000
+        }
+      }, existingService.checkcleId);
+    }
     
     return updatedService;
   }

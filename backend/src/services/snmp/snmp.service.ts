@@ -10,7 +10,6 @@ import {
 import { ServiceType, SnmpVersion } from '@prisma/client';
 import { $Enums } from '@prisma/client';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { MicroservicesGateway } from '../../ws/microservices.gateway';
 
 @Injectable()
 export class SnmpService {
@@ -19,7 +18,6 @@ export class SnmpService {
     constructor(
     private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
-    private readonly microservicesGateway: MicroservicesGateway,
     ) {}
 
     async create(createServiceDto: SnmpDto): Promise<any> {
@@ -128,29 +126,6 @@ export class SnmpService {
           });
         }
 
-      const to_send = {
-      action: 'update',
-      id : result.service.id,
-      name: result.service.name,
-      description: result.service.description,
-      type: result.service.type,
-      status: result.service.status,
-      teamId: result.service.teamId,
-      configs: result.monitoringConfig,
-      rules: createServiceDto.rules || [],
-      usersToNotify: result.usersToNotify || [],
-    };
-    
-    // atualiza o monitoramento por websocket
-    if (process.env.APP_NAME && process.env.SNMP_SERVICE_NAME)
-    {
-      this.microservicesGateway.handleMessageRest({
-        from: process.env.APP_NAME,
-        to: process.env.SNMP_SERVICE_NAME,
-        payload: to_send,
-      });
-    }
-        
         return result;
       } catch (error) {
         this.logger.error('Error creating SNMP service', error);
@@ -219,13 +194,19 @@ export class SnmpService {
       throw new NotFoundException('Serviço de SNMP não encontrado');
     }
 
-      const service = await this.prisma.service.update({
+    // Preparar dados para atualizar o serviço principal (apenas campos fornecidos)
+    const updateData: any = {
+      type: ServiceType.SNMP,
+    };
+
+    // Incluir apenas campos que foram fornecidos
+    if (data.name) updateData.name = data.name;
+    if (data.description) updateData.description = data.description;
+    if (data.status) updateData.status = data.status;
+
+    const service = await this.prisma.service.update({
         where: { id: serviceId },
-        data: {
-            name: data.name,
-            description: data.description,
-            type: ServiceType.WEBHOOK,
-        },
+        data: updateData,
     });
 
     // Atualiza MonitoringConfig relacionado ao serviço
@@ -290,29 +271,6 @@ export class SnmpService {
       throw new NotFoundException('Serviço de SNMP atualizado não encontrado');
     }
     
-    const to_send = {
-      action: 'update',
-      id : updatedService.id,
-      name: updatedService.name,
-      description: updatedService.description,
-      type: updatedService.type,
-      status: updatedService.status,
-      teamId: updatedService.teamId,
-      configs: updatedService?.configs,
-      rules: updatedService.rules,
-      usersToNotify: updatedService.usersToNotify,
-    };
-    
-    // atualiza o monitoramento por websocket
-    if (process.env.APP_NAME && process.env.SNMP_SERVICE_NAME)
-    {
-      this.microservicesGateway.handleMessageRest({
-        from: process.env.APP_NAME,
-        to: process.env.SNMP_SERVICE_NAME,
-        payload: to_send,
-      });
-    }
-
     this.eventEmitter.emit('dashboard.updated', {
       serviceId,
       data,
@@ -338,20 +296,6 @@ export class SnmpService {
       }
     });
     
-    const to_send = {
-      action: 'delete',
-      id: service.id,
-    };
-
-    if (process.env.APP_NAME && process.env.SNMP_SERVICE_NAME)
-    {
-      this.microservicesGateway.handleMessageRest({
-        from: process.env.APP_NAME,
-        to: process.env.SNMP_SERVICE_NAME,
-        payload: to_send,
-      });
-    }
-
     return { message: 'Serviço de SNMP removido com sucesso' };
   }
 

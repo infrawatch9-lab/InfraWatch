@@ -154,40 +154,48 @@ export class PingDatabaseService {
    * Atualiza dados do serviço ping
    */
   async updatePingService(serviceId: number, data: CreatePingServiceDto): Promise<any> {
+    // Preparar dados para atualizar o serviço principal (apenas campos fornecidos)
+    const updateData: any = {
+      type: $Enums.ServiceType.PING,
+    };
+
+    // Incluir apenas campos que foram fornecidos
+    if (data.name) updateData.name = data.name;
+    if (data.description) updateData.description = data.description;
+    if (data.status) updateData.status = data.status;
+
     // Atualiza Service
     await this.prisma.service.update({
       where: { id: serviceId },
-      data: {
-        name: data.name,
-        description: data.description,
-        type: $Enums.ServiceType.PING,
-      },
+      data: updateData,
     });
 
-    // Atualiza MonitoringConfig relacionado ao serviço
-    const monitoringConfig = await this.prisma.monitoringConfig.findFirst({
-      where: { serviceId: serviceId },
-    });
-
-    if (monitoringConfig && data.pingConfig) {
-      await this.prisma.monitoringConfig.update({
-        where: { id: monitoringConfig.id },
-        data: {
-          interval: data.pingConfig.interval,
-          timeout: data.pingConfig.timeout,
-          webhookUrl: data.pingConfig.webhookUrl,
-        },
+    // Atualiza MonitoringConfig relacionado ao serviço apenas se pingConfig foi fornecido
+    if (data.pingConfig) {
+      const monitoringConfig = await this.prisma.monitoringConfig.findFirst({
+        where: { serviceId: serviceId },
       });
 
-      // Atualiza PingConfig relacionado ao MonitoringConfig
-      await this.prisma.pingConfig.updateMany({
-        where: { monitoringId: monitoringConfig.id },
-        data: {
-          ipAddress: data.pingConfig.ipAddress,
-          packetSize: data.pingConfig.packetSize,
-          ttl: data.pingConfig.ttl,
-        },
-      });
+      if (monitoringConfig) {
+        await this.prisma.monitoringConfig.update({
+          where: { id: monitoringConfig.id },
+          data: {
+            interval: data.pingConfig.interval,
+            timeout: data.pingConfig.timeout,
+            webhookUrl: data.pingConfig.webhookUrl,
+          },
+        });
+
+        // Atualiza PingConfig relacionado ao MonitoringConfig
+        await this.prisma.pingConfig.updateMany({
+          where: { monitoringId: monitoringConfig.id },
+          data: {
+            ipAddress: data.pingConfig.ipAddress,
+            packetSize: data.pingConfig.packetSize,
+            ttl: data.pingConfig.ttl,
+          },
+        });
+      }
     }
 
     // Retorna o serviço atualizado

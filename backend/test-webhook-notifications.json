@@ -1,0 +1,5 @@
+{
+  "message": "HTTP monitor for Google HTTP Service is DOWN. Status: DOWN, Response time: 5000ms",
+  "notify_name": "Google_HTTP_Service_http_19",
+  "timestamp": "2025-09-06T14:30:00Z"
+}

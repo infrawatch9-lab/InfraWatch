@@ -6,17 +6,23 @@ export class CreateNotificationDto {
   userId!: number;
 
   @ApiPropertyOptional({ description: 'ID do alerta relacionado' })
-  alertId!: number;
+  alertId?: number;
 
-  @ApiProperty({ description: 'Mensagem da notificação' })
-  message!: string;
+  @ApiProperty({ description: 'Título da notificação' })
+  title!: string;
+
+  @ApiProperty({ description: 'Conteúdo da notificação' })
+  content!: string;
+
+  @ApiPropertyOptional({ description: 'Mensagem (compatibilidade)' })
+  message?: string;
 
   @ApiProperty({ 
     description: 'Tipo da notificação',
-    enum: NotificationType,
-    enumName: 'NotificationType'
+    enum: ['info', 'warning', 'success', 'error'],
+    example: 'info'
   })
-  type!: NotificationType;
+  type!: 'info' | 'warning' | 'success' | 'error';
 
   @ApiProperty({ 
     description: 'Canal da notificação',
@@ -35,29 +41,20 @@ export class NotificationResponseDto {
   @ApiProperty({ description: 'ID da notificação' })
   id!: number;
 
-  @ApiProperty({ description: 'ID do usuário' })
-  userId!: number;
+  @ApiProperty({ description: 'Tipo da notificação', enum: ['info', 'warning', 'success', 'error'] })
+  type!: 'info' | 'warning' | 'success' | 'error';
 
-  @ApiPropertyOptional({ description: 'ID do alerta relacionado' })
-  alertId?: number;
+  @ApiProperty({ description: 'Título da notificação' })
+  title!: string;
 
-  @ApiProperty({ description: 'Mensagem da notificação' })
-  message!: string;
+  @ApiProperty({ description: 'Conteúdo da notificação' })
+  content!: string;
 
-  @ApiProperty({ description: 'Tipo da notificação', enum: NotificationType })
-  type!: NotificationType;
-
-  @ApiProperty({ description: 'Canal da notificação', enum: NotificationChannel })
-  channel!: NotificationChannel;
-
-  @ApiProperty({ description: 'Data de envio da notificação' })
-  sentAt!: Date;
+  @ApiProperty({ description: 'Data da notificação' })
+  timestamp!: string;
 
   @ApiProperty({ description: 'Se a notificação foi lida' })
-  isRead!: boolean;
-
-  @ApiPropertyOptional({ description: 'Data de leitura da notificação' })
-  readAt?: Date;
+  read!: boolean;
 }
 
 export class NotificationPaginationOptionsDto {

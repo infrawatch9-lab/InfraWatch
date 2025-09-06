@@ -30,6 +30,7 @@ export class MonitoringConfigDto {
 export interface BaseServiceDto {
   name: string;
   description: string;
+  status?: 'ACTIVE' | 'INACTIVE' | 'PAUSED';
   teamId?: number;
   usersToNotify: string[];
   rules?: CreateAlertRuleDto[];

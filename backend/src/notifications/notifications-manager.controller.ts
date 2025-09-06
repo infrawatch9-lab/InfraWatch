@@ -24,6 +24,23 @@ interface AuthenticatedRequest {
   };
 }
 
+interface CheckCleWebhookPayload {
+  message: string;
+  notify_name: string;
+  timestamp: string;
+}
+
+interface ProcessedAlert {
+  service_name: string;
+  service_type: string;
+  status: string;
+  response_time?: number;
+  timestamp: string;
+  event: string;
+  users_to_notify: Array<{ name: string; email: string }>;
+  service_info: any;
+}
+
 @ApiTags('Notifications Manager')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
@@ -56,26 +73,11 @@ export class NotificationsManagerController {
                 type: 'object',
                 properties: {
                   id: { type: 'number', example: 1 },
-                  message: { type: 'string', example: 'Serviço Google está fora do ar' },
-                  type: { type: 'string', enum: ['EMAIL', 'PUSH', 'SMS', 'SLACK', 'TELEGRAM'] },
-                  channel: { type: 'string', enum: ['EMAIL', 'PUSH', 'SMS', 'SLACK', 'TELEGRAM', 'WEBHOOK'] },
-                  sentAt: { type: 'string', format: 'date-time' },
-                  isRead: { type: 'boolean', example: false },
-                  readAt: { type: 'string', format: 'date-time', nullable: true },
-                  alert: {
-                    type: 'object',
-                    nullable: true,
-                    properties: {
-                      id: { type: 'number' },
-                      message: { type: 'string' },
-                      service: {
-                        type: 'object',
-                        properties: {
-                          name: { type: 'string' }
-                        }
-                      }
-                    }
-                  }
+                  type: { type: 'string', enum: ['info', 'warning', 'success', 'error'], example: 'error' },
+                  title: { type: 'string', example: 'ALERT: Google HTTP Service' },
+                  content: { type: 'string', example: 'Serviço: Google HTTP Service\nTipo: HTTP\nStatus: DOWN\nEvento: ALERT\nTimestamp: 06/09/2025 14:30:00' },
+                  timestamp: { type: 'string', format: 'date-time', example: '2025-09-06T14:30:00Z' },
+                  read: { type: 'boolean', example: false }
                 }
               }
             },
@@ -200,6 +202,211 @@ export class NotificationsManagerController {
   async markAllAsRead(@Request() req: AuthenticatedRequest) {
     const userId = req.user.sub;
     return this.notificationsService.markAllAsRead(userId);
+  }
+
+  @Post('checkcle-webhook')
+  @Public()
+  @ApiOperation({ 
+    summary: 'Webhook do CheckCle',
+    description: 'Recebe alertas do CheckCle e processa notificações para usuários'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Webhook processado com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'object',
+          properties: {
+            processed: { type: 'boolean', example: true },
+            serviceId: { type: 'number', example: 19 },
+            event: { type: 'string', example: 'ALERT' },
+            notified_users: { type: 'number', example: 3 }
+          }
+        }
+      }
+    }
+  })
+  async processCheckcleWebhook(@Body() payload: CheckCleWebhookPayload) {
+    try {
+      // 1. Processar o payload do CheckCle
+      const processedAlert = await this.processCheckclePayload(payload);
+      
+      // 2. Enviar notificações por email
+      await this.sendAlertNotifications(processedAlert);
+      
+      return {
+        success: true,
+        data: {
+          processed: true,
+          serviceId: parseInt(processedAlert.service_name.split('_')[2]) || null,
+          event: processedAlert.event,
+          notified_users: processedAlert.users_to_notify.length
+        }
+      };
+    } catch (error) {
+      console.error('❌ Erro ao processar webhook do CheckCle:', error);
+      throw new BadRequestException(`Erro ao processar webhook: ${(error as Error).message || 'Erro desconhecido'}`);
+    }
+  }
+
+  private async processCheckclePayload(payload: CheckCleWebhookPayload): Promise<ProcessedAlert> {
+    // 1. Detectar o tipo de evento baseado na mensagem
+    const event = this.detectEventType(payload.message);
+    
+    // 2. Extrair variáveis da mensagem
+    const messageData = this.extractMessageData(payload.message);
+    
+    // 3. Quebrar notify_name pelo underscore
+    const nameParts = payload.notify_name.split('_');
+    if (nameParts.length < 3) {
+      throw new BadRequestException('Formato de notify_name inválido. Esperado: nome_tipo_id');
+    }
+    
+    const serviceName = nameParts.slice(0, -2).join('_'); // Tudo menos os últimos 2
+    const serviceType = nameParts[nameParts.length - 2]; // Penúltimo
+    const serviceId = parseInt(nameParts[nameParts.length - 1]); // Último
+    
+    if (isNaN(serviceId)) {
+      throw new BadRequestException('ID do serviço inválido no notify_name');
+    }
+    
+    // 4. Buscar informações do serviço no banco
+    const serviceInfo = await this.notificationsService.getServiceWithUsers(serviceId);
+    
+    if (!serviceInfo) {
+      throw new NotFoundException(`Serviço com ID ${serviceId} não encontrado`);
+    }
+    
+    // 5. Montar JSON padronizado
+    return {
+      service_name: serviceName,
+      service_type: serviceType.toUpperCase(),
+      status: messageData.status || 'UNKNOWN',
+      response_time: messageData.response_time,
+      timestamp: payload.timestamp,
+      event,
+      users_to_notify: serviceInfo.usersToNotify.map((userNotif: any) => ({
+        name: userNotif.User.name,
+        email: userNotif.User.email
+      })),
+      service_info: serviceInfo
+    };
+  }
+
+  private detectEventType(message: string): string {
+    const upperMessage = message.toUpperCase();
+    
+    if (upperMessage.includes('DOWN') || upperMessage.includes('FAILED')) {
+      return 'ALERT';
+    } else if (upperMessage.includes('UP') || upperMessage.includes('RESTORED')) {
+      return 'RESOLVED';
+    } else if (upperMessage.includes('WARNING') || upperMessage.includes('DEGRADED')) {
+      return 'WARNING';
+    } else if (upperMessage.includes('MAINTENANCE')) {
+      return 'MAINTENANCE';
+    } else if (upperMessage.includes('INCIDENT')) {
+      return 'INCIDENT';
+    }
+    
+    return 'ALERT'; // Default
+  }
+
+  private extractMessageData(message: string): { status?: string; response_time?: number } {
+    const result: { status?: string; response_time?: number } = {};
+    
+    // Extrair status
+    const statusMatch = message.match(/Status:\s*(\w+)/i);
+    if (statusMatch) {
+      result.status = statusMatch[1].toUpperCase();
+    }
+    
+    // Extrair response_time
+    const responseTimeMatch = message.match(/response[_\s]?time[:\s]*(\d+(?:\.\d+)?)/i);
+    if (responseTimeMatch) {
+      result.response_time = parseFloat(responseTimeMatch[1]);
+    }
+    
+    return result;
+  }
+
+  private async sendAlertNotifications(alertData: ProcessedAlert) {
+    if (alertData.users_to_notify.length === 0) {
+      console.log('⚠️ Nenhum usuário para notificar');
+      return;
+    }
+    
+    // 1. Salvar notificações na base de dados
+    try {
+      await this.notificationsService.saveWebhookNotification(
+        alertData.users_to_notify,
+        {
+          service_name: alertData.service_name,
+          service_type: alertData.service_type,
+          status: alertData.status,
+          event: alertData.event,
+          timestamp: alertData.timestamp,
+          response_time: alertData.response_time
+        }
+      );
+      console.log(`💾 Notificações salvas na base de dados para ${alertData.users_to_notify.length} usuários`);
+    } catch (error) {
+      console.error('❌ Erro ao salvar notificações na base de dados:', error);
+    }
+    
+    // 2. Enviar notificações por email
+    // Montar mensagem personalizada
+    const subject = `🚨 ${alertData.event}: ${alertData.service_name}`;
+    
+    let emailMessage = `
+      Serviço: ${alertData.service_name}
+      Tipo: ${alertData.service_type}
+      Status: ${alertData.status}
+      Evento: ${alertData.event}
+      Timestamp: ${new Date(alertData.timestamp).toLocaleString('pt-BR')}
+    `;
+    
+    if (alertData.response_time) {
+      emailMessage += `\nTempo de Resposta: ${alertData.response_time}ms`;
+    }
+    
+    // Extrair apenas os emails
+    const emailAddresses = alertData.users_to_notify.map(user => user.email);
+    
+    try {
+      // Enviar usando templates dinâmicos (seleção automática)
+      await this.notificationsService.sendAlertWithTemplate(
+        emailMessage.trim(),
+        subject,
+        emailAddresses,
+        '', // Template será selecionado automaticamente
+        {
+          serviceName: alertData.service_name,
+          serviceType: alertData.service_type,
+          serviceUrl: alertData.service_name, // Pode ser melhorado com URL real
+          checkUrl: alertData.service_name,
+          status: alertData.status,
+          event: alertData.event,
+          timestamp: new Date(alertData.timestamp).toLocaleString('pt-BR'),
+          responseTime: alertData.response_time,
+          rootCause: 'Investigando causa raiz...',
+          userName: 'Usuário' // Será personalizado por usuário se necessário
+        }
+      );
+      
+      console.log(`📧 Notificação enviada para ${emailAddresses.length} usuários com template dinâmico:`, emailAddresses);
+    } catch (error) {
+      console.error('❌ Erro ao enviar notificação:', error);
+      // Fallback para envio simples
+      await this.notificationsService.sendNotificationToEmail(
+        emailMessage.trim(),
+        subject,
+        emailAddresses
+      );
+      console.log(`📧 Notificação enviada (fallback) para ${emailAddresses.length} usuários:`, emailAddresses);
+    }
   }
 
   @Post()

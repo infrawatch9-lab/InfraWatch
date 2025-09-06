@@ -10,9 +10,8 @@ import {
 import { ServiceType } from '@prisma/client';
 import { $Enums } from '@prisma/client';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { MicroservicesGateway } from '../../ws/microservices.gateway';
-import { NotificationsService } from '../../notifications/notifications.service';
 import { parseGithubWebhook } from './utils';
+import { NotificationsManagerService } from '../../notifications/notifications-manager.service';
 
 @Injectable()
 export class WebhookService {
@@ -21,8 +20,7 @@ export class WebhookService {
     constructor(
       private readonly prisma: PrismaService,
       private readonly eventEmitter: EventEmitter2,
-      private readonly microservicesGateway: MicroservicesGateway,
-      private readonly notificationsService: NotificationsService,
+      private readonly notificationsService: NotificationsManagerService,
     ) {}
 
   async create(createServiceDto: WebhookDto): Promise<any> {
