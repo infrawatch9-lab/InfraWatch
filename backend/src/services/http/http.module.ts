@@ -1,13 +1,14 @@
 import { Module } from '@nestjs/common';
 import { HttpController } from './http.controller';
 import { HttpService } from './http.service';
+import { HttpCheckcleService } from './http-checkcle.service';
 import { DatabaseModule } from '../../database/database.module';
-import { MicroservicesModule } from '../../ws/ws.module';
+import { CheckcleAuthModule } from '../../auth/checkCle';
 
 @Module({
-  imports: [DatabaseModule, MicroservicesModule],
+  imports: [DatabaseModule, CheckcleAuthModule],
   controllers: [HttpController],
-  providers: [HttpService],
-  exports: [HttpService],
+  providers: [HttpService, HttpCheckcleService],
+  exports: [HttpService, HttpCheckcleService],
 })
 export class HttpModule {}
