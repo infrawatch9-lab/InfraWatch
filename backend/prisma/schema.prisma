@@ -52,6 +52,7 @@ model Service {
   teamId        Int
   createdAt     DateTime                  @default(now())
   description   String                    @default("Sem descrição")
+  targetSLA     Float?                    @default(99.9) // SLA alvo por serviço
   alerts        Alert[]
   rules         AlertRule[]               @relation("ServiceToAlertRules")
   configs       MonitoringConfig?

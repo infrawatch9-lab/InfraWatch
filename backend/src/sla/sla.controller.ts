@@ -8,12 +8,14 @@ export class SlaController {
 
   @Post('calculate')
   @Public()
-  async calculateSLA(@Body() body: { serviceId: number; startDate: string; endDate: string }) {
+  async calculateSLA(
+    @Body() body: { serviceId: number; startDate: string; endDate: string },
+  ) {
     const { serviceId, startDate, endDate } = body;
     return await this.slaService.calculateSLA(
       serviceId,
       new Date(startDate),
-      new Date(endDate)
+      new Date(endDate),
     );
   }
 

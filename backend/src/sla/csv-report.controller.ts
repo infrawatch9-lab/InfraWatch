@@ -1,49 +1,33 @@
 import { Controller, Get, Param, Query, Res } from '@nestjs/common';
 import { Response } from 'express';
-import { PDFReportService } from './pdf-report.service';
+import { CSVReportService } from './csv-report.service';
 import { Public } from '../auth/public.decorator';
 
 @Controller('sla/reports/export')
-export class PDFReportController {
-  constructor(private readonly pdfService: PDFReportService) {}
+export class CSVReportController {
+  constructor(private readonly csvService: CSVReportService) {}
 
-  // Relatório geral
-  @Get('pdf')
-  async exportGeneralPDF(
+  // Relatório geral CSV
+  @Get('csv')
+  @Public()
+  async exportGeneralCSV(
     @Res() res: Response,
     @Query('period') period?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
     try {
-      const buffer = await this.pdfService.generateGeneralPDFWithPeriod(
+      const csv = await this.csvService.generateGeneralCSVWithPeriod(
         period,
         startDate,
         endDate,
       );
       
-      // Para o nome do arquivo, usa as datas calculadas
-      let start: Date | undefined;
-      let end: Date | undefined;
-      if (period) {
-        const now = new Date();
-        if (period === 'year')
-          start = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-        else if (period === 'month')
-          start = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-        else if (period === 'week')
-          start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        else start = startDate ? new Date(startDate) : undefined;
-        end = endDate ? new Date(endDate) : now;
-      } else {
-        start = startDate ? new Date(startDate) : undefined;
-        end = endDate ? new Date(endDate) : undefined;
-      }
-      // Nomenclatura: sla_geral.pdf
-      const fileName = 'sla_geral.pdf';
-      res.setHeader('Content-Type', 'application/pdf');
+      // Nomenclatura: sla_geral.csv
+      const fileName = 'sla_geral.csv';
+      res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-      res.send(buffer);
+      res.send(csv);
     } catch (error) {
       const err = error as any;
       
@@ -62,32 +46,29 @@ export class PDFReportController {
       } else {
         res.status(500).json({ 
           message: 'Erro interno ao gerar relatório', 
-          error: err.message 
+          error: err.message
         });
       }
     }
   }
 
-  // Relatório por tipo
-  @Get('pdf/type/:type')
-  async exportTypePDF(
+  // Relatório por tipo CSV
+  @Get('csv/type/:type')
+  @Public()
+  async exportTypeCSV(
     @Param('type') type: string,
     @Res() res: Response,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
     try {
-      const buffer = await this.pdfService.generateTypePDF(
-        type,
-        startDate,
-        endDate,
-      );
+      const csv = await this.csvService.generateTypeCSV(type, startDate, endDate);
       
-      // Nomenclatura: sla_{tipo}_geral.pdf
-      const fileName = `sla_${type.toLowerCase()}_geral.pdf`;
-      res.setHeader('Content-Type', 'application/pdf');
+      // Nomenclatura: sla_{tipo}_geral.csv
+      const fileName = `sla_${type.toLowerCase()}_geral.csv`;
+      res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-      res.send(buffer);
+      res.send(csv);
     } catch (error) {
       const err = error as any;
       
@@ -122,17 +103,16 @@ export class PDFReportController {
     }
   }
 
-    // Relatório individual
-  @Get('pdf/service/:serviceId')
-  async exportServicePDF(
+  // Relatório individual CSV
+  @Get('csv/service/:serviceId')
+  @Public()
+  async exportServiceCSV(
     @Param('serviceId') serviceId: string,
     @Res() res: Response,
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
   ) {
     try {
       // Buscar o tipo do serviço para a nomenclatura
-      const service = await (this.pdfService as any).slaService.prisma.service.findUnique({
+      const service = await (this.csvService as any).slaService.prisma.service.findUnique({
         where: { id: parseInt(serviceId, 10) },
         select: { type: true, name: true }
       });
@@ -144,17 +124,16 @@ export class PDFReportController {
         });
       }
       
-      const buffer = await this.pdfService.generateServicePDF(
-        parseInt(serviceId, 10),
-        startDate,
-        endDate,
-      );
+      const csv = await this.csvService.generateServiceCSV(parseInt(serviceId));
       
-      // Nomenclatura: sla_{tipo}.pdf
-      const fileName = `sla_${service.type.toLowerCase()}.pdf`;
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-      res.send(buffer);
+      // Nomenclatura: sla_{tipo}.csv
+      const fileName = `sla_${service.type.toLowerCase()}.csv`;
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${fileName}"`,
+      );
+      res.send(csv);
     } catch (error) {
       const err = error as any;
       
