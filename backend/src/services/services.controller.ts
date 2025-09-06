@@ -81,6 +81,68 @@ async findOne(@Param('id', ParseIntPipe) id: number) {
   return service;
 }
 
+@Get(':id/merged')
+@UseGuards(RolesGuard)
+@Roles('ADMIN', 'USER')
+@ApiBearerAuth()
+@ApiResponse({ 
+  status: 200, 
+  description: 'Serviço com dados do banco de dados mesclados com dados em tempo real do CheckCle.',
+  schema: {
+    example: {
+      id: 11,
+      name: "postgres",
+      type: "PING",
+      status: "ACTIVE",
+      description: "Monitoramento do servidor de banco de dados principal - PostgreSQL",
+      targetSLA: 99.9,
+      lastChecked: "2025-09-06T11:34:17.000Z",
+      responseTime: 11,
+      uptime: 0,
+      team: {
+        id: 2,
+        name: "Team 2"
+      },
+      usersToNotify: [
+        {
+          id: 1,
+          name: "Watch Dog",
+          email: "gkombadev@gmail.com",
+          role: "VIEWER"
+        }
+      ]
+    }
+  }
+})
+@ApiOperation({ summary: 'Buscar serviço pelo ID com dados mesclados (Banco + CheckCle)' })
+async findOneMerged(@Param('id', ParseIntPipe) id: number) {
+  console.log("Fetching merged service data with ID:", id);
+
+  // First, identify the service type
+  const service = await this.prisma.service.findUnique({
+    where: { id },
+    select: { type: true },
+  });
+
+  if (!service) {
+    throw new NotFoundException(`Serviço com ID ${id} não encontrado`);
+  }
+
+  // Call the appropriate service's findOne method (which now includes merged data)
+  switch (service.type) {
+    case 'SNMP':
+      return await this.snmpService.findOne(id);
+    case 'WEBHOOK':
+      return await this.webhookService.findOne(id);
+    case 'PING':
+      return await this.pingService.findOne(id);
+    case 'HTTP':
+      return await this.httpService.findOne(id);
+    default:
+      throw new BadRequestException(`Tipo de serviço não suportado: ${service.type}`);
+  }
+}
+
 
 @Get()
 @UseGuards(RolesGuard)
@@ -99,6 +161,59 @@ async findAll() {
     this.pingService.findAll(),
     this.httpService.findAll(),
   ]);
+  const services = [...snmp, ...webhook, ...ping, ...http];
+  return { services };
+}
+
+@Get('merged')
+@UseGuards(RolesGuard)
+@Roles('ADMIN', 'USER')
+@ApiBearerAuth()
+@ApiResponse({ 
+  status: 200, 
+  description: 'Lista de todos os serviços com dados mesclados (Banco + CheckCle)',
+  schema: {
+    example: {
+      services: [
+        {
+          id: 11,
+          name: "postgres",
+          type: "PING",
+          status: "ACTIVE",
+          description: "Monitoramento do servidor de banco de dados principal - PostgreSQL",
+          targetSLA: 99.9,
+          lastChecked: "2025-09-06T11:34:17.000Z",
+          responseTime: 11,
+          uptime: 0,
+          team: {
+            id: 2,
+            name: "Team 2"
+          },
+          usersToNotify: [
+            {
+              id: 1,
+              name: "Watch Dog",
+              email: "gkombadev@gmail.com",
+              role: "VIEWER"
+            }
+          ]
+        }
+      ]
+    }
+  }
+})
+@ApiOperation({ summary: 'Listar todos os serviços com dados mesclados (Banco + CheckCle)' })
+async findAllMerged() {
+  console.log("Fetching all services with merged data");
+
+  // Each service type's findAll() method now returns merged data
+  const [snmp, webhook, ping, http] = await Promise.all([
+    this.snmpService.findAll(),
+    this.webhookService.findAll(),
+    this.pingService.findAll(),
+    this.httpService.findAll(),
+  ]);
+  
   const services = [...snmp, ...webhook, ...ping, ...http];
   return { services };
 }

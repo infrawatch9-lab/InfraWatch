@@ -76,4 +76,55 @@ export class PingController {
   removeAll() {
     return this.pingService.removeAll();
   }
+
+  @Get(':id/checkcle-status')
+  @ApiOperation({ summary: 'Buscar status do serviço no CheckCle' })
+  @ApiResponse({ status: 200, description: 'Status do serviço no CheckCle.' })
+  getCheckcleStatus(@Param('id', ParseIntPipe) id: number) {
+    return this.pingService.getCheckcleServiceStatus(id);
+  }
+
+  @Get(':id/merged')
+  @ApiOperation({ summary: 'Buscar serviço com dados do banco + CheckCle merged' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Serviço com dados do banco de dados mesclados com dados em tempo real do CheckCle.',
+    schema: {
+      example: {
+        id: 11,
+        name: "postgres",
+        type: "PING",
+        status: "ACTIVE",
+        description: "Monitoramento do servidor de banco de dados principal - PostgreSQL",
+        targetSLA: 99.9,
+        lastChecked: "2025-09-06T11:34:17.000Z",
+        responseTime: 11,
+        uptime: 0,
+        team: {
+          id: 2,
+          name: "Team 2"
+        },
+        usersToNotify: [
+          {
+            id: 1,
+            name: "Watch Dog",
+            email: "gkombadev@gmail.com",
+            role: "VIEWER"
+          }
+        ]
+      }
+    }
+  })
+  getMergedServiceData(@Param('id', ParseIntPipe) id: number) {
+    return this.pingService.findOne(id);
+  }
+
+  @Get('sync-checkcle-status')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Sincronizar status de todos os serviços com CheckCle' })
+  @ApiResponse({ status: 200, description: 'Status sincronizado com CheckCle.' })
+  syncAllCheckcleStatus() {
+    return this.pingService.syncAllServicesStatus();
+  }
 }

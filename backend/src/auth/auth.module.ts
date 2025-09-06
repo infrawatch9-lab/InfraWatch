@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtService } from '@nestjs/jwt';
+import { CheckcleAuthModule } from './checkCle/checkcle-auth.module';
 
 @Module({
   imports: [
@@ -8,8 +9,9 @@ import { JwtService } from '@nestjs/jwt';
       secret: process.env.JWT_SECRET || 'supersecret', // use env ou fallback
       signOptions: { expiresIn: '1h' },
     }),
+    CheckcleAuthModule,
   ],
   providers: [],
-  exports: [JwtModule], // <- exporta o JwtModule para outros módulos
+  exports: [JwtModule, CheckcleAuthModule], // <- exporta o JwtModule e CheckcleAuthModule para outros módulos
 })
 export class AuthModule {}

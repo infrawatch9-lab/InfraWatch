@@ -46,6 +46,7 @@ model TeamMember {
 
 model Service {
   id            Int                       @id @default(autoincrement())
+  checkcleId    String?   
   name          String
   type          ServiceType
   status        ServiceStatus             @default(ACTIVE)
@@ -251,6 +252,14 @@ model EmailConfig {
   gmailAppPassword     String?
   gmailUser            String?
   notificationsConfig  NotificationsConfig @relation(fields: [configsId], references: [id], onDelete: Cascade)
+}
+
+model CheckcleToken {
+  id        Int      @id @default(autoincrement())
+  token     String
+  expiry    DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 
