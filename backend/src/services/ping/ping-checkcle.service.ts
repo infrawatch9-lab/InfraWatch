@@ -48,7 +48,7 @@ export class PingCheckcleService {
 
         case 'update':
           if (!checkcleId) throw new Error('CheckCle ID é necessário para atualização');
-          const updateResponse = await this.checkcleAuthService.callCheckCle(`/collections/services/records/${checkcleId}`, 'PUT', serviceData);
+          const updateResponse = await this.checkcleAuthService.callCheckCle(`/collections/services/records/${checkcleId}`, 'PATCH', serviceData);
           this.logger.log(`Serviço atualizado no CheckCle: ${checkcleId}`);
           
           return {

@@ -141,7 +141,7 @@ export class CheckcleAuthService {
     }
   }
 
-  async callCheckCle(endpoint: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET', body: any = null): Promise<any> {
+  async callCheckCle(endpoint: string, method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' = 'GET', body: any = null): Promise<any> {
     try {
       const checkcleUrl = this.configService.get<string>('CHECKCLE_URL');
       if (!checkcleUrl) {
@@ -164,7 +164,7 @@ export class CheckcleAuthService {
           },
         };
 
-        if (body && (method === 'POST' || method === 'PUT')) {
+        if (body && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
           config.data = body;
         }
 

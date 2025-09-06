@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Param, Body, Query } from '@nestjs/common';
+import { Controller, Post, Get, Param, Body, Query, Put, Patch, Delete } from '@nestjs/common';
 import { CheckcleAuthService } from './checkcle-auth.service';
 
 @Controller('checkcle-auth')
@@ -44,6 +44,26 @@ async callCheckCleGet(@Param('endpoint') endpoint: string | string[], @Query() q
 
     const fullEndpoint = `/${endpointPath}`;
     const result = await this.checkcleAuthService.callCheckCle(fullEndpoint, 'POST', body);
+    return result;
+  }
+
+  @Patch('call/*endpoint')
+  async callCheckClePatch(@Param('endpoint') endpoint: string | string[], @Body() body: any) {
+    // Garante que vira string com "/"
+    const endpointPath = Array.isArray(endpoint) ? endpoint.join('/') : endpoint;
+
+    const fullEndpoint = `/${endpointPath}`;
+    const result = await this.checkcleAuthService.callCheckCle(fullEndpoint, 'PATCH', body);
+    return result;
+  }
+
+  @Delete('call/*endpoint')
+  async callCheckCleDelete(@Param('endpoint') endpoint: string | string[]) {
+    // Garante que vira string com "/"
+    const endpointPath = Array.isArray(endpoint) ? endpoint.join('/') : endpoint;
+
+    const fullEndpoint = `/${endpointPath}`;
+    const result = await this.checkcleAuthService.callCheckCle(fullEndpoint, 'DELETE');
     return result;
   }
 }
