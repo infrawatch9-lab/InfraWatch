@@ -148,8 +148,15 @@ echo -e "\${YELLOW}📦 Instalando dependências...\${NC}"
 case $OS in
     ubuntu|debian)
         apt-get update
-        apt-get install -y curl jq python3 python3-pip
-        pip3 install psutil requests
+        apt-get install -y curl jq python3 python3-pip python3-venv
+        
+        # Detectar se é Ubuntu 24.04+ ou ambiente gerenciado externamente
+        if python3 -c "import sys; exit(0 if sys.version_info >= (3, 11) else 1)" 2>/dev/null; then
+            echo -e "\${YELLOW}🔧 Detectado ambiente Python gerenciado externamente, usando --break-system-packages...\${NC}"
+            pip3 install --break-system-packages psutil requests
+        else
+            pip3 install psutil requests
+        fi
         ;;
     centos|rhel|fedora)
         yum update -y
