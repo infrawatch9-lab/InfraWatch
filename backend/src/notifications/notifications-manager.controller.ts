@@ -241,7 +241,7 @@ export class NotificationsManagerController {
         success: true,
         data: {
           processed: true,
-          serviceId: parseInt(processedAlert.service_name.split('_')[2]) || null,
+          serviceId: processedAlert.service_info?.id || null,
           event: processedAlert.event,
           notified_users: processedAlert.users_to_notify.length
         }
@@ -253,39 +253,31 @@ export class NotificationsManagerController {
   }
 
   private async processCheckclePayload(payload: CheckCleWebhookPayload): Promise<ProcessedAlert> {
+    console.log('📩 Webhook recebido do CheckCle:', payload);
+
     // 1. Detectar o tipo de evento baseado na mensagem
     const event = this.detectEventType(payload.message);
     
-    // 2. Extrair variáveis da mensagem
-    const messageData = this.extractMessageData(payload.message);
+    // 2. Extrair informações da mensagem (incluindo nome do serviço e ID)
+    const messageData = this.extractServiceDataFromMessage(payload.message);
     
-    // 3. Quebrar notify_name pelo underscore
-    const nameParts = payload.notify_name.split('_');
-    if (nameParts.length < 3) {
-      throw new BadRequestException('Formato de notify_name inválido. Esperado: nome_tipo_id');
+    if (!messageData.serviceName || !messageData.serviceId) {
+      throw new BadRequestException('Não foi possível extrair informações do serviço da mensagem');
     }
     
-    const serviceName = nameParts.slice(0, -2).join('_'); // Tudo menos os últimos 2
-    const serviceType = nameParts[nameParts.length - 2]; // Penúltimo
-    const serviceId = parseInt(nameParts[nameParts.length - 1]); // Último
-    
-    if (isNaN(serviceId)) {
-      throw new BadRequestException('ID do serviço inválido no notify_name');
-    }
-    
-    // 4. Buscar informações do serviço no banco
-    const serviceInfo = await this.notificationsService.getServiceWithUsers(serviceId);
+    // 3. Buscar informações do serviço no banco
+    const serviceInfo = await this.notificationsService.getServiceWithUsers(messageData.serviceId);
     
     if (!serviceInfo) {
-      throw new NotFoundException(`Serviço com ID ${serviceId} não encontrado`);
+      throw new NotFoundException(`Serviço com ID ${messageData.serviceId} não encontrado`);
     }
     
-    // 5. Montar JSON padronizado
+    // 4. Montar JSON padronizado
     return {
-      service_name: serviceName,
-      service_type: serviceType.toUpperCase(),
+      service_name: messageData.serviceName,
+      service_type: messageData.serviceType || 'UNKNOWN',
       status: messageData.status || 'UNKNOWN',
-      response_time: messageData.response_time,
+      response_time: messageData.responseTime,
       timestamp: payload.timestamp,
       event,
       users_to_notify: serviceInfo.usersToNotify.map((userNotif: any) => ({
@@ -314,22 +306,95 @@ export class NotificationsManagerController {
     return 'ALERT'; // Default
   }
 
-  private extractMessageData(message: string): { status?: string; response_time?: number } {
-    const result: { status?: string; response_time?: number } = {};
+  private extractServiceDataFromMessage(message: string): {
+    serviceName?: string;
+    serviceId?: number;
+    serviceType?: string;
+    status?: string;
+    responseTime?: number;
+  } {
+    const result: any = {};
     
-    // Extrair status
-    const statusMatch = message.match(/Status:\s*(\w+)/i);
-    if (statusMatch) {
-      result.status = statusMatch[1].toUpperCase();
+    console.log('🔍 Analisando mensagem:', message);
+    
+    // Padrão 1: "Service leo_19_PING is DOWN"
+    const serviceMatch = message.match(/Service\s+([^_\s]+)_(\d+)_(\w+)\s+is\s+(\w+)/i);
+    if (serviceMatch) {
+      result.serviceName = serviceMatch[1]; // "leo"
+      result.serviceId = parseInt(serviceMatch[2]); // 19
+      result.serviceType = serviceMatch[3].toUpperCase(); // "PING"
+      result.status = serviceMatch[4].toUpperCase(); // "DOWN"
+      console.log('✅ Padrão 1 encontrado:', result);
     }
     
-    // Extrair response_time
+    // Se não encontrou o padrão acima, tentar padrões alternativos
+    if (!result.serviceName) {
+      // Padrão 2: "Service: leo_19_PING" ou linha "Service leo_19_PING"
+      const altServiceMatch = message.match(/Service[:\s]+([^_\s]+)_(\d+)_(\w+)/i);
+      if (altServiceMatch) {
+        result.serviceName = altServiceMatch[1];
+        result.serviceId = parseInt(altServiceMatch[2]);
+        result.serviceType = altServiceMatch[3].toUpperCase();
+        console.log('✅ Padrão 2 encontrado:', result);
+      }
+    }
+    
+    // Padrão 3: Buscar por linhas separadas (multiline)
+    if (!result.serviceName) {
+      const lines = message.split('\n');
+      for (const line of lines) {
+        const lineServiceMatch = line.match(/Service\s+([^_\s]+)_(\d+)_(\w+)/i);
+        if (lineServiceMatch) {
+          result.serviceName = lineServiceMatch[1];
+          result.serviceId = parseInt(lineServiceMatch[2]);
+          result.serviceType = lineServiceMatch[3].toUpperCase();
+          console.log('✅ Padrão 3 encontrado na linha:', line, result);
+          break;
+        }
+      }
+    }
+    
+    // Extrair status se não foi encontrado acima
+    if (!result.status) {
+      const statusMatch = message.match(/Status[:\s]+(\w+)/i);
+      if (statusMatch) {
+        result.status = statusMatch[1].toUpperCase();
+      }
+      
+      // Tentar encontrar status em "is DOWN" ou "is UP"
+      if (!result.status) {
+        const isStatusMatch = message.match(/is\s+(\w+)/i);
+        if (isStatusMatch) {
+          result.status = isStatusMatch[1].toUpperCase();
+        }
+      }
+    }
+    
+    // Extrair tipo se não foi encontrado acima
+    if (!result.serviceType) {
+      const typeMatch = message.match(/Type[:\s]+(\w+)/i);
+      if (typeMatch) {
+        result.serviceType = typeMatch[1].toUpperCase();
+      }
+    }
+    
+    // Extrair response time
     const responseTimeMatch = message.match(/response[_\s]?time[:\s]*(\d+(?:\.\d+)?)/i);
     if (responseTimeMatch) {
-      result.response_time = parseFloat(responseTimeMatch[1]);
+      result.responseTime = parseFloat(responseTimeMatch[1]);
     }
     
+    console.log('📋 Dados extraídos da mensagem:', result);
+    
     return result;
+  }
+
+  private extractMessageData(message: string): { status?: string; response_time?: number } {
+    const serviceData = this.extractServiceDataFromMessage(message);
+    return {
+      status: serviceData.status,
+      response_time: serviceData.responseTime
+    };
   }
 
   private async sendAlertNotifications(alertData: ProcessedAlert) {
