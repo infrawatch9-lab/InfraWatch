@@ -375,6 +375,7 @@ export class NotificationsManagerService {
     try {
       const processedHtml = this.templateEmail(templateData);
       await this.emailService.send(message, subject, processedHtml, to);
+      await this.slackService.send(message);
 
       console.log(`✅ Alerta enviado por email com template ${templateName} para:`, to.join(', '));
     } catch (error) {
