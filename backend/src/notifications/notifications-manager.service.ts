@@ -222,7 +222,7 @@ export class NotificationsManagerService {
   }
 
     async sendAlert(messageEmail: string, messageSlack: string, to: string[]) {
-    const subject = '🚨 Alerta de Serviço';
+    const subject = 'Alerta de Serviço';
     const html = '<b>' + messageEmail + '</b>';
 
     await this.telegramService.send(messageSlack);
@@ -414,7 +414,7 @@ export class NotificationsManagerService {
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background-color: #020E36; color: white; padding: 20px; text-align: center;">
-          <h1>🚨 InfraWatch Alert</h1>
+          <h1>InfraWatch</h1>
         </div>
         <div style="padding: 20px; background-color: #f9f9f9;">
           <h2>Detalhes do Alerta</h2>

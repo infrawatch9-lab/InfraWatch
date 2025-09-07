@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import nodemailer from 'nodemailer';
 import * as dotenv from 'dotenv';
-import { sendPingAlert } from './alerts/pingUtils';
 dotenv.config();
 
 const transporter = nodemailer.createTransport({
@@ -37,11 +36,12 @@ export class EmailService {
     }
   }
 
-  async sendAlert(type: 'ping' | 'SNMP' | 'HTTP' | 'WEBHOOK', data: any, alertID?: number) {
+  async sendAlert(type: 'PING' | 'SNMP' | 'HTTP' | 'WEBHOOK', data: any, alertID?: number) {
     try {
       switch (type) {
-        case 'ping':
-          return await sendPingAlert(data, alertID);
+        case 'PING':
+          console.log('📧 Enviando alerta de Ping...');
+          break;
         case 'SNMP':
           console.log('🔧 Tipo de alerta "SNMP" ainda não implementado');
           break;
