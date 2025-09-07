@@ -15,25 +15,40 @@ export class WebhookProcessorUtil {
    * Processa o payload completo do webhook CheckCle
    */
   async processWebhookPayload(payload: CheckCleWebhookPayload): Promise<ProcessedAlert> {
-    console.log('📩 Webhook recebido do CheckCle:', payload);
+    console.log('📩 Webhook recebido do CheckCle:', JSON.stringify(payload, null, 2));
 
     // 1. Extrair informações da mensagem
     const messageData = MessageParserUtil.extractServiceData(payload.message);
+    console.log('🔍 Dados extraídos da mensagem:', JSON.stringify(messageData, null, 2));
     
     // 2. Validar dados extraídos
     this.validateExtractedData(messageData);
     
     // 3. Detectar tipo de evento
     const event = EventDetectorUtil.detectEventType(payload.message, messageData);
+    console.log('📝 Evento detectado:', event);
     
     // 4. Buscar informações do serviço no banco
+    console.log('🔍 Buscando informações do serviço ID:', messageData.serviceId);
     const serviceInfo = await this.getServiceInfo(messageData.serviceId!);
+    console.log('📊 Serviço encontrado:', JSON.stringify({
+      id: serviceInfo?.id,
+      name: serviceInfo?.name,
+      usersCount: serviceInfo?.usersToNotify?.length || 0
+    }, null, 2));
     
     // 5. Atualizar status do serviço
     await this.updateServiceStatus(messageData);
     
     // 6. Montar resposta padronizada
-    return this.buildProcessedAlert(messageData, event, payload.timestamp, serviceInfo);
+    const processedAlert = this.buildProcessedAlert(messageData, event, payload.timestamp, serviceInfo);
+    console.log('✅ Alert processado:', JSON.stringify({
+      service_name: processedAlert.service_name,
+      event: processedAlert.event,
+      users_to_notify_count: processedAlert.users_to_notify.length
+    }, null, 2));
+    
+    return processedAlert;
   }
 
   /**

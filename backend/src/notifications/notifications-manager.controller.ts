@@ -16,7 +16,7 @@ import { NotificationsManagerService } from './notifications-manager.service';
 import { CreateNotificationDto, NotificationResponseDto } from './dto/notifications.dto';
 import { Public } from '../auth/public.decorator';
 import { AuthenticatedRequest, CheckCleWebhookPayload, ProcessedAlert } from './notifications.dtos';
-import { WebhookProcessorUtil, AlertNotificationSender } from './utils';
+import { WebhookProcessorUtil, AlertNotificationSender, AuthUtils } from './utils';
 
 @ApiTags('Notifications Manager')
 @ApiBearerAuth()
@@ -32,7 +32,6 @@ export class NotificationsManagerController {
   }
 
   @Get()
-  @Public()
   @ApiOperation({ 
     summary: 'Buscar todas as notificações do usuário',
     description: 'Retorna todas as notificações do usuário logado com status de leitura (true = lida, false = não lida)'
@@ -85,7 +84,7 @@ export class NotificationsManagerController {
     @Query('limit') limit: string = '20',
     @Query('unreadOnly') unreadOnly: string = 'false'
   ) {
-    const userId = req.user.sub;
+    const userId = AuthUtils.extractUserId(req);
     const pageNum = parseInt(page, 10);
     const limitNum = parseInt(limit, 10);
     const unreadOnlyBool = unreadOnly === 'true';
@@ -123,7 +122,7 @@ export class NotificationsManagerController {
     }
   })
   async getUnreadCount(@Request() req: AuthenticatedRequest) {
-    const userId = req.user.sub;
+    const userId = AuthUtils.extractUserId(req);
     return this.notificationsService.getUnreadCount(userId);
   }
 
@@ -151,7 +150,7 @@ export class NotificationsManagerController {
     }
   })
   async markAsRead(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
-    const userId = req.user.sub;
+    const userId = AuthUtils.extractUserId(req);
     const notificationId = parseInt(id, 10);
 
     if (isNaN(notificationId)) {
@@ -183,7 +182,7 @@ export class NotificationsManagerController {
     }
   })
   async markAllAsRead(@Request() req: AuthenticatedRequest) {
-    const userId = req.user.sub;
+    const userId = AuthUtils.extractUserId(req);
     return this.notificationsService.markAllAsRead(userId);
   }
 

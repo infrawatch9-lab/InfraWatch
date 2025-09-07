@@ -1,8 +1,12 @@
 export interface AuthenticatedRequest {
   user: {
+    id: number;
+    userId: number;
     sub: number;
     email: string;
     role: string;
+    name: string;
+    status: string;
   };
 }
 
