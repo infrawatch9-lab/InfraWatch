@@ -12,6 +12,7 @@ import { SlaModule } from './sla/sla.module';
 import { DashboardModule } from './dashboards/dashboard.module';
 import { AlertModule } from './alerts/alerts.module';
 import { AlertService } from './alerts/alerts.service';
+import { AgentsModule } from './agents/agents.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { AlertService } from './alerts/alerts.service';
     ServicesModule,
     SlaModule,
     AlertModule,
+    AgentsModule,
   ],
   controllers: [AppController],
   providers: [AlertService],

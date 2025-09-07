@@ -5,8 +5,8 @@ import { Injectable } from "@nestjs/common";
 
 @Injectable()
 export class JwtService {
-  sign(payload: any): string {
-    return jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: '1h' });
+  sign(payload: any, expiresIn: string = '1h'): string {
+    return jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn } as any);
   }
 
   verify(token: string): any {

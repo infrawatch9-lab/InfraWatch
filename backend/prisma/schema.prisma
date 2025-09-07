@@ -25,6 +25,7 @@ model User {
   notifications            Notification[]
   serviceUserNotifications ServiceUserNotification[]
   teams                    TeamMember[]
+  agents                   Agent[]
 }
 
 model Team {
@@ -365,4 +366,64 @@ enum MonitoringMode {
   cron
   agent
   both
+}
+
+model Agent {
+  id        String       @id @default(uuid())
+  hostname  String
+  ip        String
+  os        String
+  arch      String
+  version   String       @default("1.0.0")
+  token     String       @unique
+  status    AgentStatus  @default(PENDING)
+  userId    Int
+  lastSeen  DateTime?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  
+  User      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  metrics   AgentMetrics[]
+  
+  @@index([userId])
+  @@index([hostname])
+  @@index([status])
+}
+
+model AgentMetrics {
+  id                   Int      @id @default(autoincrement())
+  agentId              String
+  hostname             String
+  timestamp            DateTime
+  cpuUsage             Float
+  cpuCores             Int
+  load1                Float
+  load5                Float
+  load15               Float
+  memoryTotal          BigInt
+  memoryUsed           BigInt
+  memoryFree           BigInt
+  memoryAvailable      BigInt
+  memoryUsagePercent   Float
+  diskData             String   // JSON array of disk info
+  networkData          String   // JSON array of network info
+  processesTotal       Int
+  processesRunning     Int
+  processesSleeping    Int
+  processesZombie      Int
+  uptime               BigInt
+  createdAt            DateTime @default(now())
+  
+  Agent                Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  
+  @@index([agentId])
+  @@index([timestamp])
+  @@index([hostname])
+}
+
+enum AgentStatus {
+  PENDING
+  ACTIVE
+  INACTIVE
+  ERROR
 }
