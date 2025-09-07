@@ -373,44 +373,17 @@ export class NotificationsManagerService {
     templateData: any
   ) {
     try {
-      // 1. Selecionar template automaticamente se não especificado
-      const finalTemplateName = templateName || this.selectTemplate(
-        templateData.serviceType, 
-        templateData.status, 
-        templateData.event
-      );
-
-      console.log(`📧 Usando template: ${finalTemplateName} para ${templateData.serviceType}/${templateData.status}`);
-
-      // 2. Carregar template HTML
-      const templateHtml = await this.loadTemplate(finalTemplateName);
-
-      // 3. Substituir variáveis
-      const processedHtml = this.replaceTemplateVariables(templateHtml, {
-        ...templateData,
-        userName: 'Usuário', // Pode ser personalizado por usuário
-        serviceUrl: templateData.serviceUrl || templateData.serviceName,
-        checkUrl: templateData.checkUrl || templateData.serviceUrl,
-        rootCause: templateData.rootCause || 'Verificando causa raiz...'
-      });
-
-      // 4. Enviar email com template processado
+      const processedHtml = this.templateEmail(templateData);
       await this.emailService.send(message, subject, processedHtml, to);
-      
-      console.log(`✅ Alerta enviado por email com template ${finalTemplateName} para:`, to.join(', '));
+
+      console.log(`✅ Alerta enviado por email com template ${templateName} para:`, to.join(', '));
     } catch (error) {
-      console.error('❌ Erro ao enviar com template:', error);
-      
-      // Fallback para template inline simples
-      const fallbackHtml = this.generateFallbackTemplate(templateData);
-      await this.emailService.send(message, subject, fallbackHtml, to);
-      
-      console.log('📧 Email enviado com template fallback');
+      console.error('❌ Erro ao enviar Email:', error);
     }
   }
 
   // Template fallback caso os arquivos não estejam disponíveis
-  private generateFallbackTemplate(data: any): string {
+  private templateEmail(data: any): string {
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background-color: #020E36; color: white; padding: 20px; text-align: center;">
