@@ -654,4 +654,123 @@ export class NotificationsManagerService {
       throw new BadRequestException('Erro ao salvar notificações do webhook');
     }
   }
+
+  // Atualizar status do serviço na base de dados local
+  async updateServiceStatus(
+    serviceId: number, 
+    status: string, 
+    serviceType: string,
+    responseTime?: number
+  ) {
+    try {
+      // Mapear status para ServiceStatus enum
+      let mappedStatus: 'UP' | 'DOWN' | 'DEGRADED' | 'PENDING' | 'PAUSED' | 'ACTIVE' | 'INACTIVE';
+      
+      switch (status.toUpperCase()) {
+        case 'UP':
+        case 'ACTIVE':
+        case 'OK':
+          mappedStatus = 'UP';
+          break;
+        case 'DOWN':
+        case 'FAILED':
+        case 'ERROR':
+          mappedStatus = 'DOWN';
+          break;
+        case 'DEGRADED':
+        case 'WARNING':
+        case 'WARN':
+          mappedStatus = 'DEGRADED';
+          break;
+        case 'PENDING':
+          mappedStatus = 'PENDING';
+          break;
+        case 'PAUSED':
+          mappedStatus = 'PAUSED';
+          break;
+        case 'INACTIVE':
+          mappedStatus = 'INACTIVE';
+          break;
+        default:
+          mappedStatus = 'DOWN';
+      }
+
+      // 1. Atualizar o status do serviço
+      const updatedService = await this.prisma.service.update({
+        where: { id: serviceId },
+        data: {
+          status: mappedStatus
+        },
+        include: {
+          configs: {
+            include: {
+              HttpConfig: true,
+              PingConfig: true
+            }
+          }
+        }
+      });
+
+      // 2. Atualizar campos específicos nos configs se responseTime fornecido
+      if (responseTime !== undefined && updatedService.configs) {
+        const type = serviceType.toUpperCase();
+        
+        try {
+          if (type === 'HTTP' && updatedService.configs.HttpConfig) {
+            // Atualizar expectedResponseTimeMs no HttpConfig
+            await this.prisma.httpConfig.update({
+              where: { 
+                monitoringId: updatedService.configs.id 
+              },
+              data: {
+                responseTime: Math.round(responseTime),
+                updatedAt: new Date()
+              }
+            });
+            console.log(`✅ HttpConfig atualizado com responseTime: ${responseTime}ms`);
+          } else if (type === 'PING' && updatedService.configs.PingConfig) {
+            await this.prisma.pingConfig.update({
+              where: { 
+                monitoringId: updatedService.configs.id 
+              },
+              data: {
+                responseTime: Math.round(responseTime),
+              }
+            });
+            console.log(`✅ PINGConfig atualizado com responseTime: ${responseTime}ms`);
+          }
+        } catch (configError) {
+          console.error('⚠️ Erro ao atualizar config específico (continuando):', configError);
+        }
+      }
+
+      console.log(`✅ Status do serviço ${serviceId} atualizado:`, {
+        id: updatedService.id,
+        name: updatedService.name,
+        status: updatedService.status,
+        type: serviceType,
+        responseTime: responseTime
+      });
+
+      return {
+        success: true,
+        data: {
+          id: updatedService.id,
+          name: updatedService.name,
+          status: updatedService.status,
+          type: serviceType,
+          responseTime: responseTime
+        }
+      };
+
+    } catch (error) {
+      console.error(`❌ Erro ao atualizar status do serviço ${serviceId}:`, error);
+      
+      if ((error as any)?.code === 'P2025') {
+        throw new NotFoundException(`Serviço com ID ${serviceId} não encontrado`);
+      }
+      
+      throw new BadRequestException(`Erro ao atualizar status do serviço: ${(error as Error).message}`);
+    }
+  }
 }

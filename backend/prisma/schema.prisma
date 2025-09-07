@@ -177,6 +177,7 @@ model PingConfig {
   ipAddress    String
   packetSize   Int?
   ttl          Int?
+  responseTime Int?
   Monitoring   MonitoringConfig @relation(fields: [monitoringId], references: [id], onDelete: Cascade)
 }
 
@@ -218,6 +219,7 @@ model HttpConfig {
   expectedBodyIncludes    String?
   expectedResponseTimeMs  Int?
   expectedHeadersIncludes Json?
+  responseTime           Int?
   retries                 Int?
   createdAt               DateTime         @default(now())
   updatedAt               DateTime         @updatedAt

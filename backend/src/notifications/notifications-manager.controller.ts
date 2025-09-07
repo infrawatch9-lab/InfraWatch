@@ -15,31 +15,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { NotificationsManagerService } from './notifications-manager.service';
 import { CreateNotificationDto, NotificationResponseDto } from './dto/notifications.dto';
 import { Public } from '../auth/public.decorator';
-
-interface AuthenticatedRequest {
-  user: {
-    sub: number;
-    email: string;
-    role: string;
-  };
-}
-
-interface CheckCleWebhookPayload {
-  message: string;
-  notify_name: string;
-  timestamp: string;
-}
-
-interface ProcessedAlert {
-  service_name: string;
-  service_type: string;
-  status: string;
-  response_time?: number;
-  timestamp: string;
-  event: string;
-  users_to_notify: Array<{ name: string; email: string }>;
-  service_info: any;
-}
+import { AuthenticatedRequest, CheckCleWebhookPayload, ProcessedAlert } from './notifications.dtos';
 
 @ApiTags('Notifications Manager')
 @ApiBearerAuth()
@@ -272,7 +248,20 @@ export class NotificationsManagerController {
       throw new NotFoundException(`Serviço com ID ${messageData.serviceId} não encontrado`);
     }
     
-    // 4. Montar JSON padronizado
+    // 4. Atualizar status do serviço na base de dados local
+    try {
+      await this.notificationsService.updateServiceStatus(
+        messageData.serviceId,
+        messageData.status || 'UNKNOWN',
+        messageData.serviceType || 'UNKNOWN',
+        messageData.responseTime
+      );
+      console.log(`✅ Status do serviço ${messageData.serviceId} atualizado para ${messageData.status}`);
+    } catch (statusError) {
+      console.error('⚠️ Erro ao atualizar status do serviço (continuando):', statusError);
+    }
+    
+    // 5. Montar JSON padronizado
     return {
       service_name: messageData.serviceName,
       service_type: messageData.serviceType || 'UNKNOWN',
@@ -289,6 +278,48 @@ export class NotificationsManagerController {
   }
 
   private detectEventType(message: string): string {
+    // Primeiro, tentar extrair o tipo de incidente do formato tokenizado
+    const messageData = this.extractServiceDataFromMessage(message);
+    if (messageData.incidentType) {
+      const incidentType = messageData.incidentType.toUpperCase();
+      
+      // Mapear tipos de incidente para eventos
+      switch (incidentType) {
+        case 'INFO':
+          // Para INFO, usar o status para determinar o evento
+          if (messageData.status === 'UP') {
+            return 'RESOLVED';
+          } else if (messageData.status === 'DOWN') {
+            return 'ALERT';
+          }
+          return 'INFO';
+        case 'ALERT':
+        case 'CRITICAL':
+        case 'ERROR':
+          return 'ALERT';
+        case 'WARNING':
+        case 'WARN':
+          return 'WARNING';
+        case 'RESOLVED':
+        case 'RECOVERY':
+        case 'OK':
+          return 'RESOLVED';
+        case 'MAINTENANCE':
+          return 'MAINTENANCE';
+        case 'INCIDENT':
+          return 'INCIDENT';
+        default:
+          // Se não reconhecer o tipo, usar o status
+          if (messageData.status === 'UP') {
+            return 'RESOLVED';
+          } else if (messageData.status === 'DOWN') {
+            return 'ALERT';
+          }
+          return incidentType;
+      }
+    }
+    
+    // Fallback para análise do texto da mensagem (formato antigo)
     const upperMessage = message.toUpperCase();
     
     if (upperMessage.includes('DOWN') || upperMessage.includes('FAILED')) {
@@ -312,11 +343,60 @@ export class NotificationsManagerController {
     serviceType?: string;
     status?: string;
     responseTime?: number;
+    incidentType?: string;
+    timestamp?: string;
   } {
     const result: any = {};
     
     console.log('🔍 Analisando mensagem:', message);
     
+    // Novo formato tokenizado: 'INFO|API Gateway Service_20_HTTP|UP|HTTP|248ms|2025-09-07 17:02:50'
+    if (message.includes('|')) {
+      const tokens = message.split('|');
+      
+      if (tokens.length >= 6) {
+        // Token 0: Tipo de incidente (INFO, ALERT, WARNING, etc.)
+        result.incidentType = tokens[0].trim().toUpperCase();
+        
+        // Token 1: Nome_ID_Tipo do serviço (ex: "API Gateway Service_20_HTTP")
+        const serviceToken = tokens[1].trim();
+        const serviceMatch = serviceToken.match(/^(.+)_(\d+)_(\w+)$/);
+        if (serviceMatch) {
+          result.serviceName = serviceMatch[1].trim(); // "API Gateway Service"
+          result.serviceId = parseInt(serviceMatch[2]); // 20
+          result.serviceType = serviceMatch[3].toUpperCase(); // "HTTP"
+          console.log('✅ Service data extraído do token:', result);
+        } else {
+          console.log('⚠️ Formato do service token não reconhecido:', serviceToken);
+        }
+        
+        // Token 2: Status (UP, DOWN, etc.)
+        result.status = tokens[2].trim().toUpperCase();
+        
+        // Token 3: Tipo (novamente) - pode ser usado para validação
+        const serviceTypeValidation = tokens[3].trim().toUpperCase();
+        if (result.serviceType && result.serviceType !== serviceTypeValidation) {
+          console.log('⚠️ Inconsistência no tipo de serviço:', result.serviceType, 'vs', serviceTypeValidation);
+        }
+        
+        // Token 4: Response time (ex: "248ms")
+        const responseTimeToken = tokens[4].trim();
+        const responseTimeMatch = responseTimeToken.match(/(\d+(?:\.\d+)?)(?:ms)?/);
+        if (responseTimeMatch) {
+          result.responseTime = parseFloat(responseTimeMatch[1]);
+        }
+        
+        // Token 5: Timestamp
+        result.timestamp = tokens[5].trim();
+        
+        console.log('✅ Dados extraídos do formato tokenizado:', result);
+        return result;
+      } else {
+        console.log('⚠️ Formato tokenizado incompleto, tentando parsers alternativos');
+      }
+    }
+    
+    // Fallback para formatos antigos caso o tokenizado falhe
     // Padrão 1: "Service leo_19_PING is DOWN"
     const serviceMatch = message.match(/Service\s+([^_\s]+)_(\d+)_(\w+)\s+is\s+(\w+)/i);
     if (serviceMatch) {
@@ -378,10 +458,12 @@ export class NotificationsManagerController {
       }
     }
     
-    // Extrair response time
-    const responseTimeMatch = message.match(/response[_\s]?time[:\s]*(\d+(?:\.\d+)?)/i);
-    if (responseTimeMatch) {
-      result.responseTime = parseFloat(responseTimeMatch[1]);
+    // Extrair response time se não foi encontrado acima
+    if (!result.responseTime) {
+      const responseTimeMatch = message.match(/response[_\s]?time[:\s]*(\d+(?:\.\d+)?)/i);
+      if (responseTimeMatch) {
+        result.responseTime = parseFloat(responseTimeMatch[1]);
+      }
     }
     
     console.log('📋 Dados extraídos da mensagem:', result);
