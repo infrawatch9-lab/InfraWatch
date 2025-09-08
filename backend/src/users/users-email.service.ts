@@ -22,6 +22,23 @@ export class EmailService {
     }
   }
 
+  static async sendOTP(email: string, name: string, otp: string) {
+    try {
+      await sendEmail(
+        email,
+        'InfraWatch - Código OTP',
+        'Seu código OTP para redefinição de senha',
+        `
+          <p>Olá ${name},</p>
+          <p>Seu código OTP para redefinição de senha é: <strong>${otp}</strong></p>
+          <p>Este código é válido por 10 minutos.</p>
+        `,
+      );
+    } catch (error) {
+      console.error('Erro ao enviar email:', error);
+    }
+  }
+
   static async sendPasswordChanged(email: string, name: string) {
     try {
       // to, subject, text, html

@@ -119,4 +119,18 @@ export class UsersController {
   async deleteUser(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.deleteUser(id);
   }
+
+  @Post('send-otp')
+  @Public()
+  @ApiOperation({ summary: 'Send OTP for password reset' })
+  async sendOtp(@Body() body: { email: string }) {
+    return this.usersService.generateOTP(body.email);
+  }
+
+  @Post('validate-otp')
+  @Public()
+  @ApiOperation({ summary: 'Validate OTP for password reset' })
+  async validateOtp(@Body() body: { email: string; otp: string }) {
+    return this.usersService.validateAndDeleteOTP(body.email, body.otp);
+  }
 }

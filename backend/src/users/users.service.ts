@@ -472,6 +472,66 @@ export class UsersService {
     }
   }
 
+  async generateOTP(email: string): Promise<{ success: boolean; message: string }> {
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      throw {
+        success: false,
+        message: 'Usuário com este email não encontrado',
+        statusCode: 404,
+      };
+    }
+
+    await prisma.oTP.create({
+      data: {
+        email,
+        otp,
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutos
+      },
+    });
+    
+    await EmailService.sendOTP(
+      email,
+      user.name,
+      otp,
+    );
+
+    return {
+      success: true,
+      message: 'Código de verificação enviado para seu email'
+    };
+  }
+
+  async validateAndDeleteOTP(email: string, otp: string): Promise<boolean> {
+    const record = await prisma.oTP.findFirst({
+      where: {
+        email,
+        otp,
+        expiresAt: {
+          gt: new Date()
+        }
+      }
+    });
+
+
+    if (record) {
+      await prisma.oTP.deleteMany({
+        where: {
+          email,
+          otp
+        }
+      });
+      return true;
+    }
+    return false;
+  }
+
   // Método para redefinir senha
   async resetPassword(
     userId: number,

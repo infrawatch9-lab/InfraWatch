@@ -7,6 +7,7 @@ import { SlackService } from './slack.service';
 import { Prisma } from '@prisma/client';
 import * as fs from 'fs';
 import * as path from 'path';
+import { Console } from 'console';
 
 @Injectable()
 export class NotificationsManagerService {
@@ -642,13 +643,9 @@ export class NotificationsManagerService {
       
       switch (status.toUpperCase()) {
         case 'UP':
-        case 'ACTIVE':
-        case 'OK':
           mappedStatus = 'UP';
           break;
         case 'DOWN':
-        case 'FAILED':
-        case 'ERROR':
           mappedStatus = 'DOWN';
           break;
         case 'DEGRADED':
@@ -670,6 +667,7 @@ export class NotificationsManagerService {
       }
 
       // 1. Atualizar o status do serviço
+      console.log(`🔄 Atualizando status do serviço ${serviceId} para ${mappedStatus} HEREEEE`);
       const updatedService = await this.prisma.service.update({
         where: { id: serviceId },
         data: {
