@@ -10,14 +10,17 @@ import {
   ParseIntPipe,
   Delete,
   HttpCode,
+  Res,
+  Req,
 } from '@nestjs/common';
+import { Response, Request as ExpressRequest } from 'express';
 import { UsersService } from './users.service';
 import { RolesGuard } from '../auth/roles.guard';
 import {
-  CreateUserDto,
-  LoginDto,
   ResetPasswordDto,
   UpdateUserDto,
+  CreateUserDto,
+  LoginDto,
 } from './user.entity';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Roles } from '../auth/roles.decorator';
@@ -27,6 +30,18 @@ import { Public } from '../auth/public.decorator';
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+  @Post('logout')
+  @HttpCode(200)
+  async logout(@Res() res: Response, @Req() req: ExpressRequest) {
+    res.cookie('token', '', {
+      httpOnly: true,
+      expires: new Date(0),
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+    });
+    return res.json({ message: 'Logout realizado com sucesso.' });
+  }
 
   @Post('login')
   @Public()
