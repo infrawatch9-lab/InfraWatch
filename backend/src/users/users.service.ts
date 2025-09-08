@@ -535,12 +535,19 @@ export class UsersService {
 
   async resetPasswordWithOTP(email: string, otp: string, newPassword: string) : Promise<{ success: boolean; message: string }> {
 
-    await prisma.oTP.deleteMany({
+    const deleted = await prisma.oTP.deleteMany({
       where: {
         email,
         otp
       }
     });
+
+    if (deleted.count === 0) {
+      return {
+        success: false,
+        message: 'Código de verificação inválido ou expirado',
+      };
+    }
 
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
 
