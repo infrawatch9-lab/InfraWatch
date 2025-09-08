@@ -133,4 +133,11 @@ export class UsersController {
   async validateOtp(@Body() body: { email: string; otp: string }) {
     return this.usersService.validateAndDeleteOTP(body.email, body.otp);
   }
+
+  @Post('resetWithOtp')
+  @Public()
+  @ApiOperation({ summary: 'Validate OTP for password reset' })
+  async resetPasswordWithOtp(@Body() body: { email: string; otp: string; newPassword: string}) {
+    return this.usersService.resetPasswordWithOTP(body.email, body.otp, body.newPassword);
+  }
 }

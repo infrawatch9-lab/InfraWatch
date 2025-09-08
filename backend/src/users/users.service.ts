@@ -521,12 +521,6 @@ export class UsersService {
 
     if (record)
     {
-      await prisma.oTP.deleteMany({
-        where: {
-          email,
-          otp
-        }
-      });
       return {
         success: true,
         message: 'Código de verificação válido',
@@ -536,6 +530,48 @@ export class UsersService {
     return {
       success: false,
       message: 'Código de verificação inválido ou expirado',
+    };
+  }
+
+  async resetPasswordWithOTP(email: string, otp: string, newPassword: string) : Promise<{ success: boolean; message: string }> {
+
+    await prisma.oTP.deleteMany({
+      where: {
+        email,
+        otp
+      }
+    });
+
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (user)
+    {
+      // Atualizar senha e remover flag de senha temporária
+      await prisma.user.update({
+        where: { email },
+          data: {
+            password: hashedNewPassword,
+            isTemporaryPassword: false,
+            temporaryPasswordExpiry: null,
+            updatedAt: new Date(),
+        },
+      });
+
+      // Enviar confirmação por email
+      await EmailService.sendPasswordChanged(user.email, user.name);
+
+      return {
+        success: true,
+        message: 'Senha alterada com sucesso',
+      };
+    }
+    return {
+        success: false,
+        message: 'falha ao alterar senha',
     };
   }
 
