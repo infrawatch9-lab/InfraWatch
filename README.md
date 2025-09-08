@@ -1,229 +1,147 @@
-InfraWatch - Plataforma Completa de Monitoramento de Infraestrutura
+# 📡 InfraWatch - Backend
 
-InfraWatch é uma solução avançada e escalável para monitoramento de infraestrutura corporativa, oferecendo visibilidade em tempo real de redes, servidores e aplicações através de coleta centralizada de dados, dashboards intuitivos, alertas inteligentes e métricas históricas.
+Backend do **InfraWatch**, uma plataforma de monitoramento de
+infraestrutura em tempo real, com suporte a múltiplos protocolos,
+alertas inteligentes e relatórios de SLA.
 
-Visão Geral da Solução
+------------------------------------------------------------------------
 
-InfraWatch oferece uma arquitetura robusta para monitoramento completo de infraestrutura, integrando múltiplas tecnologias de monitoramento em uma única plataforma centralizada.
+## 🚀 Tecnologias Utilizadas
 
-Principais Funcionalidades
+-   **Framework**: [NestJS](https://nestjs.com/) (TypeScript)
+-   **Banco de Dados**: PostgreSQL com [Prisma ORM](https://www.prisma.io/)
+-   **Autenticação**: JWT + Guards baseados em Roles
+-   **Comunicação em Tempo Real**: Socket.io
+-   **Documentação de API**: Swagger
+-   **Outros**:
+    -   bcrypt (hash de senhas)
+    -   nodemailer (e-mails)
+    -   Puppeteer (PDF)
+    -   json2csv (relatórios CSV)
+    -   Axios, ping
 
-Sistema de Agentes Inteligentes
-- Instalação Automática: Script de instalação com um comando via curl
-- Coleta Contínua: Métricas de sistema a cada 60 segundos
-- Monitoramento Completo: CPU, memória, disco, rede, processos e uptime
-- Auto-registro: Agentes se registram automaticamente no sistema
-- Resiliente: Reinicialização automática com systemd
+------------------------------------------------------------------------
 
-Monitoramento Multi-Protocolo
-- HTTP/HTTPS: Monitoramento de APIs, websites e serviços web
-- PING: Conectividade de rede e latência
-- SNMP: Dispositivos de rede (switches, roteadores, servidores)
-- WEBHOOK: Integração com sistemas externos via webhooks
+## 📦 Módulos Principais
 
-Sistema de Notificações Avançado
-- Multi-canal: Email, Slack, Telegram
-- Alertas Inteligentes: Regras personalizáveis por serviço
-- Templates Dinâmicos: HTML templates para emails profissionais
-- Processamento em Tempo Real: Webhooks processados instantaneamente
+### 🔍 1. Serviços de Monitoramento
 
-Análise de SLA e Relatórios
-- Cálculo Automático: SLA em tempo real baseado em uptime
-- Relatórios PDF: Geração automática de relatórios detalhados
-- Relatórios CSV: Exportação de dados para análise
-- Métricas Históricas: Armazenamento de longo prazo
+Suporte a 4 tipos de monitoramento:
+- 🏓 **PING**: Verificação de conectividade de rede
+- 🌐 **HTTP/HTTPS**: Monitoramento de endpoints e APIs
+- 📡 **SNMP**: Dispositivos de rede
+- 🔗 **WEBHOOK**: Notificações externas
 
-Gestão de Usuários e Equipes
-- Multi-tenant: Suporte a múltiplas equipes e usuários
-- Controle de Acesso: Roles (ADMIN, USER, VIEWER, AGENT)
-- Autenticação JWT: Segurança robusta com tokens
-- Notificações Personalizadas: Por usuário e por serviço
+### 🚨 2. Sistema de Alertas
 
-Dashboard em Tempo Real
-- Server-Sent Events (SSE): Atualizações em tempo real
-- Métricas Visuais: Gráficos e indicadores de status
-- Visão Unificada: Todos os serviços em uma única tela
-- Responsivo: Interface adaptável para mobile
+-   Regras configuráveis por serviço
+-   Múltiplos canais de notificação:
+    -   📧 Email (Gmail)
+    -   💬 Slack
+    -   📱 Telegram
+-   Níveis de severidade: `INFO`, `WARNING`, `CRITICAL`
 
-Arquitetura Técnica
-Links para os Readms disponiveis no Github
-BackEnd: 
-FrontEnd:
----
+### 👥 3. Gestão de Usuários e Teams
 
-Funcionalidades Detalhadas
+-   Autenticação via JWT
+-   Controle de acesso baseado em roles (`ADMIN`, `USER`)
+-   Estrutura em **teams**
+-   Notificações por usuário/serviço
 
-1. Sistema de Agentes
+### 📊 4. SLA e Relatórios
 
-Como Funciona:
-1. Geração de Credenciais: API gera token único e comando de instalação
-2. Instalação Automatizada: Script detecta SO e instala dependências
-3. Auto-registro: Agente se registra no sistema automaticamente
-4. Coleta Contínua: Envia métricas a cada 60 segundos via JWT autenticado
+-   Cálculo de SLA por serviço
+-   Relatórios em PDF
+-   Métricas históricas
 
-Métricas Coletadas:
-- CPU: Uso, cores, load average (1m, 5m, 15m)
-- Memória: Total, usado, livre, disponível, percentual
-- Disco: Dispositivos, pontos de montagem, espaço, percentual
-- Rede: Interfaces, bytes sent/recv, pacotes
-- Processos: Total, executando, dormindo, zombie
-- Sistema: Uptime, hostname, IP
+### 📈 5. Dashboard e Visualização
 
-2. Monitoramento de Serviços
+-   Interface em tempo real via WebSockets
+-   Métricas de CPU, memória e latência
+-   Status dos serviços monitorados
 
-Protocolos Suportados:
+------------------------------------------------------------------------
 
-HTTP/HTTPS
-- Monitoramento de endpoints web
-- Validação de status codes
-- Tempo de resposta
-- Validação de conteúdo
-- Headers customizados
-- Autenticação (Basic, Bearer)
+## 🗄️ Modelo de Dados
 
-PING (ICMP)
-- Conectividade de rede
-- Latência (RTT)
-- Perda de pacotes
-- TTL customizável
-- Tamanho de pacote configurável
+Entidades principais: - **User** → Usuários do sistema
+- **Team** → Organização de usuários
+- **Service** → Serviços monitorados
+- **MonitoringConfig** → Configurações de monitoramento
+- **Alert / AlertRule** → Sistema de alertas
+- **Metric** → Métricas coletadas
+- **SLA** → Acordos de Nível de Serviço
+- **Notification** → Configurações de notificação
 
-SNMP (v1, v2c, v3)
-- Dispositivos de rede
-- OIDs customizados
-- Autenticação segura (v3)
-- Polling configurável
-- Thresholds personalizados
+------------------------------------------------------------------------
 
-WEBHOOK
-- Recebimento de eventos externos
-- Validação de assinatura
-- Processamento em tempo real
-- Headers customizados
-- Payload flexível
+## 🔌 APIs Disponíveis
 
-3. Sistema de Notificações
+  Endpoint            Descrição
+  ------------------- --------------------------
+  `/api/services`     CRUD de serviços
+  `/api/ping`         Monitoramento PING
+  `/api/http`         Monitoramento HTTP/HTTPS
+  `/api/snmp`         Monitoramento SNMP
+  `/api/webhook`      Webhooks externos
+  `/api/users`        Gestão de usuários
+  `/api/alerts`       Sistema de alertas
+  `/api/metrics`      Métricas coletadas
+  `/api/sla`          Relatórios SLA
+  `/api/dashboards`   Dashboards em tempo real
 
-Canais Suportados:
-- Email: Templates HTML profissionais
-- Slack: Integração via webhooks
-- Telegram: Bot personalizado
+------------------------------------------------------------------------
 
-Características:
-- Processamento Inteligente: Parse automático de mensagens
-- Templates Dinâmicos: Personalização por tipo de alerta
-- Throttling: Prevenção de spam de notificações
-- Fallback: Múltiplos canais para garantir entrega
+## 📊 Funcionalidades
 
-4. Análise de SLA
+✅ Monitoramento multi-protocolo
+✅ Alertas inteligentes com múltiplos canais
+✅ Dashboards em tempo real
+✅ Relatórios de SLA em PDF
+✅ Gestão de equipes e permissões
+✅ APIs RESTful completas
+✅ Comunicação via WebSockets
+✅ Containerização com Docker
 
-Funcionalidades:
-- Cálculo Automático: SLA baseado em uptime real
-- Períodos Flexíveis: Diário, semanal, mensal, anual
-- Relatórios PDF: Gráficos e métricas detalhadas
-- Exportação CSV: Dados brutos para análise externa
-- Alertas de SLA: Notificações quando SLA é violado
+------------------------------------------------------------------------
 
-5. Gestão de Usuários
+## 📁 Estrutura Modular
 
-Recursos:
-- Multi-tenancy: Isolamento por equipe
-- Roles Granulares: ADMIN, USER, VIEWER, AGENT
-- JWT Security: Tokens com expiração configurável
-- Password Reset: Senhas temporárias por email
-- Profile Management: Gestão completa de perfis
+-   Cada tipo de serviço possui **módulo dedicado**
+-   Separação entre **controladores**, **serviços** e **entidades**
+-   Guards e decorators para autenticação
+-   Configuração centralizada com Prisma
 
+------------------------------------------------------------------------
 
-6. Dashboard e Visualização
+## 🚀 Como Executar
 
-Recursos do Dashboard:
-- Tempo Real: Atualizações via Server-Sent Events
-- Métricas Visuais: Gráficos de CPU, memória, rede
-- Alertas Ativos: Notificações em destaque
-- Trends: Tendências de performance
-- SLA Status: Indicadores de cumprimento de SLA
+### Ambiente de Desenvolvimento
 
-Visualizações Disponíveis:
-- Status Grid: Visão geral de todos os serviços
-- Metrics Charts: Gráficos de métricas históricas
-- Alert Timeline: Linha do tempo de incidentes
-- SLA Reports: Relatórios de disponibilidade
-- Agent Health: Status de todos os agentes
+``` bash
+npm run dev
+```
 
+### Produção
 
-7. Segurança e Conformidade
+``` bash
+npm run build && npm start
+```
 
-Medidas de Segurança:
-- JWT Authentication: Tokens seguros com expiração
-- Role-Based Access: Controle granular de permissões
-- API Rate Limiting: Proteção contra abuse
-- Audit Logs: Registro de todas as ações
-- Input Validation: Sanitização de entradas
-- Webhook Signatures: Validação de webhooks externos
+### Testes
 
-Conformidade:
-- GDPR: Proteção de dados pessoais
-- SOC 2: Controles de segurança
-- ISO 27001: Gestão de segurança da informação
+``` bash
+npm run test
+```
 
+------------------------------------------------------------------------
 
-8. Performance e Escalabilidade
+## 🔧 Pontos de Melhoria
 
-Otimizações:
-- Database Indexing: Índices otimizados para consultas
-- Connection Pooling: Pool de conexões eficiente
-- Async Processing: Processamento assíncrono
-- Horizontal Scaling: Suporte a múltiplas instâncias
-- Caching Strategy: Cache inteligente de dados
+-   🤖 **Módulo AI**: Implementação de recursos de inteligência artificial
+-   🧪 **Cobertura de Testes**: Ampliar testes unitários e de integração
+-   📚 **Documentação**: Expandir documentação técnica e exemplos de uso
 
-Métricas de Performance:
-- Response Time: < 100ms para 95% das requests
-- Throughput: > 1000 requests/segundo
-- Memory Usage: < 512MB por instância
-- Uptime: 99.9% de disponibilidade
+------------------------------------------------------------------------
 
-7. Testes e Qualidade
-
-Cobertura de Testes:
-- Unit Tests: 85%+ de cobertura
-- Integration Tests: APIs e banco de dados
-- E2E Tests: Fluxos completos
-- Performance Tests: Carga e stress
-
-Qualidade de Código:
-- TypeScript: Type safety garantido
-- ESLint: Linting automático
-- Prettier: Formatação consistente
-- Husky: Git hooks para qualidade
-
-8. Documentação
-
-Recursos Disponíveis:
-- API Documentation: Swagger/OpenAPI integrado
-- Video Tutorials: Guias passo a passo
-- Setup Guides: Instalação e configuração
-- Troubleshooting: Resolução de problemas
-- Best Practices: Melhores práticas
-
- Acesso à Documentação:
-- Swagger UI: `/api/docs`
-- Postman Collections: Coleções pré-configuradas
-- Code Examples: Exemplos práticos em múltiplas linguagens
-
-Roadmap e Futuras Funcionalidades
-
- Próximas Releases:
-- AI-Powered Insights: Análise preditiva com IA
-- Mobile App: Aplicativo nativo para iOS/Android
-- Auto-scaling: Escalabilidade automática
-- Multi-region: Suporte a múltiplas regiões
-- Advanced Analytics: Dashboards avançados
-- Plugin System: Sistema de plugins extensível
-
-Desenvolvido com ❤️ pela equipe InfraWatch durante o Hackathon.
-
-Especialidades:
-- Backend Development: NestJS, TypeScript, PostgreSQL
-- DevOps: Docker, CI/CD, Monitoring
-- Security: JWT, RBAC, API Security
-- Performance: Database Optimization, Caching
+📌 Desenvolvido para monitoramento **moderno, modular e escalável**.

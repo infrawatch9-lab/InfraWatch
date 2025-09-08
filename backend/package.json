@@ -6,11 +6,6 @@
     "dev": "ts-node-dev --respawn --transpile-only src/main.ts",
     "build": "tsc",
     "start": "node dist/main.js",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:sla": "jest src/sla/sla-api.spec.ts --config=jest.config.json --verbose",
-    "test:sla-http": "jest src/sla/sla-http.spec.ts --config=jest.config.json --verbose --detectOpenHandles",
-    "test:sla-ts": "ts-node src/sla/sla-debug.ts",
     "start:dev": "nest start --watch"
   },
   "prisma": {
@@ -21,9 +16,8 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "@nestjs/testing": "^11.1.6",
+    "@types/cookie-parser": "^1.4.9",
     "@types/cors": "^2.8.19",
-    "@types/jest": "^30.0.0",
     "@types/json2csv": "^5.0.7",
     "@types/node": "^24.2.0",
     "@types/node-fetch": "^2.6.13",
@@ -32,11 +26,7 @@
     "@types/ping": "^0.4.4",
     "@types/puppeteer": "^5.4.7",
     "@types/socket.io": "^3.0.1",
-    "@types/supertest": "^6.0.3",
-    "jest": "^30.0.5",
     "prisma": "^6.15.0",
-    "supertest": "^7.1.4",
-    "ts-jest": "^29.4.1",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.2"
@@ -62,6 +52,7 @@
     "@types/pdfkit": "^0.17.2",
     "axios": "^1.11.0",
     "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^4.21.2",
