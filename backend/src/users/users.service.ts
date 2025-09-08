@@ -508,7 +508,7 @@ export class UsersService {
     };
   }
 
-  async validateAndDeleteOTP(email: string, otp: string): Promise<boolean> {
+  async validateAndDeleteOTP(email: string, otp: string): Promise<{ success: boolean; message: string }> {
     const record = await prisma.oTP.findFirst({
       where: {
         email,
@@ -519,17 +519,24 @@ export class UsersService {
       }
     });
 
-
-    if (record) {
+    if (record)
+    {
       await prisma.oTP.deleteMany({
         where: {
           email,
           otp
         }
       });
-      return true;
+      return {
+        success: true,
+        message: 'Código de verificação válido',
+      };
     }
-    return false;
+    
+    return {
+      success: false,
+      message: 'Código de verificação inválido ou expirado',
+    };
   }
 
   // Método para redefinir senha
