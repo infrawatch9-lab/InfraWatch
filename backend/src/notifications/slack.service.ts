@@ -4,7 +4,7 @@ import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class SlackService {
-  private webhookUrl = 
+  private webhookUrl = process.env.SLACK_WEBHOOK || '';
 
   constructor(private readonly httpService: HttpService) {}
 
