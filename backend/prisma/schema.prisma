@@ -25,6 +25,7 @@ model User {
   notifications            Notification[]
   serviceUserNotifications ServiceUserNotification[]
   teams                    TeamMember[]
+  agents                   Agent[]
 }
 
 model Team {
@@ -118,15 +119,19 @@ model ServiceUserNotification {
 }
 
 model Notification {
-  id      Int                 @id @default(autoincrement())
-  userId  Int
-  alertId Int?
-  message String
-  type    NotificationType
-  channel NotificationChannel
-  sentAt  DateTime            @default(now())
-  Alert   Alert?              @relation(fields: [alertId], references: [id])
-  User    User                @relation(fields: [userId], references: [id])
+  id        Int                 @id @default(autoincrement())
+  userId    Int
+  alertId   Int?
+  title     String              @default("Notificação")
+  content   String              
+  message   String              @default("") // Manter message para compatibilidade
+  type      NotificationType
+  channel   NotificationChannel
+  timestamp DateTime            @default(now())
+  isRead    Boolean             @default(false)
+  readAt    DateTime?
+  Alert     Alert?              @relation(fields: [alertId], references: [id])
+  User      User                @relation(fields: [userId], references: [id])
 }
 
 model SLA {
@@ -173,6 +178,7 @@ model PingConfig {
   ipAddress    String
   packetSize   Int?
   ttl          Int?
+  responseTime Int?
   Monitoring   MonitoringConfig @relation(fields: [monitoringId], references: [id], onDelete: Cascade)
 }
 
@@ -214,6 +220,7 @@ model HttpConfig {
   expectedBodyIncludes    String?
   expectedResponseTimeMs  Int?
   expectedHeadersIncludes Json?
+  responseTime           Int?
   retries                 Int?
   createdAt               DateTime         @default(now())
   updatedAt               DateTime         @updatedAt
@@ -260,6 +267,14 @@ model CheckcleToken {
   expiry    DateTime
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model OTP {
+  id        Int      @id @default(autoincrement())
+  email     String
+  otp       String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
 }
 
 
@@ -359,4 +374,64 @@ enum MonitoringMode {
   cron
   agent
   both
+}
+
+model Agent {
+  id        String       @id @default(uuid())
+  hostname  String
+  ip        String
+  os        String
+  arch      String
+  version   String       @default("1.0.0")
+  token     String       @unique
+  status    AgentStatus  @default(PENDING)
+  userId    Int
+  lastSeen  DateTime?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  
+  User      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  metrics   AgentMetrics[]
+  
+  @@index([userId])
+  @@index([hostname])
+  @@index([status])
+}
+
+model AgentMetrics {
+  id                   Int      @id @default(autoincrement())
+  agentId              String
+  hostname             String
+  timestamp            DateTime
+  cpuUsage             Float
+  cpuCores             Int
+  load1                Float
+  load5                Float
+  load15               Float
+  memoryTotal          BigInt
+  memoryUsed           BigInt
+  memoryFree           BigInt
+  memoryAvailable      BigInt
+  memoryUsagePercent   Float
+  diskData             String   // JSON array of disk info
+  networkData          String   // JSON array of network info
+  processesTotal       Int
+  processesRunning     Int
+  processesSleeping    Int
+  processesZombie      Int
+  uptime               BigInt
+  createdAt            DateTime @default(now())
+  
+  Agent                Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  
+  @@index([agentId])
+  @@index([timestamp])
+  @@index([hostname])
+}
+
+enum AgentStatus {
+  PENDING
+  ACTIVE
+  INACTIVE
+  ERROR
 }
