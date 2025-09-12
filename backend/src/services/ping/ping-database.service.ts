@@ -94,6 +94,8 @@ export class PingDatabaseService {
         },
       });
 
+      
+
       return { service, monitoringConfig, pingConfig, usersToNotify: data.usersToNotify };
     });
   }

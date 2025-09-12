@@ -42,7 +42,7 @@ export class PingOrchestrationService {
       }
 
       this.logger.log(`Serviço de ping criado: ${result.service.name}`);
-
+      
       // 3. Sincronizar com CheckCle
       await this.syncServiceWithCheckcle('create', result);
 
