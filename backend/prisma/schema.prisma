@@ -20,12 +20,12 @@ model User {
   status                   Status                    @default(ACTIVE)
   temporaryPasswordExpiry  DateTime?
   number                   String?
-  Agent                    Agent[]
   alerts                   Alert[]
   createdAlertRules        AlertRule[]               @relation("CreatedByUser")
   notifications            Notification[]
   serviceUserNotifications ServiceUserNotification[]
   teams                    TeamMember[]
+  agents                   Agent[]
 }
 
 model Team {
@@ -47,14 +47,14 @@ model TeamMember {
 
 model Service {
   id            Int                       @id @default(autoincrement())
+  checkcleId    String?   
   name          String
   type          ServiceType
   status        ServiceStatus             @default(ACTIVE)
   teamId        Int
   createdAt     DateTime                  @default(now())
   description   String                    @default("Sem descrição")
-  targetSLA     Float?                    @default(99.9)
-  checkcleId    String?
+  targetSLA     Float?                    @default(99.9) // SLA alvo por serviço
   alerts        Alert[]
   rules         AlertRule[]               @relation("ServiceToAlertRules")
   configs       MonitoringConfig?
@@ -122,14 +122,14 @@ model Notification {
   id        Int                 @id @default(autoincrement())
   userId    Int
   alertId   Int?
-  message   String              @default("")
+  title     String              @default("Notificação")
+  content   String              
+  message   String              @default("") // Manter message para compatibilidade
   type      NotificationType
   channel   NotificationChannel
-  content   String
+  timestamp DateTime            @default(now())
   isRead    Boolean             @default(false)
   readAt    DateTime?
-  timestamp DateTime            @default(now())
-  title     String              @default("Notificação")
   Alert     Alert?              @relation(fields: [alertId], references: [id])
   User      User                @relation(fields: [userId], references: [id])
 }
@@ -146,13 +146,13 @@ model SLA {
 }
 
 model SystemLog {
-  id               Int      @id @default(autoincrement())
-  timestamp        DateTime @default(now())
-  type             LogType
-  message          String
-  serviceId        Int?
-  message_received Json?
-  Service          Service? @relation(fields: [serviceId], references: [id])
+  id        Int      @id @default(autoincrement())
+  timestamp DateTime @default(now())
+  type      LogType
+  message   String
+  message_received  Json?
+  serviceId Int?
+  Service   Service? @relation(fields: [serviceId], references: [id])
 
   @@index([timestamp])
   @@index([serviceId, timestamp])
@@ -220,10 +220,10 @@ model HttpConfig {
   expectedBodyIncludes    String?
   expectedResponseTimeMs  Int?
   expectedHeadersIncludes Json?
+  responseTime           Int?
   retries                 Int?
   createdAt               DateTime         @default(now())
   updatedAt               DateTime         @updatedAt
-  responseTime            Int?
   Monitoring              MonitoringConfig @relation(fields: [monitoringId], references: [id], onDelete: Cascade)
 }
 
@@ -241,24 +241,24 @@ model WebhookConfig {
 
 model NotificationsConfig {
   id          Int           @id @default(autoincrement())
-  emailConfig EmailConfig[]
   slackConfig SlackConfig[]
+  emailConfig EmailConfig[]
 }
 
 model SlackConfig {
-  id                  Int                 @id @default(autoincrement())
-  configsId           Int
-  webhookUrl          String?
-  channel             String?
-  notificationsConfig NotificationsConfig @relation(fields: [configsId], references: [id], onDelete: Cascade)
+  id                   Int                 @id @default(autoincrement())
+  configsId            Int
+  webhookUrl           String?
+  channel              String?
+  notificationsConfig  NotificationsConfig @relation(fields: [configsId], references: [id], onDelete: Cascade)
 }
 
 model EmailConfig {
-  id                  Int                 @id @default(autoincrement())
-  configsId           Int
-  gmailAppPassword    String?
-  gmailUser           String?
-  notificationsConfig NotificationsConfig @relation(fields: [configsId], references: [id], onDelete: Cascade)
+  id                   Int                 @id @default(autoincrement())
+  configsId            Int
+  gmailAppPassword     String?
+  gmailUser            String?
+  notificationsConfig  NotificationsConfig @relation(fields: [configsId], references: [id], onDelete: Cascade)
 }
 
 model CheckcleToken {
@@ -269,57 +269,6 @@ model CheckcleToken {
   updatedAt DateTime @updatedAt
 }
 
-model Agent {
-  id           String         @id
-  hostname     String
-  ip           String
-  os           String
-  arch         String
-  version      String         @default("1.0.0")
-  token        String         @unique
-  status       AgentStatus    @default(PENDING)
-  userId       Int
-  lastSeen     DateTime?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime
-  User         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  AgentMetrics AgentMetrics[]
-
-  @@index([hostname])
-  @@index([status])
-  @@index([userId])
-}
-
-model AgentMetrics {
-  id                 Int      @id @default(autoincrement())
-  agentId            String
-  hostname           String
-  timestamp          DateTime
-  cpuUsage           Float
-  cpuCores           Int
-  load1              Float
-  load5              Float
-  load15             Float
-  memoryTotal        BigInt
-  memoryUsed         BigInt
-  memoryFree         BigInt
-  memoryAvailable    BigInt
-  memoryUsagePercent Float
-  diskData           String
-  networkData        String
-  processesTotal     Int
-  processesRunning   Int
-  processesSleeping  Int
-  processesZombie    Int
-  uptime             BigInt
-  createdAt          DateTime @default(now())
-  Agent              Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
-
-  @@index([agentId])
-  @@index([hostname])
-  @@index([timestamp])
-}
-
 model OTP {
   id        Int      @id @default(autoincrement())
   email     String
@@ -327,6 +276,7 @@ model OTP {
   createdAt DateTime @default(now())
   expiresAt DateTime
 }
+
 
 enum SnmpVersion {
   v1
@@ -424,6 +374,59 @@ enum MonitoringMode {
   cron
   agent
   both
+}
+
+model Agent {
+  id        String       @id @default(uuid())
+  hostname  String
+  ip        String
+  os        String
+  arch      String
+  version   String       @default("1.0.0")
+  token     String       @unique
+  status    AgentStatus  @default(PENDING)
+  userId    Int
+  lastSeen  DateTime?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  
+  User      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  metrics   AgentMetrics[]
+  
+  @@index([userId])
+  @@index([hostname])
+  @@index([status])
+}
+
+model AgentMetrics {
+  id                   Int      @id @default(autoincrement())
+  agentId              String
+  hostname             String
+  timestamp            DateTime
+  cpuUsage             Float
+  cpuCores             Int
+  load1                Float
+  load5                Float
+  load15               Float
+  memoryTotal          BigInt
+  memoryUsed           BigInt
+  memoryFree           BigInt
+  memoryAvailable      BigInt
+  memoryUsagePercent   Float
+  diskData             String   // JSON array of disk info
+  networkData          String   // JSON array of network info
+  processesTotal       Int
+  processesRunning     Int
+  processesSleeping    Int
+  processesZombie      Int
+  uptime               BigInt
+  createdAt            DateTime @default(now())
+  
+  Agent                Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  
+  @@index([agentId])
+  @@index([timestamp])
+  @@index([hostname])
 }
 
 enum AgentStatus {
