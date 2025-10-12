@@ -27,7 +27,7 @@ import { AgentsModule } from './agents/agents.module';
     ServicesModule,
     SlaModule,
     AlertModule,
-    AgentsModule,
+    // AgentsModule,
   ],
   controllers: [AppController],
   providers: [AlertService],
